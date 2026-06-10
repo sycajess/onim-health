@@ -1,0 +1,16 @@
+{
+  "name": "onim",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @onim/web",
+    "build": "npm run build -w @onim/web",
+    "lint": "npm run lint -w @onim/web",
+    "preview": "npm run preview -w @onim/web"
+  }
+}

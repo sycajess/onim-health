@@ -1,0 +1,30 @@
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--gray4);
+}
+
+.empty-state__icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+  opacity: 0.45;
+  animation: float 4s ease-in-out infinite;
+}
+
+.empty-state__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gray5);
+  margin-bottom: 6px;
+}
+
+.empty-state__desc {
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.empty-state__action {
+  margin-top: 16px;
+}

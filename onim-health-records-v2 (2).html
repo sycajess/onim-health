@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Onim Health – Patient Records System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --teal: #1D9E75; --teal-light: #E1F5EE; --teal-dark: #0F6E56;
+    --teal-deep: #085041; --teal-mid: #5DCAA5; --teal-pale: #9FE1CB;
+    --gray: #F8F9FA; --gray2: #E9ECEF; --gray3: #CED4DA; --gray4: #6C757D;
+    --gray5: #343A40; --white: #FFFFFF; --danger: #D85A30; --danger-light: #FAECE7;
+    --amber: #BA7517; --amber-light: #FAEEDA; --success: #3B6D11; --success-light: #EAF3DE;
+    --blue: #185FA5; --blue-light: #E6F1FB; --sidebar-w: 240px;
+    --font: 'DM Sans', sans-serif; --font-serif: 'DM Serif Display', serif;
+    --radius: 10px; --radius-sm: 6px; --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--font); background: var(--gray); color: var(--gray5); font-size: 14px; min-height: 100vh; }
+
+  #app-wrapper { display: none; height: 100vh; overflow: hidden; }
+  #app-wrapper.visible { display: flex; }
+  /* SIDEBAR */
+  #sidebar { width: var(--sidebar-w); background: var(--teal-deep); color: #fff; display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+  .sidebar-logo { padding: 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-logo .logo-name { font-family: var(--font-serif); font-size: 18px; color: #fff; letter-spacing: 0.3px; }
+  .sidebar-logo .logo-sub { font-size: 10px; color: var(--teal-pale); letter-spacing: 1px; text-transform: uppercase; margin-top: 2px; }
+  .nav-section { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+  .nav-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--teal-pale); padding: 4px 16px 8px; font-weight: 500; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.8); border-left: 3px solid transparent; transition: all 0.15s; }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,0.12); color: #fff; border-left-color: var(--teal-mid); font-weight: 500; }
+  .nav-item .ni { font-size: 16px; opacity: 0.8; }
+  .sidebar-footer { margin-top: auto; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 11px; color: var(--teal-pale); }
+  .user-badge { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--teal-mid); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--teal-deep); }
+
+  /* MAIN */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+  .topbar { background: var(--white); border-bottom: 1px solid var(--gray2); padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .topbar-title { font-size: 16px; font-weight: 600; color: var(--gray5); }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: var(--font); transition: all 0.15s; }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: var(--teal-dark); }
+  .btn-secondary { background: var(--white); color: var(--gray5); border: 1px solid var(--gray3); }
+  .btn-secondary:hover { background: var(--gray); }
+  .btn-danger { background: var(--danger-light); color: var(--danger); border: 1px solid #F0997B; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .search-bar { display: flex; align-items: center; background: var(--gray); border: 1px solid var(--gray2); border-radius: var(--radius-sm); padding: 6px 12px; gap: 8px; width: 260px; }
+  .search-bar input { border: none; background: none; outline: none; font-size: 13px; color: var(--gray5); width: 100%; font-family: var(--font); }
+
+  /* CONTENT */
+  #content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* VIEWS */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* STATS */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .stat-card { background: var(--white); border-radius: var(--radius); padding: 16px 18px; border: 1px solid var(--gray2); }
+  .stat-label { font-size: 11px; color: var(--gray4); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; }
+  .stat-value { font-size: 26px; font-weight: 600; color: var(--gray5); margin: 4px 0 2px; }
+  .stat-sub { font-size: 11px; color: var(--teal); }
+  .stat-icon { float: right; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-top: -2px; }
+
+  /* CARDS / TABLES */
+  .card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--gray2); margin-bottom: 16px; }
+  .card-header { padding: 14px 18px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; justify-content: space-between; }
+  .card-header h3 { font-size: 14px; font-weight: 600; color: var(--gray5); }
+  .card-body { padding: 18px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--gray4); font-weight: 500; padding: 8px 12px; border-bottom: 1px solid var(--gray2); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--gray); font-size: 13px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FAFBFC; }
+  .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-teal { background: var(--teal-light); color: var(--teal-dark); }
+  .badge-amber { background: var(--amber-light); color: var(--amber); }
+  .badge-danger { background: var(--danger-light); color: var(--danger); }
+  .badge-gray { background: var(--gray2); color: var(--gray4); }
+  .badge-blue { background: var(--blue-light); color: var(--blue); }
+  .badge-success { background: var(--success-light); color: var(--success); }
+  .avatar-cell { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--teal-light); color: var(--teal-dark); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+  .avatar-name { font-weight: 500; color: var(--gray5); font-size: 13px; }
+  .avatar-sub { font-size: 11px; color: var(--gray4); }
+  .link-cell { color: var(--teal); cursor: pointer; font-weight: 500; text-decoration: none; }
+  .link-cell:hover { text-decoration: underline; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; min-height: 100%; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: var(--radius); width: 680px; max-height: 88vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+  .modal-header { padding: 18px 22px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; justify-content: space-between; background: var(--white); }
+  .modal-header h2 { font-size: 16px; font-weight: 600; }
+  .modal-body { padding: 22px; }
+  .modal-footer { padding: 14px 22px; border-top: 1px solid var(--gray2); display: flex; justify-content: flex-end; gap: 10px; background: var(--white); }
+  .close-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray4); line-height: 1; padding: 4px; }
+
+  /* FORMS */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1/-1; }
+  label { font-size: 12px; font-weight: 500; color: var(--gray4); text-transform: uppercase; letter-spacing: 0.6px; }
+  input[type=text], input[type=email], input[type=tel], input[type=date], input[type=number], input[type=password], select, textarea {
+    font-family: var(--font); font-size: 13px; color: var(--gray5);
+    border: 1px solid var(--gray3); border-radius: var(--radius-sm); padding: 8px 10px;
+    outline: none; background: var(--white); width: 100%; transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(29,158,117,0.1); }
+  textarea { resize: vertical; min-height: 80px; }
+  .section-title { font-size: 13px; font-weight: 600; color: var(--gray5); margin: 20px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 8px; }
+  .section-title .st-icon { width: 22px; height: 22px; background: var(--teal-light); border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 13px; color: var(--teal); }
+
+  /* PATIENT DETAIL TABS */
+  .pt-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--gray2); margin-bottom: 20px; }
+  .pt-tab { padding: 10px 18px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--gray4); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .pt-tab:hover { color: var(--teal); }
+  .pt-tab.active { color: var(--teal); border-bottom-color: var(--teal); }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* PATIENT HEADER */
+  .pt-header { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 20px; background: var(--white); border-radius: var(--radius); border: 1px solid var(--gray2); padding: 20px; }
+  .pt-avatar-lg { width: 60px; height: 60px; border-radius: 50%; background: var(--teal-light); color: var(--teal-dark); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 600; flex-shrink: 0; }
+  .pt-name { font-size: 20px; font-weight: 600; color: var(--gray5); }
+  .pt-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  .pt-meta-item { font-size: 12px; color: var(--gray4); display: flex; align-items: center; gap: 4px; }
+  .pt-header-actions { margin-left: auto; display: flex; gap: 8px; }
+
+  /* SPECIALTY TAGS */
+  .specialty-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .sp-weight { background: #E1F5EE; color: #0F6E56; }
+  .sp-sexual { background: #FAECE7; color: #993C1D; }
+  .sp-mental { background: #E6F1FB; color: #185FA5; }
+  .sp-fertility { background: #FBEAF0; color: #993556; }
+  .sp-hair { background: #FAEEDA; color: #854F0B; }
+  .sp-skin { background: #EAF3DE; color: #3B6D11; }
+
+  /* INVENTORY ALERTS */
+  .alert-bar { padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .alert-danger { background: var(--danger-light); color: var(--danger); border: 1px solid #F0997B; }
+  .alert-amber { background: var(--amber-light); color: var(--amber); border: 1px solid #FAC775; }
+  .alert-success { background: var(--success-light); color: var(--success); border: 1px solid #C0DD97; }
+
+  /* TIMELINE */
+  .timeline { position: relative; padding-left: 20px; }
+  .timeline::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 0; width: 1px; background: var(--gray2); }
+  .tl-item { position: relative; margin-bottom: 16px; }
+  .tl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--teal); position: absolute; left: -17px; top: 4px; border: 2px solid var(--white); box-shadow: 0 0 0 1px var(--teal); }
+  .tl-date { font-size: 11px; color: var(--gray4); margin-bottom: 2px; }
+  .tl-content { background: var(--white); border: 1px solid var(--gray2); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .tl-type { font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.7px; color: var(--teal); margin-bottom: 3px; }
+  .tl-note { font-size: 13px; color: var(--gray5); line-height: 1.5; }
+
+  /* UTILS */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .flex-center { display: flex; align-items: center; gap: 8px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .text-muted { color: var(--gray4); font-size: 12px; }
+  .text-teal { color: var(--teal); }
+  .bold { font-weight: 600; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--gray4); }
+  .empty-state .es-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.4; }
+  .progress-bar { height: 6px; background: var(--gray2); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: var(--teal); transition: width 0.3s; }
+  .progress-fill.warn { background: var(--amber); }
+  .progress-fill.danger { background: var(--danger); }
+  .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .info-item { background: var(--gray); border-radius: var(--radius-sm); padding: 10px 12px; }
+  .info-item .ii-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--gray4); font-weight: 500; }
+  .info-item .ii-value { font-size: 13px; font-weight: 500; color: var(--gray5); margin-top: 3px; }
+  .page-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: var(--gray4); gap: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 24px; height: 24px; border: 2px solid var(--gray2); border-top-color: var(--teal); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+  /* LOGIN / ROLES */
+  #login-screen { width: 100%; min-height: 100vh; background: var(--teal-deep); display: flex; align-items: center; justify-content: center; }
+  .login-box { background: var(--white); border-radius: 16px; padding: 40px; width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .login-logo { font-family: var(--font-serif); font-size: 26px; color: var(--teal-deep); margin-bottom: 4px; }
+  .login-sub { font-size: 12px; color: var(--gray4); letter-spacing: 0.8px; text-transform: uppercase; margin-bottom: 28px; }
+  .login-box label { display: block; font-size: 11px; font-weight: 500; color: var(--gray4); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+  .login-box input, .login-box select { width: 100%; margin-bottom: 14px; }
+  .login-error { color: var(--danger); font-size: 12px; margin-bottom: 10px; display: none; }
+
+  /* ROLE BADGE */
+  .role-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .role-admin { background: #EEEDFE; color: #3C3489; }
+  .role-doctor { background: var(--teal-light); color: var(--teal-dark); }
+  .role-pharmacist { background: var(--amber-light); color: var(--amber); }
+  .role-nutritionist { background: var(--success-light); color: var(--success); }
+  .role-nurse { background: var(--blue-light); color: var(--blue); }
+  .role-staff { background: var(--gray2); color: var(--gray4); }
+  .role-accountant { background: #FBEAF0; color: #993556; }
+
+  /* MEET BUTTON */
+  .meet-btn { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; background: #1a73e8; color: #fff; border-radius: 5px; font-size: 12px; font-weight: 500; cursor: pointer; border: none; font-family: var(--font); text-decoration: none; }
+  .meet-btn:hover { background: #1558b0; }
+  .meet-btn .meet-icon { width: 16px; height: 16px; }
+
+  /* REPORTS */
+  .report-card { background: var(--white); border: 1px solid var(--gray2); border-radius: var(--radius); padding: 18px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+  .report-card:hover { border-color: var(--teal); box-shadow: 0 2px 12px rgba(29,158,117,0.12); }
+  .report-card .rc-icon { font-size: 28px; margin-bottom: 10px; }
+  .report-card .rc-title { font-size: 14px; font-weight: 600; color: var(--gray5); margin-bottom: 4px; }
+  .report-card .rc-desc { font-size: 12px; color: var(--gray4); line-height: 1.5; }
+  .report-output { background: var(--white); border: 1px solid var(--gray2); border-radius: var(--radius); padding: 22px; margin-top: 16px; }
+  .report-output h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; justify-content: space-between; }
+  .rpt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .rpt-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray4); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--gray2); background: var(--gray); }
+  .rpt-table td { padding: 9px 10px; border-bottom: 1px solid var(--gray); }
+  .rpt-table tr:last-child td { border-bottom: none; }
+  .rpt-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  .rpt-sum-item { background: var(--gray); border-radius: var(--radius-sm); padding: 12px; text-align: center; }
+  .rpt-sum-item .rsv { font-size: 22px; font-weight: 600; color: var(--teal); }
+  .rpt-sum-item .rsl { font-size: 11px; color: var(--gray4); margin-top: 2px; }
+
+  /* PDF ATTACHMENT */
+  .pdf-attach-zone { border: 2px dashed var(--gray3); border-radius: var(--radius-sm); padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
+  .pdf-attach-zone:hover { border-color: var(--teal); }
+  .pdf-attach-zone input[type=file] { display: none; }
+  .pdf-item { display: flex; align-items: center; gap: 10px; background: var(--gray); border-radius: var(--radius-sm); padding: 8px 12px; margin-top: 8px; }
+  .pdf-item .pdf-icon { font-size: 20px; }
+  .pdf-item .pdf-name { font-size: 13px; font-weight: 500; flex: 1; }
+  .pdf-item .pdf-view { color: var(--teal); font-size: 12px; cursor: pointer; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Onim Health</div>
+    <div class="login-sub">Patient Records System</div>
+    <div class="login-error" id="login-error">Invalid credentials. Please try again.</div>
+    <label>Username</label>
+    <input type="text" id="login-user" placeholder="Enter username" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <label>Password</label>
+    <input type="password" id="login-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <label>Role</label>
+    <select id="login-role">
+      <option value="admin">Admin / Super User</option>
+      <option value="doctor">Doctor</option>
+      <option value="pharmacist">Pharmacist</option>
+      <option value="nutritionist">Nutritionist</option>
+      <option value="nurse">Nurse</option>
+      <option value="staff">General Staff / Customer Service</option>
+      <option value="accountant">Accountant / Finance</option>
+    </select>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" onclick="doLogin()">Sign In</button>
+    <div style="margin-top:14px;font-size:11px;color:var(--gray4);text-align:center">Demo: any username/password works. Role controls access.</div>
+  </div>
+</div>
+
+<!-- APP WRAPPER -->
+<div id="app-wrapper">
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-name">Onim Health</div>
+    <div class="logo-sub">Patient Records System</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <div class="nav-item active" onclick="navigate('dashboard')">
+      <span class="ni">⊞</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="navigate('patients')">
+      <span class="ni">👥</span> Patients
+    </div>
+    <div class="nav-item" onclick="navigate('appointments')">
+      <span class="ni">📅</span> Appointments
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Clinical</div>
+    <div class="nav-item" onclick="navigate('records')">
+      <span class="ni">📋</span> Medical Records
+    </div>
+    <div class="nav-item" onclick="navigate('prescriptions')">
+      <span class="ni">💊</span> Prescriptions
+    </div>
+    <div class="nav-item" onclick="navigate('labs')">
+      <span class="ni">🧪</span> Lab Results
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Operations</div>
+    <div class="nav-item" onclick="navigate('inventory')">
+      <span class="ni">📦</span> Medication Inventory
+    </div>
+    <div class="nav-item" onclick="navigate('billing')">
+      <span class="ni">🧾</span> Billing
+    </div>
+    <div class="nav-item" onclick="navigate('messaging')">
+      <span class="ni">💬</span> Secure Messaging
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Analytics</div>
+    <div class="nav-item" onclick="navigate('reports')">
+      <span class="ni">📊</span> Reports
+    </div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">System</div>
+    <div class="nav-item" onclick="navigate('settings')">
+      <span class="ni">⚙️</span> Settings
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-badge">
+      <div class="user-avatar" id="sidebar-avatar">DR</div>
+      <div>
+        <div style="font-size:12px;color:#fff;font-weight:500" id="sidebar-username">Dr. Admin</div>
+        <div style="font-size:10px;color:var(--teal-pale)" id="sidebar-role-label">Admin</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:10px;color:rgba(255,255,255,0.35)">v2.0 · Onim Health © 2026</div>
+      <button onclick="doLogout()" style="font-size:10px;color:var(--teal-pale);background:none;border:none;cursor:pointer">Sign out</button>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div id="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="topbar-actions">
+      <div class="search-bar">
+        <span style="color:var(--gray4);font-size:15px">🔍</span>
+        <input type="text" placeholder="Search patients, records..." id="global-search" oninput="globalSearch(this.value)"/>
+      </div>
+      <button class="btn btn-primary" onclick="showNewPatientModal()">+ New Patient</button>
+    </div>
+  </div>
+  <div id="content">
+
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="view active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--teal-light);color:var(--teal)">👥</div>
+          <div class="stat-label">Total Patients</div>
+          <div class="stat-value" id="stat-patients">0</div>
+          <div class="stat-sub">↑ Active records</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--blue-light);color:var(--blue)">📅</div>
+          <div class="stat-label">Today's Appointments</div>
+          <div class="stat-value" id="stat-appts">0</div>
+          <div class="stat-sub">Scheduled today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--amber-light);color:var(--amber)">💊</div>
+          <div class="stat-label">Active Prescriptions</div>
+          <div class="stat-value" id="stat-rx">0</div>
+          <div class="stat-sub">Across all patients</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:var(--danger-light);color:var(--danger)">⚠️</div>
+          <div class="stat-label">Low Stock Alerts</div>
+          <div class="stat-value" id="stat-alerts">0</div>
+          <div class="stat-sub">Medications below threshold</div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">
+            <h3>Recent Patients</h3>
+            <button class="btn btn-secondary btn-sm" onclick="navigate('patients')">View All</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>Patient</th><th>Specialty</th><th>Last Visit</th></tr></thead>
+              <tbody id="dash-recent-patients"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Today's Appointments</h3>
+            <button class="btn btn-secondary btn-sm" onclick="navigate('appointments')">View All</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table>
+              <thead><tr><th>Patient</th><th>Time</th><th>Type</th><th>Status</th></tr></thead>
+              <tbody id="dash-appts"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><h3>Inventory Alerts</h3></div>
+          <div class="card-body" id="dash-inv-alerts"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Patients by Specialty</h3></div>
+          <div class="card-body" id="dash-specialty-chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PATIENTS LIST -->
+    <div id="view-patients" class="view">
+      <div class="card">
+        <div class="card-header">
+          <h3>All Patients</h3>
+          <div class="flex-center">
+            <select id="filter-specialty" onchange="renderPatients()" style="width:160px">
+              <option value="">All Specialties</option>
+              <option value="Weight Loss">Weight Loss</option>
+              <option value="Sexual Health">Sexual Health</option>
+              <option value="Mental Health">Mental Health</option>
+              <option value="Fertility">Fertility</option>
+              <option value="Hair">Hair</option>
+              <option value="Skin">Skin</option>
+            </select>
+            <button class="btn btn-primary" onclick="showNewPatientModal()">+ Add Patient</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Patient</th><th>Age / Sex</th><th>Specialty</th><th>Phone</th><th>Last Visit</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="patients-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PATIENT DETAIL -->
+    <div id="view-patient-detail" class="view">
+      <button class="btn btn-secondary btn-sm" style="margin-bottom:14px" onclick="navigate('patients')">← Back to Patients</button>
+      <div id="pt-detail-content"></div>
+    </div>
+
+    <!-- APPOINTMENTS -->
+    <div id="view-appointments" class="view">
+      <div class="card">
+        <div class="card-header">
+          <h3>Appointments</h3>
+          <button class="btn btn-primary" onclick="showNewApptModal()">+ Schedule Appointment</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Patient</th><th>Date & Time</th><th>Type</th><th>Specialty</th><th>Provider</th><th>Google Meet</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="appts-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDICAL RECORDS -->
+    <div id="view-records" class="view">
+      <div class="card">
+        <div class="card-header">
+          <h3>Medical Records</h3>
+          <button class="btn btn-primary" onclick="showNewRecordModal()">+ Add Record</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Patient</th><th>Date</th><th>Type</th><th>Specialty</th><th>Provider</th><th>Actions</th></tr></thead>
+            <tbody id="records-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRESCRIPTIONS -->
+    <div id="view-prescriptions" class="view">
+      <div class="card">
+        <div class="card-header">
+          <h3>Prescriptions</h3>
+          <button class="btn btn-primary" onclick="showNewRxModal()">+ New Prescription</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Prescribed</th><th>Refills</th><th>Qty Dispensed</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="rx-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAB RESULTS -->
+    <div id="view-labs" class="view">
+      <div class="card">
+        <div class="card-header">
+          <h3>Lab Results</h3>
+          <button class="btn btn-primary" onclick="showNewLabModal()">+ Add Lab Result</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Patient</th><th>Test</th><th>Date</th><th>Result</th><th>Reference</th><th>Status</th><th>Attachment</th><th>Actions</th></tr></thead>
+            <tbody id="labs-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="view-reports" class="view">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+        <div class="report-card" onclick="runReport('financial')"><div class="rc-icon">💰</div><div class="rc-title">Financial Report</div><div class="rc-desc">Revenue, payments, outstanding balances by period</div></div>
+        <div class="report-card" onclick="runReport('inventory')"><div class="rc-icon">📦</div><div class="rc-title">Inventory Report</div><div class="rc-desc">Stock levels, expiry, dispense history, costs</div></div>
+        <div class="report-card" onclick="runReport('provider')"><div class="rc-icon">🩺</div><div class="rc-title">Provider Performance</div><div class="rc-desc">Consultations, prescriptions, patients per provider</div></div>
+        <div class="report-card" onclick="runReport('employee')"><div class="rc-icon">👤</div><div class="rc-title">Employee Report</div><div class="rc-desc">Staff activity, roles, login access overview</div></div>
+        <div class="report-card" onclick="runReport('patient')"><div class="rc-icon">👥</div><div class="rc-title">Patient Summary</div><div class="rc-desc">Demographics, specialty breakdown, retention</div></div>
+        <div class="report-card" onclick="runReport('appointments')"><div class="rc-icon">📅</div><div class="rc-title">Appointments Report</div><div class="rc-desc">Attendance, cancellations, telemedicine vs in-person</div></div>
+        <div class="report-card" onclick="runReport('prescriptions')"><div class="rc-icon">💊</div><div class="rc-title">Prescriptions Report</div><div class="rc-desc">Most prescribed medications, adherence, refills</div></div>
+        <div class="report-card" onclick="runReport('labs')"><div class="rc-icon">🧪</div><div class="rc-title">Lab Results Report</div><div class="rc-desc">Abnormal results, test frequency, trending values</div></div>
+      </div>
+      <div id="report-output" style="display:none" class="report-output">
+        <h3 id="rpt-title">Report<button class="btn btn-secondary btn-sm" onclick="printReport()" style="font-size:12px">🖨 Print / Export</button></h3>
+        <div id="rpt-body"></div>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div id="view-inventory" class="view">
+      <div id="inv-alerts-section" style="margin-bottom:16px"></div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Medication Inventory</h3>
+          <div class="flex-center">
+            <select id="filter-inv-category" onchange="renderInventory()" style="width:160px">
+              <option value="">All Categories</option>
+              <option value="Weight Loss">Weight Loss</option>
+              <option value="Sexual Health">Sexual Health</option>
+              <option value="Mental Health">Mental Health</option>
+              <option value="Fertility">Fertility</option>
+              <option value="Hair">Hair</option>
+              <option value="Skin">Skin</option>
+            </select>
+            <button class="btn btn-primary" onclick="showNewMedModal()">+ Add Medication</button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Medication</th><th>Category</th><th>Lot Number</th><th>Expiry</th><th>Stock</th><th>Threshold</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="inv-table"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="dispense-log-card" class="card" style="margin-top:16px">
+        <div class="card-header"><h3>Dispense Log</h3></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Date</th><th>Medication</th><th>Patient</th><th>Qty</th><th>Lot</th><th>Provider</th></tr></thead>
+            <tbody id="dispense-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BILLING -->
+    <div id="view-billing" class="view">
+      <div class="card">
+        <div class="card-header">
+          <h3>Billing & Invoices</h3>
+          <button class="btn btn-primary" onclick="showNewInvoiceModal()">+ New Invoice</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>Invoice #</th><th>Patient</th><th>Date</th><th>Services</th><th>Amount (GHS)</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="billing-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESSAGING -->
+    <div id="view-messaging" class="view">
+      <div class="two-col" style="height:calc(100vh - 120px)">
+        <div class="card" style="overflow-y:auto">
+          <div class="card-header"><h3>Conversations</h3></div>
+          <div id="msg-list" style="padding:8px"></div>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column">
+          <div class="card-header" id="msg-header"><h3>Select a conversation</h3></div>
+          <div id="msg-thread" style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+          <div style="padding:12px;border-top:1px solid var(--gray2);display:flex;gap:8px">
+            <input type="text" id="msg-input" placeholder="Type a secure message..." style="flex:1" onkeydown="if(event.key==='Enter')sendMessage()"/>
+            <button class="btn btn-primary" onclick="sendMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="view-settings" class="view">
+      <div class="two-col">
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><h3>Clinic Information</h3></div>
+            <div class="card-body">
+              <div class="form-group" style="margin-bottom:14px"><label>Clinic Name</label><input type="text" value="Onim Health"/></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Phone</label><input type="tel" value="+233 55 714 5452"/></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Email</label><input type="email" value="enquiry@onimhealth.com"/></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Address</label><textarea>Offin Street, Adabraka, Accra-Ghana</textarea></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Registration Number (FDA Ghana)</label><input type="text" placeholder="Enter FDA registration no."/></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Google Workspace Domain</label><input type="text" placeholder="onimhealth.com"/></div>
+              <button class="btn btn-primary">Save Settings</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Data & Privacy</h3></div>
+            <div class="card-body">
+              <p style="font-size:13px;color:var(--gray4);line-height:1.6;margin-bottom:12px">All patient data is stored securely in compliance with Ghana Health Service data protection guidelines and the Ghana Data Protection Act 2012. Google Meet video consultations use Google Workspace for Healthcare (BAA-covered).</p>
+              <button class="btn btn-secondary btn-sm">Export All Records (CSV)</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><h3>Staff & User Accounts</h3><button class="btn btn-primary btn-sm" onclick="showAddStaffModal()">+ Add User</button></div>
+            <div class="card-body" style="padding:0">
+              <table>
+                <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Access</th></tr></thead>
+                <tbody id="staff-table"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Role Permissions Matrix</h3></div>
+            <div class="card-body" style="padding:0">
+              <div style="overflow-x:auto">
+              <table style="font-size:11px">
+                <thead><tr><th>Module</th><th>Admin</th><th>Doctor</th><th>Pharmacist</th><th>Nutritionist</th><th>Nurse</th><th>Staff</th><th>Accountant</th></tr></thead>
+                <tbody id="permissions-table"></tbody>
+              </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+
+
+
+<!-- MODALS -->
+
+<!-- New Patient -->
+<div class="modal-overlay" id="modal-patient">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-patient-title">Add New Patient</h2>
+      <button class="close-btn" onclick="closeModal('modal-patient')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="section-title"><div class="st-icon">👤</div>Personal Information</div>
+      <div class="form-grid">
+        <div class="form-group"><label>First Name *</label><input type="text" id="pt-fname" placeholder="Kwame"/></div>
+        <div class="form-group"><label>Last Name *</label><input type="text" id="pt-lname" placeholder="Mensah"/></div>
+        <div class="form-group"><label>Date of Birth *</label><input type="date" id="pt-dob"/></div>
+        <div class="form-group"><label>Sex *</label><select id="pt-sex"><option>Male</option><option>Female</option><option>Other</option></select></div>
+        <div class="form-group"><label>Phone *</label><input type="tel" id="pt-phone" placeholder="+233 XX XXX XXXX"/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="pt-email" placeholder="patient@email.com"/></div>
+        <div class="form-group full"><label>Address</label><input type="text" id="pt-address" placeholder="Street, City, Ghana"/></div>
+        <div class="form-group"><label>Ghana Card / ID Number</label><input type="text" id="pt-id" placeholder="GHA-XXXXXXXXX-X"/></div>
+        <div class="form-group"><label>National Health Insurance</label><input type="text" id="pt-nhis" placeholder="NHIS Number"/></div>
+      </div>
+      <div class="section-title"><div class="st-icon">🏥</div>Clinical Information</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Primary Specialty</label>
+          <select id="pt-specialty">
+            <option>Weight Loss</option><option>Sexual Health</option><option>Mental Health</option>
+            <option>Fertility</option><option>Hair</option><option>Skin</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Blood Type</label>
+          <select id="pt-blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option><option>Unknown</option></select>
+        </div>
+        <div class="form-group"><label>Weight (kg)</label><input type="number" id="pt-weight" placeholder="70"/></div>
+        <div class="form-group"><label>Height (cm)</label><input type="number" id="pt-height" placeholder="170"/></div>
+        <div class="form-group full"><label>Known Allergies</label><input type="text" id="pt-allergies" placeholder="Penicillin, Sulfa drugs..."/></div>
+        <div class="form-group full"><label>Chronic Conditions</label><input type="text" id="pt-conditions" placeholder="Hypertension, Diabetes..."/></div>
+        <div class="form-group full"><label>Current Medications</label><textarea id="pt-current-meds" placeholder="List current medications and dosages..."></textarea></div>
+      </div>
+      <div class="section-title"><div class="st-icon">🚨</div>Emergency Contact</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Contact Name</label><input type="text" id="pt-ec-name" placeholder="Full name"/></div>
+        <div class="form-group"><label>Relationship</label><input type="text" id="pt-ec-rel" placeholder="Spouse, Parent..."/></div>
+        <div class="form-group full"><label>Contact Phone</label><input type="tel" id="pt-ec-phone" placeholder="+233 XX XXX XXXX"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-patient')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePatient()">Save Patient</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Appointment -->
+<div class="modal-overlay" id="modal-appt">
+  <div class="modal">
+    <div class="modal-header"><h2>Schedule Appointment</h2><button class="close-btn" onclick="closeModal('modal-appt')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Patient *</label><select id="appt-patient" style="width:100%"></select></div>
+        <div class="form-group"><label>Date *</label><input type="date" id="appt-date"/></div>
+        <div class="form-group"><label>Time *</label><input type="text" id="appt-time" placeholder="09:00 AM"/></div>
+        <div class="form-group"><label>Type</label>
+          <select id="appt-type"><option>Consultation</option><option>Follow-up</option><option>Review</option><option>Lab Collection</option><option>Procedure</option></select>
+        </div>
+        <div class="form-group"><label>Specialty</label>
+          <select id="appt-specialty"><option>Weight Loss</option><option>Sexual Health</option><option>Mental Health</option><option>Fertility</option><option>Hair</option><option>Skin</option></select>
+        </div>
+        <div class="form-group"><label>Provider</label><input type="text" id="appt-provider" value="Dr. Admin"/></div>
+        <div class="form-group full"><label>Notes</label><textarea id="appt-notes" placeholder="Reason for visit, special instructions..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-appt')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAppt()">Schedule</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Record -->
+<div class="modal-overlay" id="modal-record">
+  <div class="modal">
+    <div class="modal-header"><h2>Add Medical Record</h2><button class="close-btn" onclick="closeModal('modal-record')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Patient *</label><select id="rec-patient" style="width:100%"></select></div>
+        <div class="form-group"><label>Date *</label><input type="date" id="rec-date"/></div>
+        <div class="form-group"><label>Record Type</label>
+          <select id="rec-type"><option>Consultation Note</option><option>Progress Note</option><option>Procedure Note</option><option>Discharge Summary</option><option>Referral Note</option></select>
+        </div>
+        <div class="form-group"><label>Specialty</label>
+          <select id="rec-specialty"><option>Weight Loss</option><option>Sexual Health</option><option>Mental Health</option><option>Fertility</option><option>Hair</option><option>Skin</option></select>
+        </div>
+        <div class="form-group full"><label>Chief Complaint / Reason</label><input type="text" id="rec-complaint" placeholder="Main reason for visit"/></div>
+        <div class="form-group full"><label>Examination / History</label><textarea id="rec-exam" placeholder="Findings, history, examination notes..."></textarea></div>
+        <div class="form-group full"><label>Assessment & Diagnosis</label><textarea id="rec-assessment" placeholder="Diagnosis, ICD codes, clinical assessment..."></textarea></div>
+        <div class="form-group full"><label>Plan / Treatment</label><textarea id="rec-plan" placeholder="Treatment plan, follow-up instructions..."></textarea></div>
+        <div class="form-group"><label>Vital Signs (BP)</label><input type="text" id="rec-bp" placeholder="120/80 mmHg"/></div>
+        <div class="form-group"><label>Vital Signs (Temp)</label><input type="text" id="rec-temp" placeholder="36.5°C"/></div>
+        <div class="form-group"><label>Weight (kg)</label><input type="number" id="rec-weight" placeholder="70"/></div>
+        <div class="form-group"><label>Provider *</label><input type="text" id="rec-provider" value="Dr. Admin"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-record')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRecord()">Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Prescription -->
+<div class="modal-overlay" id="modal-rx">
+  <div class="modal">
+    <div class="modal-header"><h2>New Prescription</h2><button class="close-btn" onclick="closeModal('modal-rx')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Patient *</label><select id="rx-patient" style="width:100%"></select></div>
+        <div class="form-group"><label>Medication *</label><select id="rx-med" style="width:100%"></select></div>
+        <div class="form-group"><label>Dosage</label><input type="text" id="rx-dosage" placeholder="e.g. 2.4mg"/></div>
+        <div class="form-group"><label>Frequency</label><input type="text" id="rx-freq" placeholder="e.g. Once weekly"/></div>
+        <div class="form-group"><label>Duration</label><input type="text" id="rx-duration" placeholder="e.g. 3 months"/></div>
+        <div class="form-group"><label>Refills</label><input type="number" id="rx-refills" value="0" min="0" max="12"/></div>
+        <div class="form-group"><label>Prescribed Date</label><input type="date" id="rx-date"/></div>
+        <div class="form-group"><label>Provider</label><input type="text" id="rx-provider" value="Dr. Admin"/></div>
+        <div class="form-group full"><label>Instructions / Notes</label><textarea id="rx-notes" placeholder="Special instructions for patient..."></textarea></div>
+        <div class="form-group"><label>Dispense Now?</label>
+          <select id="rx-dispense"><option value="no">No – Write Rx only</option><option value="yes">Yes – Dispense from inventory</option></select>
+        </div>
+        <div class="form-group"><label>Quantity to Dispense</label><input type="number" id="rx-qty" value="1" min="1"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-rx')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRx()">Save Prescription</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Lab Result -->
+<div class="modal-overlay" id="modal-lab">
+  <div class="modal">
+    <div class="modal-header"><h2>Add Lab Result</h2><button class="close-btn" onclick="closeModal('modal-lab')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Patient *</label><select id="lab-patient" style="width:100%"></select></div>
+        <div class="form-group"><label>Test Name *</label><input type="text" id="lab-test" placeholder="e.g. HbA1c, TSH, FSH"/></div>
+        <div class="form-group"><label>Date Collected</label><input type="date" id="lab-date"/></div>
+        <div class="form-group"><label>Lab / Facility</label><input type="text" id="lab-facility" placeholder="Korle-Bu Labs..."/></div>
+        <div class="form-group"><label>Result Value</label><input type="text" id="lab-result" placeholder="e.g. 6.2%"/></div>
+        <div class="form-group"><label>Reference Range</label><input type="text" id="lab-ref" placeholder="e.g. 4.0–5.6%"/></div>
+        <div class="form-group"><label>Status</label>
+          <select id="lab-status"><option>Normal</option><option>Abnormal – High</option><option>Abnormal – Low</option><option>Critical</option></select>
+        </div>
+        <div class="form-group"><label>Provider</label><input type="text" id="lab-provider" value="Dr. Admin"/></div>
+        <div class="form-group full"><label>Notes / Interpretation</label><textarea id="lab-notes" placeholder="Clinical interpretation..."></textarea></div>
+      </div>
+      <div style="margin-top:16px">
+        <label style="display:block;font-size:12px;font-weight:500;color:var(--gray4);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px">Attach Lab Report PDF</label>
+        <div class="pdf-attach-zone" onclick="document.getElementById('lab-pdf-input').click()">
+          <input type="file" id="lab-pdf-input" accept=".pdf,image/*" onchange="handlePdfAttach(this)"/>
+          <div style="font-size:24px;margin-bottom:6px">📎</div>
+          <div style="font-size:13px;font-weight:500;color:var(--gray5)">Click to attach lab report</div>
+          <div style="font-size:11px;color:var(--gray4);margin-top:3px">PDF or image files from external labs (Korle-Bu, Trust Hospital, etc.)</div>
+        </div>
+        <div id="pdf-attach-preview"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-lab')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLab()">Save Result</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Medication (Inventory) -->
+<div class="modal-overlay" id="modal-med">
+  <div class="modal">
+    <div class="modal-header"><h2 id="modal-med-title">Add Medication to Inventory</h2><button class="close-btn" onclick="closeModal('modal-med')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Medication Name *</label><input type="text" id="med-name" placeholder="Semaglutide (Ozempic)"/></div>
+        <div class="form-group"><label>Generic Name</label><input type="text" id="med-generic" placeholder="Semaglutide"/></div>
+        <div class="form-group"><label>Category</label>
+          <select id="med-category"><option>Weight Loss</option><option>Sexual Health</option><option>Mental Health</option><option>Fertility</option><option>Hair</option><option>Skin</option></select>
+        </div>
+        <div class="form-group"><label>Form</label>
+          <select id="med-form"><option>Injection</option><option>Tablet</option><option>Capsule</option><option>Cream / Topical</option><option>Syrup</option><option>Patch</option><option>Suppository</option></select>
+        </div>
+        <div class="form-group"><label>Strength / Concentration</label><input type="text" id="med-strength" placeholder="0.5mg/mL"/></div>
+        <div class="form-group"><label>Supplier</label><input type="text" id="med-supplier" placeholder="Supplier name"/></div>
+        <div class="form-group"><label>Lot Number *</label><input type="text" id="med-lot" placeholder="LOT-2024-001"/></div>
+        <div class="form-group"><label>Expiration Date *</label><input type="date" id="med-expiry"/></div>
+        <div class="form-group"><label>Quantity in Stock *</label><input type="number" id="med-qty" placeholder="50" min="0"/></div>
+        <div class="form-group"><label>Low Stock Threshold</label><input type="number" id="med-threshold" placeholder="10" min="0"/></div>
+        <div class="form-group"><label>Unit Cost (GHS)</label><input type="number" id="med-cost" placeholder="0.00" step="0.01"/></div>
+        <div class="form-group"><label>Storage Requirement</label><input type="text" id="med-storage" placeholder="Refrigerate 2–8°C"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-med')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMed()">Save Medication</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Invoice -->
+<div class="modal-overlay" id="modal-invoice">
+  <div class="modal">
+    <div class="modal-header"><h2>New Invoice</h2><button class="close-btn" onclick="closeModal('modal-invoice')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Patient *</label><select id="inv-patient" style="width:100%"></select></div>
+        <div class="form-group"><label>Date</label><input type="date" id="inv-date"/></div>
+        <div class="form-group full"><label>Services Rendered</label><textarea id="inv-services" placeholder="Consultation - GHS 150&#10;Semaglutide injection - GHS 450&#10;Lab test - GHS 200"></textarea></div>
+        <div class="form-group"><label>Total Amount (GHS)</label><input type="number" id="inv-amount" placeholder="800" step="0.01"/></div>
+        <div class="form-group"><label>Payment Status</label>
+          <select id="inv-status"><option>Pending</option><option>Paid – Cash</option><option>Paid – MoMo</option><option>Paid – Insurance</option><option>Partial</option></select>
+        </div>
+        <div class="form-group full"><label>Notes</label><input type="text" id="inv-notes" placeholder="Any notes about this invoice..."/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-invoice')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveInvoice()">Create Invoice</button>
+    </div>
+  </div>
+</div>
+
+<!-- Record Detail Modal -->
+<div class="modal-overlay" id="modal-record-detail">
+  <div class="modal" style="width:740px">
+    <div class="modal-header"><h2 id="rdt-title">Medical Record</h2><button class="close-btn" onclick="closeModal('modal-record-detail')">✕</button></div>
+    <div class="modal-body" id="rdt-body"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('modal-record-detail')">Close</button></div>
+  </div>
+</div>
+
+<!-- Add Staff Modal -->
+<div class="modal-overlay" id="modal-staff">
+  <div class="modal" style="width:500px">
+    <div class="modal-header"><h2>Add Staff / User Account</h2><button class="close-btn" onclick="closeModal('modal-staff')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Full Name *</label><input type="text" id="staff-name" placeholder="Dr. Ama Boateng"/></div>
+        <div class="form-group"><label>Username *</label><input type="text" id="staff-username" placeholder="aboateng"/></div>
+        <div class="form-group"><label>Role *</label>
+          <select id="staff-role">
+            <option value="admin">Admin / Super User</option>
+            <option value="doctor">Doctor</option>
+            <option value="pharmacist">Pharmacist</option>
+            <option value="nutritionist">Nutritionist</option>
+            <option value="nurse">Nurse</option>
+            <option value="staff">General Staff / Customer Service</option>
+            <option value="accountant">Accountant / Finance</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Specialty / Department</label><input type="text" id="staff-specialty" placeholder="e.g. Weight Loss, Finance"/></div>
+        <div class="form-group"><label>Email</label><input type="email" id="staff-email" placeholder="user@onimhealth.com"/></div>
+        <div class="form-group"><label>Phone</label><input type="tel" id="staff-phone" placeholder="+233 XX XXX XXXX"/></div>
+        <div class="form-group full"><label>Temporary Password *</label><input type="password" id="staff-pw" placeholder="Set initial password"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-staff')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStaff()">Create User</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app-wrapper -->
+
+<script>
+// ============================================================
+// ROLES & PERMISSIONS
+// ============================================================
+const ROLE_PERMISSIONS = {
+  admin:        {dashboard:true, patients:true, appointments:true, records:true, prescriptions:true, labs:true, inventory:true, billing:true, messaging:true, reports:true, settings:true},
+  doctor:       {dashboard:true, patients:true, appointments:true, records:true, prescriptions:true, labs:true, inventory:false, billing:false, messaging:true, reports:true, settings:false},
+  pharmacist:   {dashboard:true, patients:true, appointments:false, records:false, prescriptions:true, labs:false, inventory:true, billing:false, messaging:true, reports:true, settings:false},
+  nutritionist: {dashboard:true, patients:true, appointments:true, records:true, prescriptions:false, labs:true, inventory:false, billing:false, messaging:true, reports:false, settings:false},
+  nurse:        {dashboard:true, patients:true, appointments:true, records:true, prescriptions:false, labs:true, inventory:true, billing:false, messaging:true, reports:false, settings:false},
+  staff:        {dashboard:true, patients:true, appointments:true, records:false, prescriptions:false, labs:false, inventory:false, billing:false, messaging:true, reports:false, settings:false},
+  accountant:   {dashboard:true, patients:false, appointments:false, records:false, prescriptions:false, labs:false, inventory:true, billing:true, messaging:false, reports:true, settings:false}
+};
+
+const ROLE_LABELS = {admin:'Admin / Super User', doctor:'Doctor', pharmacist:'Pharmacist', nutritionist:'Nutritionist', nurse:'Nurse', staff:'General Staff', accountant:'Accountant'};
+const ROLE_CSS = {admin:'role-admin', doctor:'role-doctor', pharmacist:'role-pharmacist', nutritionist:'role-nutritionist', nurse:'role-nurse', staff:'role-staff', accountant:'role-accountant'};
+
+let currentUser = null;
+
+function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value.trim();
+  const role = document.getElementById('login-role').value;
+  if (!username || !password) { document.getElementById('login-error').style.display='block'; document.getElementById('login-error').textContent='Please enter username and password.'; return; }
+  currentUser = { username, role, name: username.charAt(0).toUpperCase()+username.slice(1), avatar: username.slice(0,2).toUpperCase() };
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-wrapper').classList.add('visible');
+  document.getElementById('sidebar-username').textContent = currentUser.name;
+  document.getElementById('sidebar-role-label').textContent = ROLE_LABELS[role] || role;
+  document.getElementById('sidebar-avatar').textContent = currentUser.avatar;
+  applyRoleNav();
+  seedData();
+  renderDashboard();
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-wrapper').classList.remove('visible');
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+}
+
+function applyRoleNav() {
+  const perms = ROLE_PERMISSIONS[currentUser.role] || {};
+  const navMap = {patients:'patients',appointments:'appointments',records:'records',prescriptions:'prescriptions',labs:'labs',inventory:'inventory',billing:'billing',messaging:'messaging',reports:'reports',settings:'settings'};
+  document.querySelectorAll('.nav-item').forEach(item => {
+    const onclick = item.getAttribute('onclick')||'';
+    const match = onclick.match(/'([^']+)'/);
+    if (match && navMap[match[1]] !== undefined) {
+      item.style.display = perms[match[1]] ? '' : 'none';
+    }
+  });
+}
+
+function canAccess(module) {
+  if (!currentUser) return false;
+  return ROLE_PERMISSIONS[currentUser.role]?.[module] || false;
+}
+
+// ============================================================
+// DATA STORE
+// ============================================================
+let currentPdfAttachment = null;
+
+let db = {
+  patients: [],
+  appointments: [],
+  records: [],
+  prescriptions: [],
+  labs: [],
+  inventory: [],
+  dispenseLog: [],
+  billing: [],
+  messages: {},
+  staff: [
+    {name:'Dr. Admin', username:'admin', role:'admin', specialty:'General / Internal Medicine', email:'admin@onimhealth.com', phone:'+233 55 714 5452'},
+    {name:'Nurse Grace', username:'ngrace', role:'nurse', specialty:'All', email:'grace@onimhealth.com', phone:'+233 244 001 001'},
+    {name:'Abena Mensah', username:'abensah', role:'staff', specialty:'Administration', email:'abena@onimhealth.com', phone:'+233 244 002 002'},
+    {name:'Kofi Pharmacy', username:'kpharm', role:'pharmacist', specialty:'Pharmacy', email:'kofi@onimhealth.com', phone:'+233 244 003 003'},
+    {name:'Ama Nutrition', username:'anutrition', role:'nutritionist', specialty:'Weight Loss / Nutrition', email:'ama@onimhealth.com', phone:'+233 244 004 004'}
+  ]
+};
+
+let nextId = { p:6, a:6, r:4, rx:4, l:4, m:7, b:4, s:6 };
+let currentPatientId = null;
+let currentMsgThread = null;
+let editingMedId = null;
+
+function generateMeetLink() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz';
+  const seg = (n) => Array.from({length:n},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  return 'https://meet.google.com/'+seg(3)+'-'+seg(4)+'-'+seg(3);
+}
+
+// ============================================================
+// SEED DATA
+// ============================================================
+function seedData() {
+  const today = new Date().toISOString().split('T')[0];
+  const d = (offset) => {
+    const x = new Date(); x.setDate(x.getDate() + offset);
+    return x.toISOString().split('T')[0];
+  };
+
+  db.patients = [
+    {id:'P001',fname:'Abena',lname:'Sarpong',dob:'1988-04-15',sex:'Female',phone:'+233 244 123 456',email:'abena@gmail.com',address:'Labone, Accra',idNum:'GHA-123456789-0',nhis:'NHIS-88221',specialty:'Weight Loss',blood:'O+',weight:92,height:165,allergies:'None',conditions:'Hypertension',currentMeds:'Amlodipine 5mg',ecName:'Kofi Sarpong',ecRel:'Husband',ecPhone:'+233 244 987 654',status:'Active',created:d(-30)},
+    {id:'P002',fname:'Laryea',lname:'Tetteh',dob:'1975-11-22',sex:'Male',phone:'+233 277 555 001',email:'laryea@gmail.com',address:'Tema, Greater Accra',idNum:'GHA-987654321-1',nhis:'NHIS-75443',specialty:'Sexual Health',blood:'A+',weight:78,height:178,allergies:'Penicillin',conditions:'Diabetes Type 2',currentMeds:'Metformin 500mg',ecName:'Mrs Tetteh',ecRel:'Wife',ecPhone:'+233 277 555 002',status:'Active',created:d(-45)},
+    {id:'P003',fname:'Akosua',lname:'Owusu',dob:'1995-07-08',sex:'Female',phone:'+233 200 333 777',email:'akosua@yahoo.com',address:'East Legon, Accra',idNum:'GHA-111222333-2',nhis:'NHIS-95001',specialty:'Fertility',blood:'B+',weight:64,height:162,allergies:'Sulfa drugs',conditions:'PCOS',currentMeds:'None',ecName:'Kwame Owusu',ecRel:'Father',ecPhone:'+233 200 333 888',status:'Active',created:d(-20)},
+    {id:'P004',fname:'Kweku',lname:'Mensah',dob:'1982-03-30',sex:'Male',phone:'+233 233 445 566',email:'kweku@gmail.com',address:'Adabraka, Accra',idNum:'GHA-444555666-3',nhis:'',specialty:'Mental Health',blood:'AB+',weight:80,height:175,allergies:'None',conditions:'Anxiety, Depression',currentMeds:'Sertraline 50mg',ecName:'Ama Mensah',ecRel:'Sister',ecPhone:'+233 233 445 567',status:'Active',created:d(-60)},
+    {id:'P005',fname:'Esi',lname:'Asante',dob:'2000-12-01',sex:'Female',phone:'+233 266 778 899',email:'esi@gmail.com',address:'Dansoman, Accra',idNum:'GHA-777888999-4',nhis:'NHIS-2000X',specialty:'Skin',blood:'O-',weight:58,height:158,allergies:'None',conditions:'Acne Vulgaris',currentMeds:'None',ecName:'Mrs Asante',ecRel:'Mother',ecPhone:'+233 266 778 000',status:'Active',created:d(-10)}
+  ];
+
+  db.appointments = [
+    {id:'A001',patientId:'P001',date:today,time:'09:00 AM',type:'Follow-up',specialty:'Weight Loss',provider:'Dr. Admin',notes:'Check weight progress on semaglutide',status:'Confirmed',meetLink:generateMeetLink()},
+    {id:'A002',patientId:'P002',date:today,time:'10:30 AM',type:'Consultation',specialty:'Sexual Health',provider:'Dr. Admin',notes:'ED evaluation',status:'Confirmed',meetLink:generateMeetLink()},
+    {id:'A003',patientId:'P003',date:today,time:'02:00 PM',type:'Review',specialty:'Fertility',provider:'Dr. Admin',notes:'Hormone panel review',status:'Pending',meetLink:generateMeetLink()},
+    {id:'A004',patientId:'P004',date:d(2),time:'11:00 AM',type:'Follow-up',specialty:'Mental Health',provider:'Dr. Admin',notes:'Monthly mental health check-in',status:'Scheduled',meetLink:generateMeetLink()},
+    {id:'A005',patientId:'P005',date:d(3),time:'03:30 PM',type:'Consultation',specialty:'Skin',provider:'Dr. Admin',notes:'Skin treatment review',status:'Scheduled',meetLink:generateMeetLink()}
+  ];
+
+  db.records = [
+    {id:'R001',patientId:'P001',date:d(-14),type:'Consultation Note',specialty:'Weight Loss',complaint:'Weight loss support, starting GLP-1',exam:'BMI 33.8. BP 130/82. Abdomen soft. No lymphadenopathy.',assessment:'Obesity (BMI >30) with hypertension. Candidate for semaglutide.',plan:'Start Ozempic 0.25mg/week. Dietary counselling. Follow up in 4 weeks.',bp:'130/82',temp:'36.6°C',weight:92,provider:'Dr. Admin'},
+    {id:'R002',patientId:'P002',date:d(-20),type:'Consultation Note',specialty:'Sexual Health',complaint:'Erectile dysfunction x 6 months',exam:'Normal genitalia. No obvious structural abnormality.',assessment:'Erectile dysfunction, likely vasculogenic. Diabetes-related component possible.',plan:'Sildenafil 50mg PRN. Lifestyle modification. Glucose control optimization.',bp:'128/80',temp:'36.4°C',weight:78,provider:'Dr. Admin'},
+    {id:'R003',patientId:'P003',date:d(-8),type:'Progress Note',specialty:'Fertility',complaint:'Irregular cycles, trying to conceive',exam:'USG – polycystic ovaries. Hormone panel ordered.',assessment:'PCOS. Sub-fertility.',plan:'Clomiphene 50mg cycle days 2-6. Repeat USG in 2 weeks.',bp:'115/75',temp:'36.5°C',weight:64,provider:'Dr. Admin'}
+  ];
+
+  db.prescriptions = [
+    {id:'RX001',patientId:'P001',medication:'Ozempic (Semaglutide)',medId:'M001',dosage:'0.25mg',frequency:'Once weekly',duration:'3 months',refills:2,date:d(-14),provider:'Dr. Admin',notes:'Inject subcutaneously. Increase dose after 4 weeks if tolerated.',status:'Active',qtyDispensed:1},
+    {id:'RX002',patientId:'P002',medication:'Sildenafil 50mg',medId:'M002',dosage:'50mg',frequency:'As needed (PRN)',duration:'Ongoing',refills:3,date:d(-20),provider:'Dr. Admin',notes:'Take 30-60 min before activity. Not with nitrates.',status:'Active',qtyDispensed:4},
+    {id:'RX003',patientId:'P004',medication:'Sertraline 50mg',medId:'M003',dosage:'50mg',frequency:'Once daily',duration:'6 months',refills:5,date:d(-60),provider:'Dr. Admin',notes:'Take in morning. Do not abruptly stop.',status:'Active',qtyDispensed:30}
+  ];
+
+  db.labs = [
+    {id:'L001',patientId:'P001',test:'HbA1c',date:d(-14),facility:'Korle-Bu Labs',result:'5.8%',ref:'4.0–5.6%',status:'Abnormal – High',provider:'Dr. Admin',notes:'Slightly elevated. Monitor diet and repeat in 3 months.',attachment:null},
+    {id:'L002',patientId:'P002',test:'Fasting Blood Glucose',date:d(-20),facility:'Trust Hospital Lab',result:'7.2 mmol/L',ref:'3.9–5.5 mmol/L',status:'Abnormal – High',provider:'Dr. Admin',notes:'Consistent with poorly controlled T2DM.',attachment:null},
+    {id:'L003',patientId:'P003',test:'FSH',date:d(-8),facility:'Korle-Bu Labs',result:'6.1 IU/L',ref:'3.1–17.7 IU/L',status:'Normal',provider:'Dr. Admin',notes:'Normal FSH. LH and AMH pending.',attachment:null}
+  ];
+
+  db.inventory = [
+    {id:'M001',name:'Ozempic (Semaglutide)',generic:'Semaglutide',category:'Weight Loss',form:'Injection',strength:'1mg/mL',supplier:'Novo Nordisk GH',lot:'LOT-2024-OZ01',expiry:d(240),qty:24,threshold:5,cost:850,storage:'Refrigerate 2–8°C'},
+    {id:'M002',name:'Sildenafil 50mg',generic:'Sildenafil Citrate',category:'Sexual Health',form:'Tablet',strength:'50mg',supplier:'Pharma Plus GH',lot:'LOT-2024-SIL02',expiry:d(380),qty:120,threshold:20,cost:12,storage:'Room temperature'},
+    {id:'M003',name:'Sertraline 50mg',generic:'Sertraline HCl',category:'Mental Health',form:'Tablet',strength:'50mg',supplier:'MedSource Africa',lot:'LOT-2024-SER03',expiry:d(420),qty:90,threshold:15,cost:8,storage:'Room temperature'},
+    {id:'M004',name:'Clomiphene 50mg',generic:'Clomiphene Citrate',category:'Fertility',form:'Tablet',strength:'50mg',supplier:'Pharma Plus GH',lot:'LOT-2024-CLO04',expiry:d(310),qty:4,threshold:10,cost:25,storage:'Room temperature'},
+    {id:'M005',name:'Minoxidil 5% Solution',generic:'Minoxidil',category:'Hair',form:'Cream / Topical',strength:'5%',supplier:'DermCare GH',lot:'LOT-2024-MIN05',expiry:d(180),qty:8,threshold:5,cost:95,storage:'Room temperature'},
+    {id:'M006',name:'Tretinoin 0.025% Cream',generic:'Tretinoin',category:'Skin',form:'Cream / Topical',strength:'0.025%',supplier:'DermCare GH',lot:'LOT-2024-TRE06',expiry:d(16),qty:15,threshold:5,cost:60,storage:'Cool, dry place'}
+  ];
+
+  db.dispenseLog = [
+    {date:d(-14),medId:'M001',medName:'Ozempic (Semaglutide)',patientId:'P001',patientName:'Abena Sarpong',qty:1,lot:'LOT-2024-OZ01',provider:'Dr. Admin'},
+    {date:d(-20),medId:'M002',medName:'Sildenafil 50mg',patientId:'P002',patientName:'Laryea Tetteh',qty:4,lot:'LOT-2024-SIL02',provider:'Dr. Admin'}
+  ];
+
+  db.billing = [
+    {id:'B001',patientId:'P001',date:d(-14),services:'Consultation (Weight Loss) – GHS 200\nOzempic injection (1 vial) – GHS 850',amount:1050,status:'Paid – MoMo',notes:''},
+    {id:'B002',patientId:'P002',date:d(-20),services:'Consultation (Sexual Health) – GHS 200\nSildenafil 50mg x4 – GHS 48',amount:248,status:'Paid – Cash',notes:''},
+    {id:'B003',patientId:'P003',date:d(-8),services:'Consultation (Fertility) – GHS 250\nLab tests – GHS 180',amount:430,status:'Pending',notes:''}
+  ];
+
+  db.messages = {
+    P001: [{from:'provider',text:'Hello Abena! How are you feeling on the Ozempic?',time:'10:02 AM'},
+           {from:'patient',text:'Much better! I have reduced appetite and have lost 3kg already.',time:'10:15 AM'},
+           {from:'provider',text:'Excellent! Keep it up. Any nausea or side effects?',time:'10:18 AM'}],
+    P002: [{from:'provider',text:'Laryea, please remember to avoid alcohol with the sildenafil.',time:'Yesterday'},
+           {from:'patient',text:'Understood, doctor. Thank you.',time:'Yesterday'}],
+    P004: [{from:'patient',text:'Dr, I am feeling much better this week. Sleep has improved.',time:'2 days ago'},
+           {from:'provider',text:'That is great to hear Kweku! Let us keep your next appointment as scheduled.',time:'2 days ago'}]
+  };
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function navigate(view) {
+  if (currentUser && view !== 'dashboard' && view !== 'patient-detail') {
+    const moduleMap = {patients:'patients',appointments:'appointments',records:'records',prescriptions:'prescriptions',labs:'labs',inventory:'inventory',billing:'billing',messaging:'messaging',reports:'reports',settings:'settings'};
+    if (moduleMap[view] && !canAccess(moduleMap[view])) { alert('Access denied. Your role does not have permission for this module.'); return; }
+  }
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById('view-' + view);
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+view+"'")) n.classList.add('active');
+  });
+  const titles = {dashboard:'Dashboard',patients:'Patients',appointments:'Appointments',records:'Medical Records',prescriptions:'Prescriptions',labs:'Lab Results',inventory:'Medication Inventory',billing:'Billing',messaging:'Secure Messaging',reports:'Reports & Analytics',settings:'Settings','patient-detail':'Patient Detail'};
+  document.getElementById('topbar-title').textContent = titles[view] || 'Onim Health';
+
+  if (view === 'dashboard') renderDashboard();
+  else if (view === 'patients') renderPatients();
+  else if (view === 'appointments') renderAppts();
+  else if (view === 'records') renderRecords();
+  else if (view === 'prescriptions') renderRx();
+  else if (view === 'labs') renderLabs();
+  else if (view === 'inventory') renderInventory();
+  else if (view === 'billing') renderBilling();
+  else if (view === 'messaging') renderMessaging();
+  else if (view === 'reports') renderReports();
+  else if (view === 'settings') renderSettings();
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function pt(id) { return db.patients.find(p => p.id === id); }
+function med(id) { return db.inventory.find(m => m.id === id); }
+function initials(p) { return (p.fname[0]+p.lname[0]).toUpperCase(); }
+function fmtDate(d) { if(!d) return '–'; return new Date(d+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function daysUntil(d) { return Math.round((new Date(d) - new Date()) / 86400000); }
+function specBadge(s) {
+  const map = {'Weight Loss':'sp-weight','Sexual Health':'sp-sexual','Mental Health':'sp-mental','Fertility':'sp-fertility','Hair':'sp-hair','Skin':'sp-skin'};
+  return `<span class="specialty-tag ${map[s]||''}">${s}</span>`;
+}
+function statusBadge(s) {
+  const map = {'Active':'badge-teal','Pending':'badge-amber','Confirmed':'badge-teal','Scheduled':'badge-blue','Completed':'badge-gray','Cancelled':'badge-danger','Normal':'badge-teal','Abnormal – High':'badge-danger','Abnormal – Low':'badge-amber','Critical':'badge-danger','Paid – Cash':'badge-success','Paid – MoMo':'badge-success','Paid – Insurance':'badge-success','Partial':'badge-amber'};
+  return `<span class="badge ${map[s]||'badge-gray'}">${s}</span>`;
+}
+function populatePatientSelect(selectId, selectedId) {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = db.patients.map(p => `<option value="${p.id}" ${p.id===selectedId?'selected':''}>${p.fname} ${p.lname}</option>`).join('');
+}
+function populateMedSelect(selectId) {
+  const sel = document.getElementById(selectId);
+  sel.innerHTML = db.inventory.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const lowStock = db.inventory.filter(m => m.qty <= m.threshold || daysUntil(m.expiry) <= 30);
+  document.getElementById('stat-patients').textContent = db.patients.length;
+  document.getElementById('stat-appts').textContent = db.appointments.filter(a => a.date === today()).length;
+  document.getElementById('stat-rx').textContent = db.prescriptions.filter(r => r.status==='Active').length;
+  document.getElementById('stat-alerts').textContent = lowStock.length;
+
+  const recentPts = [...db.patients].sort((a,b) => b.created > a.created ? 1 : -1).slice(0,5);
+  document.getElementById('dash-recent-patients').innerHTML = recentPts.map(p =>
+    `<tr><td><div class="avatar-cell"><div class="avatar">${initials(p)}</div><div><div class="avatar-name link-cell" onclick="openPatient('${p.id}')">${p.fname} ${p.lname}</div><div class="avatar-sub">${p.id}</div></div></div></td><td>${specBadge(p.specialty)}</td><td>${fmtDate(p.created)}</td></tr>`
+  ).join('');
+
+  const todayAppts = db.appointments.filter(a => a.date === today());
+  document.getElementById('dash-appts').innerHTML = todayAppts.length ? todayAppts.map(a => {
+    const p = pt(a.patientId);
+    return `<tr><td>${p?p.fname+' '+p.lname:'–'}</td><td>${a.time}</td><td>${a.type}</td><td>${statusBadge(a.status)}</td></tr>`;
+  }).join('') : `<tr><td colspan="4" class="empty-state" style="padding:20px;text-align:center;color:var(--gray4)">No appointments today</td></tr>`;
+
+  const alerts = document.getElementById('dash-inv-alerts');
+  const alertItems = db.inventory.filter(m => m.qty <= m.threshold || daysUntil(m.expiry) <= 30);
+  alerts.innerHTML = alertItems.length ? alertItems.map(m => {
+    const exp = daysUntil(m.expiry);
+    const isLow = m.qty <= m.threshold;
+    const isExp = exp <= 30;
+    const cls = exp <= 7 ? 'alert-danger' : isLow ? 'alert-amber' : 'alert-amber';
+    const msg = isExp && isLow ? `Low stock (${m.qty} left) & expiring in ${exp} days` : isLow ? `Low stock: only ${m.qty} units remaining` : `Expires in ${exp} days`;
+    return `<div class="alert-bar ${cls}">⚠️ <strong>${m.name}</strong>: ${msg}</div>`;
+  }).join('') : `<div class="alert-bar alert-success">✅ All medications are well-stocked and within date.</div>`;
+
+  const specCount = {};
+  db.patients.forEach(p => { specCount[p.specialty] = (specCount[p.specialty]||0)+1; });
+  const specChart = document.getElementById('dash-specialty-chart');
+  const specColors = {'Weight Loss':'var(--teal)','Sexual Health':'var(--danger)','Mental Health':'var(--blue)','Fertility':'#D4537E','Hair':'var(--amber)','Skin':'var(--success)'};
+  specChart.innerHTML = Object.entries(specCount).map(([s,c]) => {
+    const pct = Math.round((c/db.patients.length)*100);
+    return `<div style="margin-bottom:10px"><div class="flex-between" style="margin-bottom:4px"><span style="font-size:12px;font-weight:500">${s}</span><span style="font-size:12px;color:var(--gray4)">${c} patients</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${specColors[s]||'var(--teal)'}"></div></div></div>`;
+  }).join('');
+}
+
+// ============================================================
+// PATIENTS
+// ============================================================
+function renderPatients() {
+  const filter = document.getElementById('filter-specialty').value;
+  const search = document.getElementById('global-search').value.toLowerCase();
+  let pts = db.patients.filter(p => {
+    const matchSpec = !filter || p.specialty === filter;
+    const matchSearch = !search || (p.fname+' '+p.lname+p.phone+p.id).toLowerCase().includes(search);
+    return matchSpec && matchSearch;
+  });
+  const tbody = document.getElementById('patients-table');
+  tbody.innerHTML = pts.length ? pts.map(p => {
+    const age = Math.floor((new Date() - new Date(p.dob)) / 31557600000);
+    return `<tr>
+      <td><div class="avatar-cell"><div class="avatar">${initials(p)}</div><div><div class="avatar-name link-cell" onclick="openPatient('${p.id}')">${p.fname} ${p.lname}</div><div class="avatar-sub">${p.id} · ${p.email}</div></div></div></td>
+      <td>${age} / ${p.sex}</td><td>${specBadge(p.specialty)}</td><td>${p.phone}</td>
+      <td>${fmtDate(p.created)}</td><td>${statusBadge(p.status)}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="openPatient('${p.id}')">View</button></td></tr>`;
+  }).join('') : `<tr><td colspan="7"><div class="empty-state"><div class="es-icon">👥</div>No patients found</div></td></tr>`;
+}
+
+function openPatient(id) {
+  currentPatientId = id;
+  const p = pt(id);
+  if (!p) return;
+  const age = Math.floor((new Date() - new Date(p.dob)) / 31557600000);
+  const bmi = p.weight && p.height ? (p.weight / ((p.height/100)**2)).toFixed(1) : '–';
+  const ptRecs = db.records.filter(r => r.patientId === id);
+  const ptRx = db.prescriptions.filter(r => r.patientId === id);
+  const ptLabs = db.labs.filter(l => l.patientId === id);
+  const ptAppts = db.appointments.filter(a => a.patientId === id);
+  const ptBills = db.billing.filter(b => b.patientId === id);
+
+  document.getElementById('pt-detail-content').innerHTML = `
+    <div class="pt-header">
+      <div class="pt-avatar-lg">${initials(p)}</div>
+      <div style="flex:1">
+        <div class="pt-name">${p.fname} ${p.lname}</div>
+        <div class="pt-meta">
+          <span class="pt-meta-item">🪪 ${p.id}</span>
+          <span class="pt-meta-item">🎂 ${fmtDate(p.dob)} (${age} yrs)</span>
+          <span class="pt-meta-item">⚧ ${p.sex}</span>
+          <span class="pt-meta-item">🩸 ${p.blood}</span>
+          <span class="pt-meta-item">📱 ${p.phone}</span>
+          <span class="pt-meta-item">📧 ${p.email}</span>
+        </div>
+        <div style="margin-top:8px">${specBadge(p.specialty)} ${statusBadge(p.status)}</div>
+      </div>
+      <div class="pt-header-actions">
+        <button class="btn btn-secondary btn-sm" onclick="showNewApptModal('${id}')">+ Appointment</button>
+        <button class="btn btn-secondary btn-sm" onclick="showNewRecordModal('${id}')">+ Record</button>
+        <button class="btn btn-primary btn-sm" onclick="showNewRxModal('${id}')">+ Prescribe</button>
+      </div>
+    </div>
+
+    <div class="pt-tabs">
+      <div class="pt-tab active" onclick="switchTab(this,'tab-overview')">Overview</div>
+      <div class="pt-tab" onclick="switchTab(this,'tab-records')">Medical Records (${ptRecs.length})</div>
+      <div class="pt-tab" onclick="switchTab(this,'tab-rx')">Prescriptions (${ptRx.length})</div>
+      <div class="pt-tab" onclick="switchTab(this,'tab-labs')">Lab Results (${ptLabs.length})</div>
+      <div class="pt-tab" onclick="switchTab(this,'tab-appts')">Appointments (${ptAppts.length})</div>
+      <div class="pt-tab" onclick="switchTab(this,'tab-billing')">Billing (${ptBills.length})</div>
+    </div>
+
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview" class="tab-panel active">
+      <div class="two-col">
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-header"><h3>Clinical Summary</h3></div>
+            <div class="card-body">
+              <div class="info-grid">
+                <div class="info-item"><div class="ii-label">Weight</div><div class="ii-value">${p.weight||'–'} kg</div></div>
+                <div class="info-item"><div class="ii-label">Height</div><div class="ii-value">${p.height||'–'} cm</div></div>
+                <div class="info-item"><div class="ii-label">BMI</div><div class="ii-value">${bmi}</div></div>
+                <div class="info-item"><div class="ii-label">Blood Type</div><div class="ii-value">${p.blood}</div></div>
+                <div class="info-item"><div class="ii-label">NHIS</div><div class="ii-value">${p.nhis||'–'}</div></div>
+                <div class="info-item"><div class="ii-label">Ghana Card</div><div class="ii-value">${p.idNum||'–'}</div></div>
+              </div>
+              <div style="margin-top:12px">
+                <div style="font-size:12px;color:var(--gray4);margin-bottom:4px;font-weight:500">ALLERGIES</div>
+                <div style="font-size:13px;color:${p.allergies&&p.allergies!=='None'?'var(--danger)':'var(--gray4)'}">${p.allergies||'None recorded'}</div>
+              </div>
+              <div style="margin-top:10px">
+                <div style="font-size:12px;color:var(--gray4);margin-bottom:4px;font-weight:500">CHRONIC CONDITIONS</div>
+                <div style="font-size:13px">${p.conditions||'None recorded'}</div>
+              </div>
+              <div style="margin-top:10px">
+                <div style="font-size:12px;color:var(--gray4);margin-bottom:4px;font-weight:500">CURRENT MEDICATIONS</div>
+                <div style="font-size:13px">${p.currentMeds||'None'}</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>Emergency Contact</h3></div>
+            <div class="card-body">
+              <div style="font-weight:500">${p.ecName||'–'}</div>
+              <div style="font-size:12px;color:var(--gray4)">${p.ecRel||''}</div>
+              <div style="font-size:13px;margin-top:4px">${p.ecPhone||'–'}</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-header"><h3>Activity Timeline</h3></div>
+            <div class="card-body">
+              <div class="timeline">
+                ${[...ptRecs.map(r=>({date:r.date,type:'Record',label:r.type,detail:r.complaint})),
+                   ...ptRx.map(r=>({date:r.date,type:'Prescription',label:r.medication,detail:r.dosage+' · '+r.frequency})),
+                   ...ptLabs.map(l=>({date:l.date,type:'Lab',label:l.test,detail:l.result+' ('+l.status+')'})),
+                   ...ptAppts.map(a=>({date:a.date,type:'Appointment',label:a.type,detail:a.time+' · '+a.status}))]
+                  .sort((a,b) => b.date > a.date ? 1:-1)
+                  .map(ev => `<div class="tl-item"><div class="tl-dot"></div><div class="tl-date">${fmtDate(ev.date)}</div><div class="tl-content"><div class="tl-type">${ev.type}</div><div class="tl-note"><strong>${ev.label}</strong>${ev.detail?' — '+ev.detail:''}</div></div></div>`)
+                  .join('') || '<div class="text-muted">No activity yet</div>'}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECORDS TAB -->
+    <div id="tab-records" class="tab-panel">
+      <div class="flex-between" style="margin-bottom:12px">
+        <div></div>
+        <button class="btn btn-primary btn-sm" onclick="showNewRecordModal('${id}')">+ Add Record</button>
+      </div>
+      ${ptRecs.length ? ptRecs.sort((a,b)=>b.date>a.date?1:-1).map(r => `
+        <div class="card" style="margin-bottom:12px;cursor:pointer" onclick="viewRecord('${r.id}')">
+          <div class="card-body">
+            <div class="flex-between"><div><span class="bold">${r.type}</span> <span class="text-muted">· ${fmtDate(r.date)}</span></div>${specBadge(r.specialty)}</div>
+            <div style="margin-top:6px;font-size:13px;color:var(--gray4)">${r.complaint}</div>
+            <div style="margin-top:4px;font-size:12px;color:var(--gray4)">By ${r.provider} · BP: ${r.bp||'–'} · Wt: ${r.weight||'–'}kg</div>
+          </div>
+        </div>`).join('') : '<div class="empty-state"><div class="es-icon">📋</div>No records yet</div>'}
+    </div>
+
+    <!-- PRESCRIPTIONS TAB -->
+    <div id="tab-rx" class="tab-panel">
+      <div class="flex-between" style="margin-bottom:12px"><div></div><button class="btn btn-primary btn-sm" onclick="showNewRxModal('${id}')">+ New Prescription</button></div>
+      <table><thead><tr><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Date</th><th>Refills</th><th>Qty Dispensed</th><th>Status</th></tr></thead>
+      <tbody>${ptRx.map(r=>`<tr><td><strong>${r.medication}</strong></td><td>${r.dosage}</td><td>${r.frequency}</td><td>${fmtDate(r.date)}</td><td>${r.refills}</td><td><strong>${r.qtyDispensed||0}</strong></td><td>${statusBadge(r.status)}</td></tr>`).join('')||'<tr><td colspan="7" class="empty-state" style="padding:20px;text-align:center;color:var(--gray4)">No prescriptions</td></tr>'}</tbody></table>
+    </div>
+
+    <!-- LABS TAB -->
+    <div id="tab-labs" class="tab-panel">
+      <div class="flex-between" style="margin-bottom:12px"><div></div><button class="btn btn-primary btn-sm" onclick="showNewLabModal('${id}')">+ Add Lab</button></div>
+      <table><thead><tr><th>Test</th><th>Date</th><th>Result</th><th>Reference</th><th>Status</th><th>Notes</th></tr></thead>
+      <tbody>${ptLabs.map(l=>`<tr><td><strong>${l.test}</strong></td><td>${fmtDate(l.date)}</td><td>${l.result}</td><td>${l.ref}</td><td>${statusBadge(l.status)}</td><td style="font-size:12px;max-width:200px">${l.notes||'–'}</td></tr>`).join('')||'<tr><td colspan="6" class="empty-state" style="padding:20px;text-align:center;color:var(--gray4)">No lab results</td></tr>'}</tbody></table>
+    </div>
+
+    <!-- APPTS TAB -->
+    <div id="tab-appts" class="tab-panel">
+      <div class="flex-between" style="margin-bottom:12px"><div></div><button class="btn btn-primary btn-sm" onclick="showNewApptModal('${id}')">+ Schedule</button></div>
+      <table><thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Specialty</th><th>Meet</th><th>Status</th></tr></thead>
+      <tbody>${ptAppts.sort((a,b)=>b.date>a.date?1:-1).map(a=>`<tr><td>${fmtDate(a.date)}</td><td>${a.time}</td><td>${a.type}</td><td>${specBadge(a.specialty)}</td><td>${a.meetLink?`<a href="${a.meetLink}" target="_blank" class="meet-btn" style="font-size:11px;padding:3px 8px">📹 Join</a>`:'–'}</td><td>${statusBadge(a.status)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty-state" style="padding:20px;text-align:center;color:var(--gray4)">No appointments</td></tr>'}</tbody></table>
+    </div>
+
+    <!-- BILLING TAB -->
+    <div id="tab-billing" class="tab-panel">
+      <div class="flex-between" style="margin-bottom:12px"><div></div><button class="btn btn-primary btn-sm" onclick="showNewInvoiceModal('${id}')">+ New Invoice</button></div>
+      <table><thead><tr><th>Invoice #</th><th>Date</th><th>Amount (GHS)</th><th>Status</th></tr></thead>
+      <tbody>${ptBills.map(b=>`<tr><td>${b.id}</td><td>${fmtDate(b.date)}</td><td><strong>${Number(b.amount).toLocaleString('en-GH',{minimumFractionDigits:2})}</strong></td><td>${statusBadge(b.status)}</td></tr>`).join('')||'<tr><td colspan="4" class="empty-state" style="padding:20px;text-align:center;color:var(--gray4)">No invoices</td></tr>'}</tbody></table>
+    </div>
+  `;
+  navigate('patient-detail');
+}
+
+function switchTab(el, tabId) {
+  document.querySelectorAll('.pt-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const tp = document.getElementById(tabId);
+  if (tp) tp.classList.add('active');
+}
+
+function viewRecord(id) {
+  const r = db.records.find(x => x.id === id);
+  if (!r) return;
+  const p = pt(r.patientId);
+  document.getElementById('rdt-title').textContent = r.type + ' – ' + fmtDate(r.date);
+  document.getElementById('rdt-body').innerHTML = `
+    <div class="info-grid" style="margin-bottom:16px">
+      <div class="info-item"><div class="ii-label">Patient</div><div class="ii-value">${p?p.fname+' '+p.lname:'–'}</div></div>
+      <div class="info-item"><div class="ii-label">Date</div><div class="ii-value">${fmtDate(r.date)}</div></div>
+      <div class="info-item"><div class="ii-label">Provider</div><div class="ii-value">${r.provider}</div></div>
+      <div class="info-item"><div class="ii-label">BP</div><div class="ii-value">${r.bp||'–'}</div></div>
+      <div class="info-item"><div class="ii-label">Temperature</div><div class="ii-value">${r.temp||'–'}</div></div>
+      <div class="info-item"><div class="ii-label">Weight</div><div class="ii-value">${r.weight||'–'} kg</div></div>
+    </div>
+    ${r.complaint?`<div style="margin-bottom:14px"><div class="section-title" style="margin-top:0"><div class="st-icon">🗣</div>Chief Complaint</div><p style="font-size:13px;line-height:1.6">${r.complaint}</p></div>`:''}
+    ${r.exam?`<div style="margin-bottom:14px"><div class="section-title" style="margin-top:0"><div class="st-icon">🔍</div>Examination / History</div><p style="font-size:13px;line-height:1.6">${r.exam}</p></div>`:''}
+    ${r.assessment?`<div style="margin-bottom:14px"><div class="section-title" style="margin-top:0"><div class="st-icon">🩺</div>Assessment & Diagnosis</div><p style="font-size:13px;line-height:1.6">${r.assessment}</p></div>`:''}
+    ${r.plan?`<div><div class="section-title" style="margin-top:0"><div class="st-icon">📝</div>Plan / Treatment</div><p style="font-size:13px;line-height:1.6">${r.plan}</p></div>`:''}
+  `;
+  document.getElementById('modal-record-detail').classList.add('open');
+}
+
+// ============================================================
+// APPOINTMENTS
+// ============================================================
+function renderAppts() {
+  const tbody = document.getElementById('appts-table');
+  tbody.innerHTML = db.appointments.sort((a,b)=>b.date>a.date?1:-1).map(a => {
+    const p = pt(a.patientId);
+    const meetBtn = a.meetLink ? `<a href="${a.meetLink}" target="_blank" class="meet-btn"><svg class="meet-icon" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="4" fill="#1a73e8"/><path d="M14.5 12l3.5-2.5v5L14.5 12z" fill="#fff"/><rect x="6" y="8" width="8" height="8" rx="1.5" fill="#fff"/></svg>Join Meet</a>` : '<span style="font-size:12px;color:var(--gray4)">–</span>';
+    return `<tr>
+      <td><div class="avatar-cell">${p?`<div class="avatar">${initials(p)}</div><div class="avatar-name">${p.fname} ${p.lname}</div>`:'–'}</div></td>
+      <td>${fmtDate(a.date)} <span style="color:var(--gray4)">${a.time}</span></td>
+      <td>${a.type}</td><td>${specBadge(a.specialty)}</td><td>${a.provider}</td>
+      <td>${meetBtn}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>
+        <select style="font-size:11px;padding:4px 6px;border-radius:4px;border:1px solid var(--gray3)" onchange="updateApptStatus('${a.id}',this.value)">
+          <option ${a.status==='Confirmed'?'selected':''}>Confirmed</option>
+          <option ${a.status==='Pending'?'selected':''}>Pending</option>
+          <option ${a.status==='Scheduled'?'selected':''}>Scheduled</option>
+          <option ${a.status==='Completed'?'selected':''}>Completed</option>
+          <option ${a.status==='Cancelled'?'selected':''}>Cancelled</option>
+        </select>
+      </td></tr>`;
+  }).join('') || `<tr><td colspan="8"><div class="empty-state"><div class="es-icon">📅</div>No appointments scheduled</div></td></tr>`;
+}
+
+function updateApptStatus(id, status) {
+  const a = db.appointments.find(x => x.id === id);
+  if (a) a.status = status;
+  renderAppts();
+}
+
+// ============================================================
+// RECORDS
+// ============================================================
+function renderRecords() {
+  const tbody = document.getElementById('records-table');
+  tbody.innerHTML = db.records.sort((a,b)=>b.date>a.date?1:-1).map(r => {
+    const p = pt(r.patientId);
+    return `<tr>
+      <td>${p?`<div class="avatar-cell"><div class="avatar">${initials(p)}</div><div class="avatar-name link-cell" onclick="openPatient('${p.id}')">${p.fname} ${p.lname}</div></div>`:'–'}</td>
+      <td>${fmtDate(r.date)}</td><td>${r.type}</td><td>${specBadge(r.specialty)}</td><td>${r.provider}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="viewRecord('${r.id}')">View</button></td></tr>`;
+  }).join('') || `<tr><td colspan="6"><div class="empty-state"><div class="es-icon">📋</div>No records found</div></td></tr>`;
+}
+
+// ============================================================
+// PRESCRIPTIONS
+// ============================================================
+function renderRx() {
+  const tbody = document.getElementById('rx-table');
+  tbody.innerHTML = db.prescriptions.sort((a,b)=>b.date>a.date?1:-1).map(r => {
+    const p = pt(r.patientId);
+    return `<tr>
+      <td>${p?`<div class="avatar-cell"><div class="avatar">${initials(p)}</div><div class="avatar-name">${p.fname} ${p.lname}</div></div>`:'–'}</td>
+      <td><strong>${r.medication}</strong></td><td>${r.dosage}</td><td>${fmtDate(r.date)}</td>
+      <td>${r.refills}</td>
+      <td><strong>${r.qtyDispensed||0}</strong></td>
+      <td>${statusBadge(r.status)}</td>
+      <td>
+        <select style="font-size:11px;padding:4px 6px;border-radius:4px;border:1px solid var(--gray3)" onchange="updateRxStatus('${r.id}',this.value)">
+          <option ${r.status==='Active'?'selected':''}>Active</option>
+          <option ${r.status==='Completed'?'selected':''}>Completed</option>
+          <option ${r.status==='Cancelled'?'selected':''}>Cancelled</option>
+        </select>
+      </td></tr>`;
+  }).join('') || `<tr><td colspan="8"><div class="empty-state">No prescriptions</div></td></tr>`;
+}
+
+function updateRxStatus(id, status) {
+  const r = db.prescriptions.find(x => x.id === id);
+  if (r) r.status = status;
+  renderRx();
+}
+
+// ============================================================
+// LABS
+// ============================================================
+function renderLabs() {
+  const tbody = document.getElementById('labs-table');
+  tbody.innerHTML = db.labs.sort((a,b)=>b.date>a.date?1:-1).map(l => {
+    const p = pt(l.patientId);
+    const attachCell = l.attachment
+      ? `<span class="pdf-item" style="display:inline-flex;padding:3px 8px;font-size:11px;cursor:pointer" onclick="viewPdf('${l.id}')">📄 ${l.attachment.name} <span class="pdf-view" style="margin-left:6px">View</span></span>`
+      : `<span style="font-size:11px;color:var(--gray4)">None</span>`;
+    return `<tr>
+      <td>${p?`<div class="avatar-cell"><div class="avatar">${initials(p)}</div><div class="avatar-name">${p.fname} ${p.lname}</div></div>`:'–'}</td>
+      <td><strong>${l.test}</strong></td><td>${fmtDate(l.date)}</td><td>${l.result}</td><td>${l.ref}</td><td>${statusBadge(l.status)}</td>
+      <td>${attachCell}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick="showLabNotes('${l.id}')">Notes</button></td></tr>`;
+  }).join('') || `<tr><td colspan="8"><div class="empty-state">No lab results</div></td></tr>`;
+}
+
+function showLabNotes(id) {
+  const l = db.labs.find(x => x.id === id);
+  if (l) alert('Lab Notes:\n\n' + (l.notes || 'None'));
+}
+
+function viewPdf(labId) {
+  const l = db.labs.find(x => x.id === labId);
+  if (l && l.attachment && l.attachment.url) {
+    window.open(l.attachment.url, '_blank');
+  }
+}
+
+function handlePdfAttach(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  currentPdfAttachment = { name: file.name, url, type: file.type };
+  document.getElementById('pdf-attach-preview').innerHTML = `
+    <div class="pdf-item"><span class="pdf-icon">📄</span><span class="pdf-name">${file.name}</span>
+    <span class="pdf-view" onclick="window.open('${url}','_blank')">Preview</span>
+    <span style="cursor:pointer;color:var(--danger);font-size:12px;margin-left:8px" onclick="removePdfAttach()">✕ Remove</span></div>`;
+}
+
+function removePdfAttach() {
+  currentPdfAttachment = null;
+  document.getElementById('pdf-attach-preview').innerHTML = '';
+  document.getElementById('lab-pdf-input').value = '';
+}
+
+// ============================================================
+// INVENTORY
+// ============================================================
+function renderInventory() {
+  const filter = document.getElementById('filter-inv-category').value;
+  let meds = db.inventory.filter(m => !filter || m.category === filter);
+
+  const alerts = document.getElementById('inv-alerts-section');
+  const alertMeds = db.inventory.filter(m => m.qty <= m.threshold || daysUntil(m.expiry) <= 30);
+  alerts.innerHTML = alertMeds.map(m => {
+    const exp = daysUntil(m.expiry);
+    const cls = exp <= 7 ? 'alert-danger' : 'alert-amber';
+    const msgs = [];
+    if (m.qty <= m.threshold) msgs.push(`Low stock: ${m.qty} units (threshold: ${m.threshold})`);
+    if (exp <= 30) msgs.push(`Expires in ${exp} days (${fmtDate(m.expiry)})`);
+    return `<div class="alert-bar ${cls}">⚠️ <strong>${m.name}</strong> [Lot: ${m.lot}]: ${msgs.join(' · ')}</div>`;
+  }).join('');
+
+  const tbody = document.getElementById('inv-table');
+  tbody.innerHTML = meds.map(m => {
+    const exp = daysUntil(m.expiry);
+    const pct = Math.min(100, Math.round((m.qty / Math.max(m.threshold*3,1))*100));
+    const barClass = m.qty <= m.threshold ? 'danger' : m.qty <= m.threshold*2 ? 'warn' : '';
+    const expClass = exp <= 7 ? 'badge-danger' : exp <= 30 ? 'badge-amber' : 'badge-success';
+    return `<tr>
+      <td><strong>${m.name}</strong><div style="font-size:11px;color:var(--gray4)">${m.generic} · ${m.form} · ${m.strength}</div></td>
+      <td>${specBadge(m.category)}</td>
+      <td style="font-family:monospace;font-size:12px">${m.lot}</td>
+      <td><span class="badge ${expClass}">${fmtDate(m.expiry)}</span><div style="font-size:11px;color:var(--gray4)">${exp>0?exp+' days':exp+' (EXPIRED)'}</div></td>
+      <td><div style="display:flex;align-items:center;gap:8px"><span style="font-size:13px;font-weight:600;min-width:24px">${m.qty}</span><div style="flex:1;min-width:60px"><div class="progress-bar"><div class="progress-fill ${barClass}" style="width:${pct}%"></div></div></div></div></td>
+      <td>${m.threshold}</td>
+      <td>${m.qty <= m.threshold ? `<span class="badge badge-danger">Low Stock</span>` : exp <= 30 ? `<span class="badge badge-amber">Expiring Soon</span>` : `<span class="badge badge-teal">OK</span>`}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-secondary btn-sm" onclick="dispenseModal('${m.id}')" style="margin-right:4px">Dispense</button>
+        <button class="btn btn-secondary btn-sm" onclick="editMed('${m.id}')">Edit</button>
+      </td></tr>`;
+  }).join('') || `<tr><td colspan="8"><div class="empty-state">No medications found</div></td></tr>`;
+
+  const dlog = document.getElementById('dispense-table');
+  dlog.innerHTML = db.dispenseLog.sort((a,b)=>b.date>a.date?1:-1).map(d =>
+    `<tr><td>${fmtDate(d.date)}</td><td>${d.medName}</td><td>${d.patientName}</td><td>${d.qty}</td><td style="font-family:monospace;font-size:12px">${d.lot}</td><td>${d.provider}</td></tr>`
+  ).join('') || `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--gray4)">No dispenses recorded</td></tr>`;
+}
+
+function dispenseModal(medId) {
+  const m = med(medId);
+  if (!m) return;
+  const ptOpts = db.patients.map(p=>`<option value="${p.id}">${p.fname} ${p.lname}</option>`).join('');
+  const qty = prompt(`Dispense from: ${m.name}\nLot: ${m.lot} | Current stock: ${m.qty}\n\nEnter quantity to dispense:`);
+  if (!qty || isNaN(qty) || Number(qty) <= 0) return;
+  if (Number(qty) > m.qty) { alert('Insufficient stock!'); return; }
+  const ptId = prompt('Enter Patient ID (e.g. P001):');
+  const p = pt(ptId);
+  if (!p) { alert('Patient not found.'); return; }
+  m.qty -= Number(qty);
+  db.dispenseLog.unshift({date:today(),medId:m.id,medName:m.name,patientId:p.id,patientName:p.fname+' '+p.lname,qty:Number(qty),lot:m.lot,provider:'Dr. Admin'});
+  alert(`✅ Dispensed ${qty} × ${m.name} to ${p.fname} ${p.lname}`);
+  renderInventory();
+}
+
+function editMed(id) {
+  const m = med(id);
+  if (!m) return;
+  editingMedId = id;
+  document.getElementById('modal-med-title').textContent = 'Edit Medication';
+  document.getElementById('med-name').value = m.name;
+  document.getElementById('med-generic').value = m.generic;
+  document.getElementById('med-category').value = m.category;
+  document.getElementById('med-form').value = m.form;
+  document.getElementById('med-strength').value = m.strength;
+  document.getElementById('med-supplier').value = m.supplier;
+  document.getElementById('med-lot').value = m.lot;
+  document.getElementById('med-expiry').value = m.expiry;
+  document.getElementById('med-qty').value = m.qty;
+  document.getElementById('med-threshold').value = m.threshold;
+  document.getElementById('med-cost').value = m.cost;
+  document.getElementById('med-storage').value = m.storage;
+  document.getElementById('modal-med').classList.add('open');
+}
+
+// ============================================================
+// BILLING
+// ============================================================
+function renderBilling() {
+  const tbody = document.getElementById('billing-table');
+  tbody.innerHTML = db.billing.sort((a,b)=>b.date>a.date?1:-1).map(b => {
+    const p = pt(b.patientId);
+    return `<tr>
+      <td><strong>${b.id}</strong></td>
+      <td>${p?p.fname+' '+p.lname:'–'}</td>
+      <td>${fmtDate(b.date)}</td>
+      <td><div style="font-size:12px;line-height:1.5;max-width:220px">${b.services.replace(/\n/g,'<br>')}</div></td>
+      <td><strong>GHS ${Number(b.amount).toLocaleString('en-GH',{minimumFractionDigits:2})}</strong></td>
+      <td>${statusBadge(b.status)}</td>
+      <td>
+        <select style="font-size:11px;padding:4px 6px;border-radius:4px;border:1px solid var(--gray3)" onchange="updateBillStatus('${b.id}',this.value)">
+          <option ${b.status==='Pending'?'selected':''}>Pending</option>
+          <option ${b.status==='Paid – Cash'?'selected':''}>Paid – Cash</option>
+          <option ${b.status==='Paid – MoMo'?'selected':''}>Paid – MoMo</option>
+          <option ${b.status==='Paid – Insurance'?'selected':''}>Paid – Insurance</option>
+          <option ${b.status==='Partial'?'selected':''}>Partial</option>
+        </select>
+      </td></tr>`;
+  }).join('') || `<tr><td colspan="7"><div class="empty-state">No invoices</div></td></tr>`;
+}
+
+function updateBillStatus(id, status) {
+  const b = db.billing.find(x => x.id === id);
+  if (b) b.status = status;
+  renderBilling();
+}
+
+// ============================================================
+// MESSAGING
+// ============================================================
+function renderMessaging() {
+  const list = document.getElementById('msg-list');
+  list.innerHTML = db.patients.map(p => {
+    const msgs = db.messages[p.id] || [];
+    const last = msgs.length ? msgs[msgs.length-1].text : 'No messages';
+    return `<div style="padding:10px 8px;border-radius:8px;cursor:pointer;margin-bottom:4px;${currentMsgThread===p.id?'background:var(--teal-light)':''}" onclick="openThread('${p.id}')">
+      <div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:36px;height:36px">${initials(p)}</div>
+      <div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px">${p.fname} ${p.lname}</div>
+      <div style="font-size:11px;color:var(--gray4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px">${last}</div></div></div></div>`;
+  }).join('');
+}
+
+function openThread(ptId) {
+  currentMsgThread = ptId;
+  const p = pt(ptId);
+  document.getElementById('msg-header').innerHTML = `<h3>${p.fname} ${p.lname}</h3><span class="badge badge-teal">Secure</span>`;
+  const thread = document.getElementById('msg-thread');
+  const msgs = db.messages[ptId] || [];
+  thread.innerHTML = msgs.map(m => {
+    const isProvider = m.from === 'provider';
+    return `<div style="display:flex;justify-content:${isProvider?'flex-end':'flex-start'}">
+      <div style="max-width:72%;background:${isProvider?'var(--teal)':'var(--gray)'};color:${isProvider?'#fff':'var(--gray5)'};padding:8px 12px;border-radius:${isProvider?'12px 12px 2px 12px':'12px 12px 12px 2px'};font-size:13px;line-height:1.5">
+        ${m.text}<div style="font-size:10px;margin-top:4px;opacity:0.7;text-align:right">${m.time}</div>
+      </div></div>`;
+  }).join('');
+  thread.scrollTop = thread.scrollHeight;
+  renderMessaging();
+}
+
+function sendMessage() {
+  if (!currentMsgThread) return;
+  const input = document.getElementById('msg-input');
+  const txt = input.value.trim();
+  if (!txt) return;
+  if (!db.messages[currentMsgThread]) db.messages[currentMsgThread] = [];
+  const now = new Date().toLocaleTimeString('en-GH',{hour:'2-digit',minute:'2-digit'});
+  db.messages[currentMsgThread].push({from:'provider',text:txt,time:now});
+  input.value = '';
+  openThread(currentMsgThread);
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function renderSettings() {
+  document.getElementById('staff-table').innerHTML = db.staff.map(s =>
+    `<tr><td><strong>${s.name}</strong><div style="font-size:11px;color:var(--gray4)">${s.username||''}</div></td><td><span class="role-badge role-${s.role||'staff'}">${ROLE_LABELS[s.role]||s.role}</span></td><td>${s.specialty}</td><td><span style="font-size:11px;color:var(--gray4)">${s.email||''}</span></td></tr>`
+  ).join('');
+
+  const modules = ['Patients','Appointments','Records','Prescriptions','Labs','Inventory','Billing','Messaging','Reports','Settings'];
+  const moduleKeys = ['patients','appointments','records','prescriptions','labs','inventory','billing','messaging','reports','settings'];
+  const roles = ['admin','doctor','pharmacist','nutritionist','nurse','staff','accountant'];
+  document.getElementById('permissions-table').innerHTML = moduleKeys.map((key,i) =>
+    `<tr><td style="font-weight:500;padding:7px 10px">${modules[i]}</td>${roles.map(r=>`<td style="text-align:center;padding:7px 8px">${ROLE_PERMISSIONS[r][key]?'<span style="color:var(--teal);font-size:14px">✓</span>':'<span style="color:var(--gray3);font-size:14px">–</span>'}</td>`).join('')}</tr>`
+  ).join('');
+}
+
+function showAddStaffModal() { document.getElementById('modal-staff').classList.add('open'); }
+
+function saveStaff() {
+  const name = document.getElementById('staff-name').value.trim();
+  const username = document.getElementById('staff-username').value.trim();
+  if (!name || !username) { alert('Name and username are required.'); return; }
+  db.staff.push({
+    name, username,
+    role: document.getElementById('staff-role').value,
+    specialty: document.getElementById('staff-specialty').value,
+    email: document.getElementById('staff-email').value,
+    phone: document.getElementById('staff-phone').value
+  });
+  closeModal('modal-staff');
+  renderSettings();
+}
+
+// ============================================================
+// MODAL SAVE FUNCTIONS
+// ============================================================
+function savePatient() {
+  const fname = document.getElementById('pt-fname').value.trim();
+  const lname = document.getElementById('pt-lname').value.trim();
+  if (!fname||!lname) { alert('First and last name are required.'); return; }
+  const id = 'P' + String(nextId.p++).padStart(3,'0');
+  db.patients.push({
+    id, fname, lname,
+    dob: document.getElementById('pt-dob').value,
+    sex: document.getElementById('pt-sex').value,
+    phone: document.getElementById('pt-phone').value,
+    email: document.getElementById('pt-email').value,
+    address: document.getElementById('pt-address').value,
+    idNum: document.getElementById('pt-id').value,
+    nhis: document.getElementById('pt-nhis').value,
+    specialty: document.getElementById('pt-specialty').value,
+    blood: document.getElementById('pt-blood').value,
+    weight: document.getElementById('pt-weight').value,
+    height: document.getElementById('pt-height').value,
+    allergies: document.getElementById('pt-allergies').value,
+    conditions: document.getElementById('pt-conditions').value,
+    currentMeds: document.getElementById('pt-current-meds').value,
+    ecName: document.getElementById('pt-ec-name').value,
+    ecRel: document.getElementById('pt-ec-rel').value,
+    ecPhone: document.getElementById('pt-ec-phone').value,
+    status: 'Active', created: today()
+  });
+  closeModal('modal-patient');
+  clearModal('modal-patient');
+  renderPatients();
+}
+
+function saveAppt() {
+  const patientId = document.getElementById('appt-patient').value;
+  const date = document.getElementById('appt-date').value;
+  const time = document.getElementById('appt-time').value;
+  if (!patientId||!date||!time) { alert('Patient, date and time are required.'); return; }
+  const id = 'A' + String(nextId.a++).padStart(3,'0');
+  db.appointments.push({
+    id, patientId, date, time,
+    type: document.getElementById('appt-type').value,
+    specialty: document.getElementById('appt-specialty').value,
+    provider: document.getElementById('appt-provider').value,
+    notes: document.getElementById('appt-notes').value,
+    status: 'Scheduled',
+    meetLink: generateMeetLink()
+  });
+  closeModal('modal-appt');
+  renderAppts();
+}
+
+function saveRecord() {
+  const patientId = document.getElementById('rec-patient').value;
+  if (!patientId) { alert('Patient required.'); return; }
+  const id = 'R' + String(nextId.r++).padStart(3,'0');
+  db.records.push({
+    id, patientId,
+    date: document.getElementById('rec-date').value || today(),
+    type: document.getElementById('rec-type').value,
+    specialty: document.getElementById('rec-specialty').value,
+    complaint: document.getElementById('rec-complaint').value,
+    exam: document.getElementById('rec-exam').value,
+    assessment: document.getElementById('rec-assessment').value,
+    plan: document.getElementById('rec-plan').value,
+    bp: document.getElementById('rec-bp').value,
+    temp: document.getElementById('rec-temp').value,
+    weight: document.getElementById('rec-weight').value,
+    provider: document.getElementById('rec-provider').value
+  });
+  closeModal('modal-record');
+  renderRecords();
+}
+
+function saveRx() {
+  const patientId = document.getElementById('rx-patient').value;
+  const medId = document.getElementById('rx-med').value;
+  if (!patientId||!medId) { alert('Patient and medication required.'); return; }
+  const m = med(medId);
+  const id = 'RX' + String(nextId.rx++).padStart(3,'0');
+  const qty = Number(document.getElementById('rx-qty').value)||1;
+  const willDispense = document.getElementById('rx-dispense').value === 'yes';
+  const dispensed = willDispense ? qty : 0;
+  db.prescriptions.push({
+    id, patientId, medId,
+    medication: m ? m.name : '',
+    dosage: document.getElementById('rx-dosage').value,
+    frequency: document.getElementById('rx-freq').value,
+    duration: document.getElementById('rx-duration').value,
+    refills: document.getElementById('rx-refills').value,
+    date: document.getElementById('rx-date').value || today(),
+    provider: document.getElementById('rx-provider').value,
+    notes: document.getElementById('rx-notes').value,
+    status: 'Active',
+    qtyDispensed: dispensed
+  });
+  if (willDispense && m) {
+    if (qty > m.qty) { alert('Insufficient inventory for dispense! Prescription saved but not dispensed.'); }
+    else {
+      const p = pt(patientId);
+      m.qty -= qty;
+      db.dispenseLog.unshift({date:today(),medId:m.id,medName:m.name,patientId,patientName:p?p.fname+' '+p.lname:'–',qty,lot:m.lot,provider:currentUser?currentUser.name:'Dr. Admin'});
+    }
+  }
+  closeModal('modal-rx');
+  renderRx();
+}
+
+function saveLab() {
+  const patientId = document.getElementById('lab-patient').value;
+  if (!patientId) { alert('Patient required.'); return; }
+  const id = 'L' + String(nextId.l++).padStart(3,'0');
+  db.labs.push({
+    id, patientId,
+    test: document.getElementById('lab-test').value,
+    date: document.getElementById('lab-date').value || today(),
+    facility: document.getElementById('lab-facility').value,
+    result: document.getElementById('lab-result').value,
+    ref: document.getElementById('lab-ref').value,
+    status: document.getElementById('lab-status').value,
+    provider: document.getElementById('lab-provider').value,
+    notes: document.getElementById('lab-notes').value,
+    attachment: currentPdfAttachment ? {...currentPdfAttachment} : null
+  });
+  currentPdfAttachment = null;
+  document.getElementById('pdf-attach-preview').innerHTML = '';
+  document.getElementById('lab-pdf-input').value = '';
+  closeModal('modal-lab');
+  renderLabs();
+}
+
+function saveMed() {
+  const name = document.getElementById('med-name').value.trim();
+  const lot = document.getElementById('med-lot').value.trim();
+  const expiry = document.getElementById('med-expiry').value;
+  const qty = document.getElementById('med-qty').value;
+  if (!name||!lot||!expiry||qty==='') { alert('Name, lot number, expiry and quantity are required.'); return; }
+  if (editingMedId) {
+    const m = med(editingMedId);
+    Object.assign(m, {name,lot,expiry,qty:Number(qty),
+      generic:document.getElementById('med-generic').value,
+      category:document.getElementById('med-category').value,
+      form:document.getElementById('med-form').value,
+      strength:document.getElementById('med-strength').value,
+      supplier:document.getElementById('med-supplier').value,
+      threshold:Number(document.getElementById('med-threshold').value)||10,
+      cost:Number(document.getElementById('med-cost').value)||0,
+      storage:document.getElementById('med-storage').value
+    });
+    editingMedId = null;
+  } else {
+    const id = 'M' + String(nextId.m++).padStart(3,'0');
+    db.inventory.push({
+      id,name,lot,expiry,qty:Number(qty),
+      generic:document.getElementById('med-generic').value,
+      category:document.getElementById('med-category').value,
+      form:document.getElementById('med-form').value,
+      strength:document.getElementById('med-strength').value,
+      supplier:document.getElementById('med-supplier').value,
+      threshold:Number(document.getElementById('med-threshold').value)||10,
+      cost:Number(document.getElementById('med-cost').value)||0,
+      storage:document.getElementById('med-storage').value
+    });
+  }
+  closeModal('modal-med');
+  document.getElementById('modal-med-title').textContent = 'Add Medication to Inventory';
+  renderInventory();
+}
+
+function saveInvoice() {
+  const patientId = document.getElementById('inv-patient').value;
+  const amount = document.getElementById('inv-amount').value;
+  if (!patientId||!amount) { alert('Patient and amount required.'); return; }
+  const id = 'B' + String(nextId.b++).padStart(3,'0');
+  db.billing.push({
+    id, patientId,
+    date: document.getElementById('inv-date').value || today(),
+    services: document.getElementById('inv-services').value,
+    amount: Number(amount),
+    status: document.getElementById('inv-status').value,
+    notes: document.getElementById('inv-notes').value
+  });
+  closeModal('modal-invoice');
+  renderBilling();
+}
+
+// ============================================================
+// MODAL OPEN HELPERS
+// ============================================================
+function showNewPatientModal() {
+  clearModal('modal-patient');
+  document.getElementById('modal-patient-title').textContent = 'Add New Patient';
+  document.getElementById('modal-patient').classList.add('open');
+}
+function showNewApptModal(ptId) {
+  populatePatientSelect('appt-patient', ptId);
+  document.getElementById('appt-date').value = today();
+  document.getElementById('modal-appt').classList.add('open');
+}
+function showNewRecordModal(ptId) {
+  populatePatientSelect('rec-patient', ptId);
+  document.getElementById('rec-date').value = today();
+  document.getElementById('modal-record').classList.add('open');
+}
+function showNewRxModal(ptId) {
+  populatePatientSelect('rx-patient', ptId);
+  populateMedSelect('rx-med');
+  document.getElementById('rx-date').value = today();
+  document.getElementById('modal-rx').classList.add('open');
+}
+function showNewLabModal(ptId) {
+  populatePatientSelect('lab-patient', ptId);
+  document.getElementById('lab-date').value = today();
+  document.getElementById('modal-lab').classList.add('open');
+}
+function showNewMedModal() {
+  editingMedId = null;
+  document.getElementById('modal-med-title').textContent = 'Add Medication to Inventory';
+  ['med-name','med-generic','med-strength','med-supplier','med-lot','med-expiry','med-storage'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('med-qty').value='';
+  document.getElementById('med-threshold').value='';
+  document.getElementById('med-cost').value='';
+  document.getElementById('modal-med').classList.add('open');
+}
+function showNewInvoiceModal(ptId) {
+  populatePatientSelect('inv-patient', ptId);
+  document.getElementById('inv-date').value = today();
+  document.getElementById('modal-invoice').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function clearModal(id) {
+  document.querySelectorAll(`#${id} input, #${id} textarea`).forEach(el => { if(el.type!=='submit') el.value=''; });
+}
+
+// ============================================================
+// GLOBAL SEARCH
+// ============================================================
+function globalSearch(q) {
+  if (q.length > 1) {
+    navigate('patients');
+    renderPatients();
+  }
+}
+
+// ============================================================
+// REPORTS ENGINE
+// ============================================================
+function renderReports() { /* cards already in HTML, output area cleared */ document.getElementById('report-output').style.display='none'; }
+
+function runReport(type) {
+  const out = document.getElementById('report-output');
+  const body = document.getElementById('rpt-body');
+  const title = document.getElementById('rpt-title');
+  out.style.display = 'block';
+  out.scrollIntoView({behavior:'smooth'});
+
+  if (type === 'financial') {
+    const paid = db.billing.filter(b => b.status.startsWith('Paid'));
+    const pending = db.billing.filter(b => b.status === 'Pending' || b.status === 'Partial');
+    const totalRev = paid.reduce((s,b)=>s+Number(b.amount),0);
+    const totalPending = pending.reduce((s,b)=>s+Number(b.amount),0);
+    const momoRev = db.billing.filter(b=>b.status==='Paid – MoMo').reduce((s,b)=>s+Number(b.amount),0);
+    const cashRev = db.billing.filter(b=>b.status==='Paid – Cash').reduce((s,b)=>s+Number(b.amount),0);
+    title.childNodes[0].textContent = '💰 Financial Report — All Time  ';
+    body.innerHTML = `
+      <div class="rpt-summary">
+        <div class="rpt-sum-item"><div class="rsv">GHS ${totalRev.toLocaleString('en-GH',{minimumFractionDigits:2})}</div><div class="rsl">Total Revenue Collected</div></div>
+        <div class="rpt-sum-item"><div class="rsv" style="color:var(--amber)">GHS ${totalPending.toLocaleString('en-GH',{minimumFractionDigits:2})}</div><div class="rsl">Outstanding / Pending</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${db.billing.length}</div><div class="rsl">Total Invoices</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${paid.length}</div><div class="rsl">Paid Invoices</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+        <div style="background:var(--gray);border-radius:8px;padding:12px"><div style="font-size:12px;color:var(--gray4);margin-bottom:6px">Revenue by Payment Method</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="flex-between"><span style="font-size:13px">MoMo</span><strong>GHS ${momoRev.toLocaleString('en-GH',{minimumFractionDigits:2})}</strong></div>
+            <div class="flex-between"><span style="font-size:13px">Cash</span><strong>GHS ${cashRev.toLocaleString('en-GH',{minimumFractionDigits:2})}</strong></div>
+            <div class="flex-between"><span style="font-size:13px">Insurance</span><strong>GHS ${db.billing.filter(b=>b.status==='Paid – Insurance').reduce((s,b)=>s+Number(b.amount),0).toLocaleString('en-GH',{minimumFractionDigits:2})}</strong></div>
+          </div>
+        </div>
+        <div style="background:var(--gray);border-radius:8px;padding:12px"><div style="font-size:12px;color:var(--gray4);margin-bottom:6px">Revenue by Specialty</div>
+          ${['Weight Loss','Sexual Health','Mental Health','Fertility','Hair','Skin'].map(sp=>{
+            const ptIds = db.patients.filter(p=>p.specialty===sp).map(p=>p.id);
+            const spRev = db.billing.filter(b=>ptIds.includes(b.patientId)&&b.status.startsWith('Paid')).reduce((s,b)=>s+Number(b.amount),0);
+            return spRev>0?`<div class="flex-between" style="margin-bottom:4px"><span style="font-size:12px">${sp}</span><strong style="font-size:12px">GHS ${spRev.toLocaleString()}</strong></div>`:'';
+          }).join('')}
+        </div>
+      </div>
+      <table class="rpt-table"><thead><tr><th>Invoice #</th><th>Patient</th><th>Date</th><th>Amount (GHS)</th><th>Method</th><th>Status</th></tr></thead>
+      <tbody>${db.billing.sort((a,b)=>b.date>a.date?1:-1).map(b=>{const p=pt(b.patientId);return`<tr><td>${b.id}</td><td>${p?p.fname+' '+p.lname:'–'}</td><td>${fmtDate(b.date)}</td><td><strong>${Number(b.amount).toLocaleString('en-GH',{minimumFractionDigits:2})}</strong></td><td>${b.status.replace('Paid – ','')}</td><td>${statusBadge(b.status)}</td></tr>`}).join('')}</tbody></table>`;
+
+  } else if (type === 'inventory') {
+    const invCost = db.inventory.reduce((s,m)=>s+(m.qty*m.cost),0);
+    const lowStock = db.inventory.filter(m=>m.qty<=m.threshold);
+    const expiring = db.inventory.filter(m=>daysUntil(m.expiry)<=30);
+    title.childNodes[0].textContent = '📦 Inventory Report  ';
+    body.innerHTML = `
+      <div class="rpt-summary">
+        <div class="rpt-sum-item"><div class="rsv">${db.inventory.length}</div><div class="rsl">Medications in Stock</div></div>
+        <div class="rpt-sum-item"><div class="rsv" style="color:var(--danger)">${lowStock.length}</div><div class="rsl">Low Stock Alerts</div></div>
+        <div class="rpt-sum-item"><div class="rsv" style="color:var(--amber)">${expiring.length}</div><div class="rsl">Expiring ≤30 Days</div></div>
+        <div class="rpt-sum-item"><div class="rsv">GHS ${invCost.toLocaleString()}</div><div class="rsl">Total Inventory Value</div></div>
+      </div>
+      <table class="rpt-table"><thead><tr><th>Medication</th><th>Category</th><th>Lot Number</th><th>Expiry</th><th>Qty</th><th>Value (GHS)</th><th>Status</th></tr></thead>
+      <tbody>${db.inventory.map(m=>{const exp=daysUntil(m.expiry);const cls=m.qty<=m.threshold?'badge-danger':exp<=30?'badge-amber':'badge-teal';const lbl=m.qty<=m.threshold?'Low Stock':exp<=30?'Expiring Soon':'OK';return`<tr><td><strong>${m.name}</strong><div style="font-size:11px;color:var(--gray4)">${m.generic}</div></td><td>${specBadge(m.category)}</td><td style="font-family:monospace;font-size:12px">${m.lot}</td><td>${fmtDate(m.expiry)}</td><td>${m.qty}</td><td>${(m.qty*m.cost).toLocaleString()}</td><td><span class="badge ${cls}">${lbl}</span></td></tr>`}).join('')}</tbody></table>
+      <div style="margin-top:16px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">Dispense History</div>
+      <table class="rpt-table"><thead><tr><th>Date</th><th>Medication</th><th>Patient</th><th>Qty</th><th>Lot</th><th>Provider</th></tr></thead>
+      <tbody>${db.dispenseLog.map(d=>`<tr><td>${fmtDate(d.date)}</td><td>${d.medName}</td><td>${d.patientName}</td><td>${d.qty}</td><td style="font-family:monospace;font-size:12px">${d.lot}</td><td>${d.provider}</td></tr>`).join('')}</tbody></table></div>`;
+
+  } else if (type === 'provider') {
+    const providers = [...new Set([...db.records.map(r=>r.provider),...db.appointments.map(a=>a.provider),...db.prescriptions.map(r=>r.provider)])];
+    title.childNodes[0].textContent = '🩺 Provider Performance Report  ';
+    body.innerHTML = `
+      <table class="rpt-table"><thead><tr><th>Provider</th><th>Consultations</th><th>Prescriptions</th><th>Appointments</th><th>Lab Orders</th><th>Unique Patients</th></tr></thead>
+      <tbody>${providers.map(prov=>{
+        const recs = db.records.filter(r=>r.provider===prov).length;
+        const rxs = db.prescriptions.filter(r=>r.provider===prov).length;
+        const apts = db.appointments.filter(a=>a.provider===prov).length;
+        const labs = db.labs.filter(l=>l.provider===prov).length;
+        const uniquePts = [...new Set([...db.records.filter(r=>r.provider===prov).map(r=>r.patientId)])].length;
+        const staffMember = db.staff.find(s=>s.name===prov);
+        return`<tr><td><strong>${prov}</strong><div style="font-size:11px;color:var(--gray4)">${staffMember?`<span class="role-badge role-${staffMember.role}">${ROLE_LABELS[staffMember.role]||staffMember.role}</span>`:''}</div></td><td>${recs}</td><td>${rxs}</td><td>${apts}</td><td>${labs}</td><td>${uniquePts}</td></tr>`;
+      }).join('')}</tbody></table>`;
+
+  } else if (type === 'employee') {
+    title.childNodes[0].textContent = '👤 Employee Report  ';
+    body.innerHTML = `
+      <div class="rpt-summary">
+        <div class="rpt-sum-item"><div class="rsv">${db.staff.length}</div><div class="rsl">Total Staff</div></div>
+        ${Object.entries(ROLE_LABELS).map(([r,l])=>{const c=db.staff.filter(s=>s.role===r).length;return c?`<div class="rpt-sum-item"><div class="rsv">${c}</div><div class="rsl">${l}s</div></div>`:''}).join('')}
+      </div>
+      <table class="rpt-table"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Specialty</th><th>Email</th><th>Phone</th></tr></thead>
+      <tbody>${db.staff.map(s=>`<tr><td><strong>${s.name}</strong></td><td style="font-family:monospace;font-size:12px">${s.username||'–'}</td><td><span class="role-badge role-${s.role||'staff'}">${ROLE_LABELS[s.role]||s.role}</span></td><td>${s.specialty}</td><td style="font-size:12px">${s.email||'–'}</td><td style="font-size:12px">${s.phone||'–'}</td></tr>`).join('')}</tbody></table>`;
+
+  } else if (type === 'patient') {
+    const specCount = {};
+    db.patients.forEach(p=>{specCount[p.specialty]=(specCount[p.specialty]||0)+1;});
+    const avgAge = Math.round(db.patients.reduce((s,p)=>s+Math.floor((new Date()-new Date(p.dob))/31557600000),0)/db.patients.length);
+    title.childNodes[0].textContent = '👥 Patient Summary Report  ';
+    body.innerHTML = `
+      <div class="rpt-summary">
+        <div class="rpt-sum-item"><div class="rsv">${db.patients.length}</div><div class="rsl">Total Patients</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${db.patients.filter(p=>p.sex==='Female').length}</div><div class="rsl">Female</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${db.patients.filter(p=>p.sex==='Male').length}</div><div class="rsl">Male</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${avgAge} yrs</div><div class="rsl">Average Age</div></div>
+      </div>
+      <div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">Patients by Specialty</div>
+      ${Object.entries(specCount).map(([s,c])=>`<div class="flex-between" style="margin-bottom:8px"><span style="font-size:13px">${s}</span><div style="display:flex;align-items:center;gap:8px"><div style="width:120px" class="progress-bar"><div class="progress-fill" style="width:${Math.round(c/db.patients.length*100)}%"></div></div><span style="font-size:12px;min-width:30px;text-align:right">${c} (${Math.round(c/db.patients.length*100)}%)</span></div></div>`).join('')}</div>
+      <table class="rpt-table"><thead><tr><th>Patient</th><th>Age</th><th>Sex</th><th>Specialty</th><th>NHIS</th><th>Records</th><th>Status</th></tr></thead>
+      <tbody>${db.patients.map(p=>{const age=Math.floor((new Date()-new Date(p.dob))/31557600000);const recs=db.records.filter(r=>r.patientId===p.id).length;return`<tr><td><strong>${p.fname} ${p.lname}</strong><div style="font-size:11px;color:var(--gray4)">${p.id}</div></td><td>${age}</td><td>${p.sex}</td><td>${specBadge(p.specialty)}</td><td style="font-size:12px">${p.nhis||'–'}</td><td>${recs}</td><td>${statusBadge(p.status)}</td></tr>`}).join('')}</tbody></table>`;
+
+  } else if (type === 'appointments') {
+    const completed = db.appointments.filter(a=>a.status==='Completed').length;
+    const cancelled = db.appointments.filter(a=>a.status==='Cancelled').length;
+    const withMeet = db.appointments.filter(a=>a.meetLink).length;
+    title.childNodes[0].textContent = '📅 Appointments Report  ';
+    body.innerHTML = `
+      <div class="rpt-summary">
+        <div class="rpt-sum-item"><div class="rsv">${db.appointments.length}</div><div class="rsl">Total Appointments</div></div>
+        <div class="rpt-sum-item"><div class="rsv" style="color:var(--teal)">${completed}</div><div class="rsl">Completed</div></div>
+        <div class="rpt-sum-item"><div class="rsv" style="color:var(--danger)">${cancelled}</div><div class="rsl">Cancelled</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${withMeet}</div><div class="rsl">With Google Meet</div></div>
+      </div>
+      <table class="rpt-table"><thead><tr><th>Patient</th><th>Date</th><th>Time</th><th>Type</th><th>Specialty</th><th>Provider</th><th>Telemedicine</th><th>Status</th></tr></thead>
+      <tbody>${db.appointments.sort((a,b)=>b.date>a.date?1:-1).map(a=>{const p=pt(a.patientId);return`<tr><td>${p?p.fname+' '+p.lname:'–'}</td><td>${fmtDate(a.date)}</td><td>${a.time}</td><td>${a.type}</td><td>${specBadge(a.specialty)}</td><td>${a.provider}</td><td>${a.meetLink?'<span class="badge badge-blue">Google Meet</span>':'<span class="badge badge-gray">In-person</span>'}</td><td>${statusBadge(a.status)}</td></tr>`}).join('')}</tbody></table>`;
+
+  } else if (type === 'prescriptions') {
+    const medFreq = {};
+    db.prescriptions.forEach(r=>{medFreq[r.medication]=(medFreq[r.medication]||0)+1;});
+    title.childNodes[0].textContent = '💊 Prescriptions Report  ';
+    body.innerHTML = `
+      <div class="rpt-summary">
+        <div class="rpt-sum-item"><div class="rsv">${db.prescriptions.length}</div><div class="rsl">Total Prescriptions</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${db.prescriptions.filter(r=>r.status==='Active').length}</div><div class="rsl">Active</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${db.prescriptions.reduce((s,r)=>s+(r.qtyDispensed||0),0)}</div><div class="rsl">Total Units Dispensed</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${Object.keys(medFreq).length}</div><div class="rsl">Unique Medications</div></div>
+      </div>
+      <div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">Most Prescribed Medications</div>
+      ${Object.entries(medFreq).sort((a,b)=>b[1]-a[1]).map(([name,count])=>`<div class="flex-between" style="margin-bottom:6px"><span style="font-size:13px">${name}</span><span class="badge badge-teal">${count} Rx</span></div>`).join('')}</div>
+      <table class="rpt-table"><thead><tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Date</th><th>Provider</th><th>Qty Dispensed</th><th>Status</th></tr></thead>
+      <tbody>${db.prescriptions.sort((a,b)=>b.date>a.date?1:-1).map(r=>{const p=pt(r.patientId);return`<tr><td>${p?p.fname+' '+p.lname:'–'}</td><td><strong>${r.medication}</strong></td><td>${r.dosage}</td><td>${fmtDate(r.date)}</td><td>${r.provider}</td><td><strong>${r.qtyDispensed||0}</strong></td><td>${statusBadge(r.status)}</td></tr>`}).join('')}</tbody></table>`;
+
+  } else if (type === 'labs') {
+    const abnormal = db.labs.filter(l=>l.status!=='Normal').length;
+    const withAttachment = db.labs.filter(l=>l.attachment).length;
+    title.childNodes[0].textContent = '🧪 Lab Results Report  ';
+    body.innerHTML = `
+      <div class="rpt-summary">
+        <div class="rpt-sum-item"><div class="rsv">${db.labs.length}</div><div class="rsl">Total Tests</div></div>
+        <div class="rpt-sum-item"><div class="rsv" style="color:var(--danger)">${abnormal}</div><div class="rsl">Abnormal Results</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${db.labs.filter(l=>l.status==='Normal').length}</div><div class="rsl">Normal Results</div></div>
+        <div class="rpt-sum-item"><div class="rsv">${withAttachment}</div><div class="rsl">With PDF Attachment</div></div>
+      </div>
+      <table class="rpt-table"><thead><tr><th>Patient</th><th>Test</th><th>Date</th><th>Facility</th><th>Result</th><th>Reference</th><th>Attachment</th><th>Status</th></tr></thead>
+      <tbody>${db.labs.sort((a,b)=>b.date>a.date?1:-1).map(l=>{const p=pt(l.patientId);return`<tr><td>${p?p.fname+' '+p.lname:'–'}</td><td><strong>${l.test}</strong></td><td>${fmtDate(l.date)}</td><td style="font-size:12px">${l.facility}</td><td>${l.result}</td><td style="font-size:12px">${l.ref}</td><td>${l.attachment?'📄 Yes':'–'}</td><td>${statusBadge(l.status)}</td></tr>`}).join('')}</tbody></table>`;
+  }
+}
+
+function printReport() {
+  window.print();
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+// Login screen is shown on load; doLogin() initializes data and dashboard
+</script>
+</body>
+</html>

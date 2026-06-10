@@ -1,0 +1,56 @@
+.pdf-attach-zone {
+  display: block;
+  width: 100%;
+  border: 2px dashed var(--gray3);
+  border-radius: var(--radius-sm);
+  padding: 18px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--white);
+  font-family: var(--font);
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.pdf-attach-zone:hover:not(:disabled) {
+  border-color: var(--teal);
+  background: var(--teal-light);
+}
+
+.pdf-attach-zone:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.pdf-attach-zone__icon { font-size: 24px; margin-bottom: 6px; }
+.pdf-attach-zone__title { font-size: 13px; font-weight: 500; color: var(--gray5); }
+.pdf-attach-zone__hint { font-size: 11px; color: var(--gray4); margin-top: 3px; }
+
+.pdf-attach__error {
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 6px;
+}
+
+.pdf-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--gray);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-top: 8px;
+}
+
+.pdf-item__icon { font-size: 20px; }
+.pdf-item__name { font-size: 13px; font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pdf-item__view { color: var(--teal); font-size: 12px; font-weight: 500; text-decoration: none; }
+.pdf-item__remove {
+  border: none;
+  background: none;
+  color: var(--gray4);
+  font-size: 12px;
+  cursor: pointer;
+  font-family: var(--font);
+}
+
+.pdf-item__remove:hover { color: var(--danger); }

@@ -1,0 +1,13 @@
+-- Test credentials (create via Supabase Auth dashboard or admin API when project is live):
+--
+-- admin@onimhealth.com       / Test1234!  → admin
+-- doctor@onimhealth.com      / Test1234!  → doctor
+-- nurse@onimhealth.com       / Test1234!  → nurse
+-- pharmacist@onimhealth.com  / Test1234!  → pharmacist
+-- nutritionist@onimhealth.com / Test1234! → nutritionist
+-- staff@onimhealth.com       / Test1234!  → staff
+-- accountant@onimhealth.com  / Test1234!  → accountant
+--
+-- After creating auth users, set roles on profiles:
+-- UPDATE public.profiles SET role = 'admin' WHERE email = 'admin@onimhealth.com';
+-- (repeat for each role)
