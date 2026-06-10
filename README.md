@@ -24,45 +24,6 @@ Onim Health helps staff manage patients, appointments, clinical documentation, p
 
 Access is controlled by role: admin, doctor, nurse, pharmacist, nutritionist, staff, and accountant. Each role gets a tailored sidebar and route permissions.
 
-## Tech stack
-
-- **Frontend** — React, TypeScript, Vite, Framer Motion, Recharts
-- **Monorepo** — `apps/web` + shared packages (`ui`, `auth`, `data`, `types`, `supabase`)
-- **Backend (planned)** — Supabase (Auth, Postgres, Storage, RLS)
-
-## Running locally
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173).
-
-### Environment
-
-Copy the example env file and adjust when you connect a real Supabase project:
-
-```bash
-cp apps/web/.env.example apps/web/.env.local
-```
-
-By default the app runs in **mock mode** — no Supabase project required. Data persists in the browser via localStorage.
-
-### Demo login
-
-Password for all test accounts: `Test1234!`
-
-| Email | Role |
-|-------|------|
-| admin@onimhealth.com | Admin |
-| doctor@onimhealth.com | Doctor |
-| nurse@onimhealth.com | Nurse |
-| pharmacist@onimhealth.com | Pharmacist |
-| nutritionist@onimhealth.com | Nutritionist |
-| staff@onimhealth.com | Staff |
-| accountant@onimhealth.com | Accountant |
-
 ## Project structure
 
 ```
