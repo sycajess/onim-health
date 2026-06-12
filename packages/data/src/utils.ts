@@ -28,7 +28,28 @@ export function patientInitials(p: Pick<Patient, 'fname' | 'lname'>): string {
 }
 
 export function patientAge(dob: string): number {
+  if (!dob) return NaN
   return Math.floor((Date.now() - new Date(dob).getTime()) / 31557600000)
+}
+
+export function formatPatientAge(dob: string): string {
+  if (!dob) return '–'
+  const age = patientAge(dob)
+  if (Number.isNaN(age)) return '–'
+  return String(age)
+}
+
+export function formatPatientDemographics(dob: string, sex: string): string {
+  const parts: string[] = []
+  if (dob) parts.push(`${formatPatientAge(dob)} yrs`)
+  if (sex) parts.push(sex)
+  return parts.length ? parts.join(' · ') : '–'
+}
+
+export function displayField(value: string | number | null | undefined, suffix = ''): string {
+  if (value === null || value === undefined || value === '') return '–'
+  if (typeof value === 'number' && value === 0) return '–'
+  return `${value}${suffix}`
 }
 
 export function patientFullName(p: Pick<Patient, 'fname' | 'lname'>): string {

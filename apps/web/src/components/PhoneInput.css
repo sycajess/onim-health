@@ -1,0 +1,25 @@
+.phone-input {
+  display: flex;
+  gap: 8px;
+}
+
+.phone-input__code {
+  width: 148px;
+  flex-shrink: 0;
+  padding-right: 8px;
+}
+
+.phone-input__number {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 520px) {
+  .phone-input {
+    flex-direction: column;
+  }
+
+  .phone-input__code {
+    width: 100%;
+  }
+}

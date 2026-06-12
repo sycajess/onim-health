@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { useData, fmtDate, patientAge, patientFullName } from '@onim/data'
+import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName } from '@onim/data'
 import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
@@ -98,7 +98,7 @@ export function PatientDetailPage() {
           <div className="pt-name">{patientFullName(patient)}</div>
           <div className="pt-meta">
             <span className="pt-meta-item">{patient.id}</span>
-            <span className="pt-meta-item">{patientAge(patient.dob)} yrs · {patient.sex}</span>
+            <span className="pt-meta-item">{formatPatientDemographics(patient.dob, patient.sex)}</span>
             <SpecialtyTag specialty={patient.specialty} />
             <Badge>{patient.status}</Badge>
           </div>
@@ -119,15 +119,15 @@ export function PatientDetailPage() {
           <div>
             <div className="info-grid">
               {[
-                ['Phone', patient.phone],
-                ['Email', patient.email],
-                ['Blood Type', patient.blood],
-                ['Weight', `${patient.weight} kg`],
-                ['Height', `${patient.height} cm`],
-                ['NHIS', patient.nhis || '–'],
-                ['Allergies', patient.allergies],
-                ['Conditions', patient.conditions],
-                ['Current Meds', patient.current_meds],
+                ['Phone', displayField(patient.phone)],
+                ['Email', displayField(patient.email)],
+                ['Blood Type', displayField(patient.blood)],
+                ['Weight', displayField(patient.weight, ' kg')],
+                ['Height', displayField(patient.height, ' cm')],
+                ['NHIS', displayField(patient.nhis)],
+                ['Allergies', displayField(patient.allergies)],
+                ['Conditions', displayField(patient.conditions)],
+                ['Current Meds', displayField(patient.current_meds)],
               ].map(([label, value]) => (
                 <div key={label} className="info-item">
                   <div className="info-item__label">{label}</div>

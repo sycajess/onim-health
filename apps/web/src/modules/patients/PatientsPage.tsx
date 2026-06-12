@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { useData, fmtDate, patientAge, patientInitials, patientFullName, SPECIALTIES } from '@onim/data'
+import { useData, fmtDate, formatPatientDemographics, patientInitials, patientFullName } from '@onim/data'
 import { Badge, Card, EmptyState, PageHero, SpecialtyTag } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
+import { SpecialtyFilter } from '../../components/SpecialtyFilter'
 import '@onim/ui/Card.css'
 
 export function PatientsPage() {
@@ -14,17 +15,13 @@ export function PatientsPage() {
 
   return (
     <div className="page--patients">
-    <PageHero title="Patients" subtitle={`${patients.length} records${q ? ` matching "${q}"` : ''}`} variant="teal" />
-    <Card
-      title="All Patients"
-      action={
-        <select value={specialty} onChange={(e) => setSpecialty(e.target.value)} style={{ width: 160 }}>
-          <option value="">All Specialties</option>
-          {SPECIALTIES.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-      }
-      noPadding
-    >
+    <PageHero
+      title="Patients"
+      subtitle={`${patients.length} record${patients.length === 1 ? '' : 's'}${specialty ? ` · ${specialty}` : ''}${q ? ` matching "${q}"` : ''}`}
+      variant="teal"
+    />
+    <Card title="All Patients" noPadding>
+      <SpecialtyFilter value={specialty} onChange={setSpecialty} />
       {patients.length ? (
         <table className="data-table">
           <thead>
@@ -50,7 +47,7 @@ export function PatientsPage() {
                     </div>
                   </div>
                 </td>
-                <td>{patientAge(p.dob)} / {p.sex}</td>
+                <td>{formatPatientDemographics(p.dob, p.sex)}</td>
                 <td><SpecialtyTag specialty={p.specialty} /></td>
                 <td>{p.phone}</td>
                 <td><Badge>{p.status}</Badge></td>

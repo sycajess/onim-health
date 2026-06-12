@@ -34,18 +34,18 @@ function mapPatient(row: Record<string, unknown>): Patient {
     id: String(row.id),
     fname: String(row.fname),
     lname: String(row.lname),
-    dob: String(row.dob),
-    sex: String(row.sex),
+    dob: row.dob ? String(row.dob) : '',
+    sex: row.sex ? String(row.sex) : '',
     phone: String(row.phone ?? ''),
     email: String(row.email ?? ''),
     address: String(row.address ?? ''),
     id_num: String(row.id_num ?? ''),
     nhis: String(row.nhis ?? ''),
     specialty: String(row.specialty),
-    blood: String(row.blood ?? ''),
-    weight: Number(row.weight ?? 0),
-    height: Number(row.height ?? 0),
-    allergies: String(row.allergies ?? ''),
+    blood: row.blood ? String(row.blood) : '',
+    weight: row.weight != null && row.weight !== '' ? Number(row.weight) : 0,
+    height: row.height != null && row.height !== '' ? Number(row.height) : 0,
+    allergies: row.allergies ? String(row.allergies) : '',
     conditions: String(row.conditions ?? ''),
     current_meds: String(row.current_meds ?? ''),
     ec_name: String(row.ec_name ?? ''),
@@ -222,22 +222,29 @@ export async function createPatient(input: NewPatientInput): Promise<Patient | {
   const id = `P${String(num).padStart(3, '0')}`
   const today = new Date().toISOString().slice(0, 10)
 
+  if (!input.fname.trim() || !input.lname.trim()) {
+    return { error: 'First and last name are required.' }
+  }
+  if (!input.specialty?.trim()) {
+    return { error: 'Specialty is required.' }
+  }
+
   const row = {
     id,
-    fname: input.fname,
-    lname: input.lname,
-    dob: '1990-01-01',
-    sex: 'Female',
-    phone: input.phone ?? '',
-    email: input.email ?? '',
+    fname: input.fname.trim(),
+    lname: input.lname.trim(),
+    dob: null,
+    sex: null,
+    phone: input.phone?.trim() ?? '',
+    email: input.email?.trim() ?? '',
     address: '',
     id_num: '',
     nhis: '',
-    specialty: input.specialty ?? 'Weight Loss',
-    blood: 'O+',
-    weight: 0,
-    height: 0,
-    allergies: 'None',
+    specialty: input.specialty.trim(),
+    blood: null,
+    weight: null,
+    height: null,
+    allergies: null,
     conditions: '',
     current_meds: '',
     ec_name: '',
