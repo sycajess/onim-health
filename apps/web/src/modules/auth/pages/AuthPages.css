@@ -11,21 +11,6 @@
   font-family: var(--font), system-ui, sans-serif;
 }
 
-.auth-page__home {
-  position: absolute;
-  top: 20px;
-  left: 24px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #6b7280;
-  text-decoration: none;
-  transition: color 0.2s;
-}
-
-.auth-page__home:hover {
-  color: #111827;
-}
-
 .auth-page__card {
   width: 100%;
   max-width: 420px;

@@ -1,12 +1,16 @@
-import { Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { PageLoader } from '@onim/ui'
 import { AuthProvider } from '@onim/auth'
 import { DataProvider } from '@onim/data'
 import { AppRouter } from './router'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { clearChunkReloadFlag } from './utils/chunkError'
 
 function App() {
+  useEffect(() => {
+    clearChunkReloadFlag()
+  }, [])
   return (
     <ErrorBoundary>
       <BrowserRouter>

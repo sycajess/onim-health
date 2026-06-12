@@ -11,10 +11,6 @@ type AuthShellProps = {
 export function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
   return (
     <div className="auth-page">
-      <Link to="/" className="auth-page__home">
-        ← Back to home
-      </Link>
-
       <div className="auth-page__card">
         <Link to="/" className="auth-page__brand">
           <span className="auth-page__logo" aria-hidden />
