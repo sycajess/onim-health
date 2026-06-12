@@ -1,0 +1,119 @@
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--gray2, #e5e7eb);
+  border-radius: 8px;
+  background: var(--white, #fff);
+  color: var(--gray5, #374151);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.icon-action svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.icon-action:hover {
+  background: var(--gray1, #f3f4f6);
+  border-color: var(--gray3, #d1d5db);
+  color: var(--gray6, #111827);
+}
+
+.icon-action:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.icon-action--primary {
+  border-color: rgba(16, 185, 129, 0.35);
+  color: var(--teal, #059669);
+}
+
+.icon-action--primary:hover {
+  background: var(--teal-light, #ecfdf5);
+}
+
+.icon-action--success {
+  border-color: rgba(16, 185, 129, 0.35);
+  color: var(--teal, #059669);
+}
+
+.icon-action--success:hover {
+  background: var(--teal-light, #ecfdf5);
+}
+
+.icon-action--danger {
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--danger, #dc2626);
+}
+
+.icon-action--danger:hover {
+  background: var(--danger-light, #fef2f2);
+}
+
+.status-icon-menu {
+  position: relative;
+}
+
+.status-icon-menu__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 36px;
+  padding: 4px;
+  background: var(--white, #fff);
+  border: 1px solid var(--gray2, #e5e7eb);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.status-icon-menu__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--gray5, #374151);
+  cursor: pointer;
+}
+
+.status-icon-menu__option:hover,
+.status-icon-menu__option.is-active {
+  background: var(--gray1, #f3f4f6);
+  color: var(--teal, #059669);
+}
+
+.status-icon-menu__option svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}

@@ -1,16 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useData, patientFullName } from '@onim/data'
-import { Button, Card, EmptyState } from '@onim/ui'
+import { Card, EmptyState } from '@onim/ui'
+import { IconAction } from '../../components/IconAction'
 import '@onim/ui/Card.css'
 import './Messaging.css'
 
 export function MessagingPage() {
   const { db, sendMessage } = useData()
-  const threadIds = Object.keys(db.messages).length
-    ? Object.keys(db.messages)
-    : db.patients.slice(0, 10).map((p) => p.id)
-  const [activeId, setActiveId] = useState(threadIds[0] ?? '')
+  const [params] = useSearchParams()
+  const threadParam = params.get('thread')
+  const threadIds = useMemo(() => {
+    const ids = Object.keys(db.messages).length
+      ? Object.keys(db.messages)
+      : db.patients.slice(0, 10).map((p) => p.id)
+    if (threadParam && db.patients.some((p) => p.id === threadParam) && !ids.includes(threadParam)) {
+      return [threadParam, ...ids]
+    }
+    return ids
+  }, [db.messages, db.patients, threadParam])
+  const [activeId, setActiveId] = useState(threadParam ?? threadIds[0] ?? '')
   const [draft, setDraft] = useState('')
+
+  useEffect(() => {
+    if (threadParam && db.patients.some((p) => p.id === threadParam)) setActiveId(threadParam)
+  }, [threadParam, db.patients])
   const activePatient = db.patients.find((p) => p.id === activeId)
   const messages = db.messages[activeId] ?? []
 
@@ -72,7 +86,7 @@ export function MessagingPage() {
               placeholder="Type a message…"
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend() } }}
             />
-            <Button variant="primary" onClick={() => void handleSend()} disabled={!draft.trim()}>Send</Button>
+            <IconAction icon="send" label="Send message" variant="primary" onClick={() => void handleSend()} disabled={!draft.trim()} />
           </div>
         )}
       </Card>

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, EmptyState, PageHero } from '@onim/ui'
+import { IconAction, RowActions } from '../../components/IconAction'
+import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { NewAppointmentModal } from '../../components/modals/ClinicModals'
 
 const STATUSES = ['Confirmed', 'Pending', 'Scheduled', 'Completed', 'Cancelled']
@@ -38,22 +40,20 @@ export function AppointmentsPage() {
                 <div>
                   <div style={{ fontWeight: 600, marginBottom: 4 }}>{p ? patientFullName(p) : '–'}</div>
                   <div style={{ fontSize: 12, color: 'var(--gray4)' }}>{a.type} · {a.specialty} · {fmtDate(a.date)}</div>
-                  {a.meet_link && (
-                    <a href={a.meet_link} target="_blank" rel="noreferrer" className="link-cell" style={{ fontSize: 12, marginTop: 4, display: 'inline-block' }}>
-                      Join Meet
-                    </a>
-                  )}
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <Badge>{a.status}</Badge>
-                  <select
-                    className="form-input"
-                    style={{ fontSize: 11, padding: '4px 6px', width: 130 }}
-                    value={a.status}
-                    onChange={(e) => void updateAppointmentStatus(a.id, e.target.value)}
-                  >
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  <RowActions>
+                    {p && <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />}
+                    {a.meet_link && <IconAction icon="video" label="Join video call" href={a.meet_link} variant="primary" />}
+                    {a.status !== 'Completed' && (
+                      <IconAction icon="complete" label="Mark completed" variant="success" onClick={() => void updateAppointmentStatus(a.id, 'Completed')} />
+                    )}
+                    {a.status !== 'Cancelled' && (
+                      <IconAction icon="cancel" label="Cancel appointment" variant="danger" onClick={() => void updateAppointmentStatus(a.id, 'Cancelled')} />
+                    )}
+                    <StatusIconMenu value={a.status} options={STATUSES} onChange={(s) => void updateAppointmentStatus(a.id, s)} />
+                  </RowActions>
                 </div>
               </motion.div>
             )

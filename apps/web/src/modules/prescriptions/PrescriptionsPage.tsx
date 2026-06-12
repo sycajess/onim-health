@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, EmptyState, PageHero } from '@onim/ui'
+import { IconAction, RowActions } from '../../components/IconAction'
+import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { NewPrescriptionModal } from '../../components/modals/ClinicModals'
 
 const STATUSES = ['Active', 'Completed', 'Cancelled']
@@ -41,14 +43,16 @@ export function PrescriptionsPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <Badge>{r.status}</Badge>
-                  <select
-                    className="form-input"
-                    style={{ fontSize: 11, padding: '4px 6px', width: 120 }}
-                    value={r.status}
-                    onChange={(e) => void updatePrescriptionStatus(r.id, e.target.value)}
-                  >
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  <RowActions>
+                    {p && <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />}
+                    {r.status !== 'Completed' && (
+                      <IconAction icon="complete" label="Mark completed" variant="success" onClick={() => void updatePrescriptionStatus(r.id, 'Completed')} />
+                    )}
+                    {r.status !== 'Cancelled' && (
+                      <IconAction icon="cancel" label="Cancel prescription" variant="danger" onClick={() => void updatePrescriptionStatus(r.id, 'Cancelled')} />
+                    )}
+                    <StatusIconMenu value={r.status} options={STATUSES} onChange={(s) => void updatePrescriptionStatus(r.id, s)} />
+                  </RowActions>
                 </div>
               </motion.div>
             )

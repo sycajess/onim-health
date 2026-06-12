@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useData, fmtDate, patientInitials, patientFullName, SPECIALTY_COLORS, today, daysUntil } from '@onim/data'
 import { Badge, Card, EmptyState, PageHero, StatCard } from '@onim/ui'
+import { IconAction, RowActions } from '../../components/IconAction'
 import '@onim/ui/Card.css'
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
@@ -62,7 +63,7 @@ export function DashboardPage() {
         <Card title="Recent Patients" action={<Link to="/patients" className="link-cell">View All</Link>} noPadding>
           {data.recentPatients.length ? (
             <table className="data-table">
-              <thead><tr><th>Patient</th><th>Specialty</th><th>Registered</th></tr></thead>
+              <thead><tr><th>Patient</th><th>Specialty</th><th>Registered</th><th aria-label="Actions" /></tr></thead>
               <tbody>
                 {data.recentPatients.map((p) => (
                   <tr key={p.id}>
@@ -77,6 +78,11 @@ export function DashboardPage() {
                     </td>
                     <td>{p.specialty}</td>
                     <td>{fmtDate(p.created)}</td>
+                    <td>
+                      <RowActions>
+                        <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />
+                      </RowActions>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -88,16 +94,26 @@ export function DashboardPage() {
         <Card title="Today's Appointments" action={<Link to="/appointments" className="link-cell">View All</Link>} noPadding>
           {data.todayAppointments.length ? (
             <table className="data-table">
-              <thead><tr><th>Patient</th><th>Time</th><th>Type</th><th>Status</th></tr></thead>
+              <thead><tr><th>Patient</th><th>Time</th><th>Type</th><th>Status</th><th aria-label="Actions" /></tr></thead>
               <tbody>
-                {data.todayAppointments.map((a) => (
+                {data.todayAppointments.map((a) => {
+                  const patient = db.patients.find((p) => p.id === a.patient_id)
+                  return (
                   <tr key={a.id}>
-                    <td>{db.patients.find((p) => p.id === a.patient_id) ? patientFullName(db.patients.find((p) => p.id === a.patient_id)!) : a.patient_id}</td>
+                    <td>{patient ? patientFullName(patient) : a.patient_id}</td>
                     <td>{a.time}</td>
                     <td>{a.type}</td>
                     <td><Badge>{a.status}</Badge></td>
+                    <td>
+                      {patient && (
+                        <RowActions>
+                          <IconAction icon="view" label={`View ${patientFullName(patient)}`} to={`/patients/${patient.id}`} />
+                        </RowActions>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           ) : (

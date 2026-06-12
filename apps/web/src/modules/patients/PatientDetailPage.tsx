@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { useData, fmtDate, patientAge, patientFullName } from '@onim/data'
 import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
+import { IconAction, RowActions } from '../../components/IconAction'
 import '@onim/ui/Card.css'
 import './PatientDetail.css'
 
@@ -93,7 +94,7 @@ export function PatientDetailPage() {
 
       <div className="pt-header">
         <div className="pt-avatar-lg">{(patient.fname[0] + patient.lname[0]).toUpperCase()}</div>
-        <div>
+        <div style={{ flex: 1 }}>
           <div className="pt-name">{patientFullName(patient)}</div>
           <div className="pt-meta">
             <span className="pt-meta-item">{patient.id}</span>
@@ -102,6 +103,9 @@ export function PatientDetailPage() {
             <Badge>{patient.status}</Badge>
           </div>
         </div>
+        <RowActions>
+          <IconAction icon="message" label={`Message ${patientFullName(patient)}`} to={`/messaging?thread=${patient.id}`} variant="primary" />
+        </RowActions>
       </div>
 
       <div className="pt-tabs">

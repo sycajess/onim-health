@@ -3,6 +3,8 @@ import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, EmptyState, PageHero } from '@onim/ui'
+import { IconAction, RowActions } from '../../components/IconAction'
+import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { NewInvoiceModal } from '../../components/modals/ClinicModals'
 
 const STATUSES = ['Pending', 'Paid – Cash', 'Paid – MoMo', 'Paid – Insurance', 'Partial']
@@ -38,14 +40,13 @@ export function BillingPage() {
                 <div className="bill-card__amount">GHS {b.amount.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</div>
                 {p && <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link>}
                 <div style={{ marginTop: 10, marginBottom: 8 }}><Badge>{b.status}</Badge></div>
-                <select
-                  className="form-input"
-                  style={{ fontSize: 11, padding: '4px 6px', width: '100%' }}
-                  value={b.status}
-                  onChange={(e) => void updateBillingStatus(b.id, e.target.value)}
-                >
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
+                <RowActions>
+                  {p && <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />}
+                  {!b.status.startsWith('Paid') && (
+                    <IconAction icon="paid" label="Mark paid (MoMo)" variant="success" onClick={() => void updateBillingStatus(b.id, 'Paid – MoMo')} />
+                  )}
+                  <StatusIconMenu value={b.status} options={STATUSES} onChange={(s) => void updateBillingStatus(b.id, s)} />
+                </RowActions>
               </motion.div>
             )
           })}

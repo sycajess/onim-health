@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, EmptyState, PageHero, PdfAttachZone } from '@onim/ui'
 import type { PdfAttachment } from '@onim/ui'
+import { IconAction, RowActions } from '../../components/IconAction'
 import { NewLabModal } from '../../components/modals/ClinicModals'
 
 export function LabsPage() {
@@ -40,7 +41,14 @@ export function LabsPage() {
                 whileHover={{ y: -4 }}
               >
                 <div style={{ fontSize: 12, color: 'var(--gray4)' }}>{fmtDate(l.date)} · {l.facility}</div>
-                <div style={{ fontWeight: 600, marginTop: 4 }}>{l.test}</div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginTop: 4 }}>
+                  <div style={{ fontWeight: 600 }}>{l.test}</div>
+                  {p && (
+                    <RowActions>
+                      <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />
+                    </RowActions>
+                  )}
+                </div>
                 <div className="lab-tile__value">{l.result}</div>
                 <div style={{ fontSize: 11, color: 'var(--gray4)', marginBottom: 8 }}>Ref: {l.ref}</div>
                 {p && <Link to={`/patients/${p.id}`} className="link-cell" style={{ fontSize: 12 }}>{patientFullName(p)}</Link>}

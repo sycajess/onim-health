@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { useData, fmtDate, daysUntil } from '@onim/data'
 import type { InventoryItem } from '@onim/data'
 import { Button, Card, EmptyState, PageHero } from '@onim/ui'
+import { IconAction, RowActions } from '../../components/IconAction'
 import '@onim/ui/Card.css'
 import { DispenseModal, MedicationModal } from '../../components/modals/ClinicModals'
 
@@ -56,9 +57,11 @@ export function InventoryPage() {
               <div style={{ fontWeight: 600, marginTop: 6 }}>{m.name}</div>
               <div className="inv-card__qty">{m.qty}</div>
               <div style={{ fontSize: 12, color: 'var(--gray4)' }}>Threshold: {m.threshold} · Exp: {fmtDate(m.expiry)}</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <Button variant="secondary" onClick={() => openDispense(m)}>Dispense</Button>
-                <Button variant="secondary" onClick={() => openEdit(m)}>Edit</Button>
+              <div style={{ marginTop: 12 }}>
+                <RowActions>
+                  <IconAction icon="dispense" label={`Dispense ${m.name}`} variant="primary" onClick={() => openDispense(m)} />
+                  <IconAction icon="edit" label={`Edit ${m.name}`} onClick={() => openEdit(m)} />
+                </RowActions>
               </div>
             </motion.div>
           ))}

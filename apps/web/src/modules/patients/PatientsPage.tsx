@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useData, fmtDate, patientAge, patientInitials, patientFullName, SPECIALTIES } from '@onim/data'
 import { Badge, Card, EmptyState, PageHero, SpecialtyTag } from '@onim/ui'
+import { IconAction, RowActions } from '../../components/IconAction'
 import '@onim/ui/Card.css'
 
 export function PatientsPage() {
@@ -34,6 +35,7 @@ export function PatientsPage() {
               <th>Phone</th>
               <th>Status</th>
               <th>Registered</th>
+              <th aria-label="Actions" />
             </tr>
           </thead>
           <tbody>
@@ -53,6 +55,12 @@ export function PatientsPage() {
                 <td>{p.phone}</td>
                 <td><Badge>{p.status}</Badge></td>
                 <td>{fmtDate(p.created)}</td>
+                <td>
+                  <RowActions>
+                    <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />
+                    <IconAction icon="message" label={`Message ${patientFullName(p)}`} to={`/messaging?thread=${p.id}`} />
+                  </RowActions>
+                </td>
               </tr>
             ))}
           </tbody>
