@@ -3,10 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute, GuestRoute } from '@onim/auth'
 import { PageLoader } from '@onim/ui'
 import { AppLayout } from '../layouts/AppLayout'
+import { LoginPage } from '../modules/auth/pages/LoginPage'
+import { SignupPage } from '../modules/auth/pages/SignupPage'
 import { LandingPage } from '../modules/landing/LandingPage'
-
-const LoginPage = lazy(() => import('../modules/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage })))
-const SignupPage = lazy(() => import('../modules/auth/pages/SignupPage').then((m) => ({ default: m.SignupPage })))
 const DashboardPage = lazy(() => import('../modules/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })))
 const PatientsPage = lazy(() => import('../modules/patients/PatientsPage').then((m) => ({ default: m.PatientsPage })))
 const PatientDetailPage = lazy(() => import('../modules/patients/PatientDetailPage').then((m) => ({ default: m.PatientDetailPage })))
@@ -30,22 +29,8 @@ export function AppRouter() {
       <Route path="/" element={<LandingPage />} />
 
       <Route element={<GuestRoute />}>
-        <Route
-          path="/login"
-          element={(
-            <Lazy>
-              <LoginPage />
-            </Lazy>
-          )}
-        />
-        <Route
-          path="/signup"
-          element={(
-            <Lazy>
-              <SignupPage />
-            </Lazy>
-          )}
-        />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>

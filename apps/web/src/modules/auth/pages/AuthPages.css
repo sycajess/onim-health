@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 .auth-page {
   min-height: 100vh;
   display: flex;
@@ -10,7 +8,7 @@
   background:
     radial-gradient(ellipse 70% 50% at 50% 0%, rgba(16, 185, 129, 0.1), transparent),
     #f8fafc;
-  font-family: 'Inter', var(--font), system-ui, sans-serif;
+  font-family: var(--font), system-ui, sans-serif;
 }
 
 .auth-page__home {
