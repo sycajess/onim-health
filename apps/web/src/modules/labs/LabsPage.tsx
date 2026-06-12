@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, EmptyState, PageHero, PdfAttachZone } from '@onim/ui'
 import type { PdfAttachment } from '@onim/ui'
-import { IconAction, RowActions } from '../../components/IconAction'
 import { NewLabModal } from '../../components/modals/ClinicModals'
 
 export function LabsPage() {
   const { db, updateLabAttachment } = useData()
+  const { canWriteModule } = usePermissions()
+  const canWrite = canWriteModule('labs')
   const [modalOpen, setModalOpen] = useState(false)
 
   function handleAttach(labId: string, file: PdfAttachment) {
@@ -21,7 +23,7 @@ export function LabsPage() {
         title="Lab Results"
         subtitle="Test values, abnormal flags, and report attachments"
         variant="rose"
-        action={<Button variant="primary" onClick={() => setModalOpen(true)}>+ Add Result</Button>}
+        action={canWrite ? <Button variant="primary" onClick={() => setModalOpen(true)}>+ Add Result</Button> : undefined}
       />
       {db.labs.length ? (
         <div className="lab-grid">
@@ -43,21 +45,20 @@ export function LabsPage() {
                 <div style={{ fontSize: 12, color: 'var(--gray4)' }}>{fmtDate(l.date)} · {l.facility}</div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginTop: 4 }}>
                   <div style={{ fontWeight: 600 }}>{l.test}</div>
-                  {p && (
-                    <RowActions>
-                      <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />
-                    </RowActions>
-                  )}
                 </div>
                 <div className="lab-tile__value">{l.result}</div>
                 <div style={{ fontSize: 11, color: 'var(--gray4)', marginBottom: 8 }}>Ref: {l.ref}</div>
                 {p && <Link to={`/patients/${p.id}`} className="link-cell" style={{ fontSize: 12 }}>{patientFullName(p)}</Link>}
                 <div style={{ marginTop: 8, marginBottom: 10 }}><Badge>{l.status}</Badge></div>
-                <PdfAttachZone
-                  attachment={attachment}
-                  onAttach={(file) => handleAttach(l.id, file)}
-                  onRemove={() => updateLabAttachment(l.id, null)}
-                />
+                {canWrite ? (
+                  <PdfAttachZone
+                    attachment={attachment}
+                    onAttach={(file) => handleAttach(l.id, file)}
+                    onRemove={() => updateLabAttachment(l.id, null)}
+                  />
+                ) : attachment ? (
+                  <a href={attachment.dataUrl} target="_blank" rel="noreferrer" className="link-cell" style={{ fontSize: 12 }}>View report</a>
+                ) : null}
               </motion.div>
             )
           })}

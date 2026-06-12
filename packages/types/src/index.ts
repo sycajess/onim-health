@@ -175,3 +175,9 @@ export function getInitials(name: string): string {
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('')
 }
+
+export {
+  canPerformAction,
+  canWriteModule,
+  type ActionId,
+} from './permissions'

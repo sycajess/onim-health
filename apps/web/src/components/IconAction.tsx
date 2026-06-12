@@ -3,9 +3,9 @@ import type { ReactNode, ButtonHTMLAttributes } from 'react'
 import './IconAction.css'
 
 export type IconName =
-  | 'view'
   | 'video'
   | 'edit'
+  | 'delete'
   | 'dispense'
   | 'complete'
   | 'cancel'
@@ -15,12 +15,6 @@ export type IconName =
   | 'more'
 
 const ICONS: Record<IconName, ReactNode> = {
-  view: (
-    <svg viewBox="0 0 24 24" aria-hidden>
-      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  ),
   video: (
     <svg viewBox="0 0 24 24" aria-hidden>
       <path d="m16 13 5-3v8l-5-3v-2Z" />
@@ -31,6 +25,15 @@ const ICONS: Record<IconName, ReactNode> = {
     <svg viewBox="0 0 24 24" aria-hidden>
       <path d="M12 20h9" />
       <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  ),
+  delete: (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <path d="M3 6h18" />
+      <path d="M8 6V4h8v2" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
     </svg>
   ),
   dispense: (

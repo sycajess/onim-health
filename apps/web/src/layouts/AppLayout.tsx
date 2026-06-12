@@ -2,9 +2,9 @@ import { Suspense, useState } from 'react'
 import { motion } from 'framer-motion'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
-import { useAuth } from '@onim/auth'
+import { useAuth, usePermissions } from '@onim/auth'
 import { useData } from '@onim/data'
-import { MODULES, ROLE_LABELS, canAccessModule } from '@onim/types'
+import { MODULES, ROLE_LABELS } from '@onim/types'
 import { Button, PageLoader, PageTransition } from '@onim/ui'
 import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NewPatientModal } from '../components/NewPatientModal'
@@ -20,6 +20,7 @@ const SECTION_LABELS = {
 
 export function AppLayout() {
   const { profile, signOut } = useAuth()
+  const { canAccessModule, canCreatePatient } = usePermissions()
   const { loading: dataLoading, error: dataError } = useData()
   const location = useLocation()
   const navigate = useNavigate()
@@ -37,9 +38,8 @@ export function AppLayout() {
   }
 
   const { role } = profile
-  const visibleModules = MODULES.filter((m) => canAccessModule(role, m.id))
+  const visibleModules = MODULES.filter((m) => canAccessModule(m.id))
   const sections = [...new Set(visibleModules.map((m) => m.section))]
-  const canAddPatients = canAccessModule(role, 'patients')
 
   function handleSignOut() {
     signOut()
@@ -125,7 +125,7 @@ export function AppLayout() {
           </h1>
           <div className="topbar__actions">
             <GlobalSearchBar />
-            {canAddPatients && (
+            {canCreatePatient && (
               <Button variant="primary" onClick={() => setPatientModalOpen(true)}>
                 + New Patient
               </Button>

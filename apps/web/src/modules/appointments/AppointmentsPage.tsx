@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, EmptyState, PageHero } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
@@ -10,6 +11,8 @@ const STATUSES = ['Confirmed', 'Pending', 'Scheduled', 'Completed', 'Cancelled']
 
 export function AppointmentsPage() {
   const { db, updateAppointmentStatus } = useData()
+  const { canWriteModule } = usePermissions()
+  const canWrite = canWriteModule('appointments')
   const [modalOpen, setModalOpen] = useState(false)
 
   return (
@@ -18,7 +21,7 @@ export function AppointmentsPage() {
         title="Appointments"
         subtitle="Today's schedule and upcoming visits"
         variant="blue"
-        action={<Button variant="primary" onClick={() => setModalOpen(true)}>+ Schedule</Button>}
+        action={canWrite ? <Button variant="primary" onClick={() => setModalOpen(true)}>+ Schedule</Button> : undefined}
       />
       {db.appointments.length ? (
         <div className="appt-list">
@@ -43,17 +46,18 @@ export function AppointmentsPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <Badge>{a.status}</Badge>
-                  <RowActions>
-                    {p && <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />}
-                    {a.meet_link && <IconAction icon="video" label="Join video call" href={a.meet_link} variant="primary" />}
-                    {a.status !== 'Completed' && (
-                      <IconAction icon="complete" label="Mark completed" variant="success" onClick={() => void updateAppointmentStatus(a.id, 'Completed')} />
-                    )}
-                    {a.status !== 'Cancelled' && (
-                      <IconAction icon="cancel" label="Cancel appointment" variant="danger" onClick={() => void updateAppointmentStatus(a.id, 'Cancelled')} />
-                    )}
-                    <StatusIconMenu value={a.status} options={STATUSES} onChange={(s) => void updateAppointmentStatus(a.id, s)} />
-                  </RowActions>
+                  {canWrite && (
+                    <RowActions>
+                      {a.meet_link && <IconAction icon="video" label="Join video call" href={a.meet_link} variant="primary" />}
+                      {a.status !== 'Completed' && (
+                        <IconAction icon="complete" label="Mark completed" variant="success" onClick={() => void updateAppointmentStatus(a.id, 'Completed')} />
+                      )}
+                      {a.status !== 'Cancelled' && (
+                        <IconAction icon="cancel" label="Cancel appointment" variant="danger" onClick={() => void updateAppointmentStatus(a.id, 'Cancelled')} />
+                      )}
+                      <StatusIconMenu value={a.status} options={STATUSES} onChange={(s) => void updateAppointmentStatus(a.id, s)} />
+                    </RowActions>
+                  )}
                 </div>
               </motion.div>
             )

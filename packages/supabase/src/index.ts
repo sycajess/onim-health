@@ -15,6 +15,8 @@ export {
 export { emptyDatabase, fetchDatabase } from './database'
 export {
   createPatient,
+  updatePatient,
+  deletePatient,
   saveLabAttachment,
   updateAppointmentStatus,
   createAppointment,
@@ -30,6 +32,7 @@ export {
 } from './mutations'
 export type {
   NewPatientInput,
+  UpdatePatientInput,
   NewAppointmentInput,
   NewRecordInput,
   NewPrescriptionInput,

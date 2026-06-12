@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useData, SPECIALTIES } from '@onim/data'
+import { useData, SPECIALTIES, type Patient } from '@onim/data'
 import { Button, Modal } from '@onim/ui'
 import { PhoneInput, formatPhone } from './PhoneInput'
 
@@ -9,11 +9,29 @@ const OTHER_SPECIALTY = 'Other'
 type NewPatientModalProps = {
   open: boolean
   onClose: () => void
+  patient?: Patient | null
 }
 
-export function NewPatientModal({ open, onClose }: NewPatientModalProps) {
-  const { addPatient } = useData()
+function parsePhone(phone: string) {
+  const trimmed = phone.trim()
+  if (!trimmed) return { countryCode: '+233', number: '' }
+  const match = trimmed.match(/^(\+\d{1,4})\s*(.*)$/)
+  if (match) return { countryCode: match[1], number: match[2] }
+  return { countryCode: '+233', number: trimmed }
+}
+
+function resolveSpecialtyFields(specialty: string) {
+  if ((SPECIALTIES as readonly string[]).includes(specialty)) {
+    return { choice: specialty, other: '' }
+  }
+  if (!specialty) return { choice: '', other: '' }
+  return { choice: OTHER_SPECIALTY, other: specialty }
+}
+
+export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps) {
+  const { addPatient, updatePatient } = useData()
   const navigate = useNavigate()
+  const isEdit = !!patient
   const [fname, setFname] = useState('')
   const [lname, setLname] = useState('')
   const [countryCode, setCountryCode] = useState('+233')
@@ -24,7 +42,20 @@ export function NewPatientModal({ open, onClose }: NewPatientModalProps) {
 
   const resolvedSpecialty = specialtyChoice === OTHER_SPECIALTY ? otherSpecialty.trim() : specialtyChoice
 
-  function reset() {
+  useEffect(() => {
+    if (!open) return
+    if (patient) {
+      setFname(patient.fname)
+      setLname(patient.lname)
+      const parsed = parsePhone(patient.phone)
+      setCountryCode(parsed.countryCode)
+      setPhoneNumber(parsed.number)
+      setEmail(patient.email)
+      const specialtyFields = resolveSpecialtyFields(patient.specialty)
+      setSpecialtyChoice(specialtyFields.choice)
+      setOtherSpecialty(specialtyFields.other)
+      return
+    }
     setFname('')
     setLname('')
     setCountryCode('+233')
@@ -32,42 +63,46 @@ export function NewPatientModal({ open, onClose }: NewPatientModalProps) {
     setEmail('')
     setSpecialtyChoice('')
     setOtherSpecialty('')
-  }
+  }, [open, patient])
 
   async function handleSave() {
     if (!fname.trim() || !lname.trim() || !resolvedSpecialty) return
-    const patient = await addPatient({
+
+    const payload = {
       fname: fname.trim(),
       lname: lname.trim(),
       phone: formatPhone(countryCode, phoneNumber),
       email: email.trim(),
       specialty: resolvedSpecialty,
-    })
-    if ('error' in patient) return
-    reset()
-    onClose()
-    navigate(`/patients/${patient.id}`)
-  }
+    }
 
-  function handleClose() {
-    reset()
+    if (isEdit && patient) {
+      const result = await updatePatient(patient.id, payload)
+      if ('error' in result) return
+      onClose()
+      return
+    }
+
+    const created = await addPatient(payload)
+    if ('error' in created) return
     onClose()
+    navigate(`/patients/${created.id}`)
   }
 
   return (
     <Modal
       open={open}
-      title="Register New Patient"
-      onClose={handleClose}
+      title={isEdit ? 'Edit Patient' : 'Register New Patient'}
+      onClose={onClose}
       footer={
         <>
-          <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+          <Button variant="secondary" onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
             disabled={!fname.trim() || !lname.trim() || !resolvedSpecialty}
           >
-            Save Patient
+            {isEdit ? 'Save Changes' : 'Save Patient'}
           </Button>
         </>
       }

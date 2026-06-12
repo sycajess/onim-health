@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, daysUntil } from '@onim/data'
 import type { InventoryItem } from '@onim/data'
 import { Button, Card, EmptyState, PageHero } from '@onim/ui'
@@ -9,6 +10,7 @@ import { DispenseModal, MedicationModal } from '../../components/modals/ClinicMo
 
 export function InventoryPage() {
   const { db } = useData()
+  const { canManageInventory, canDispenseInventory } = usePermissions()
   const [medModalOpen, setMedModalOpen] = useState(false)
   const [dispenseOpen, setDispenseOpen] = useState(false)
   const [editItem, setEditItem] = useState<InventoryItem | undefined>()
@@ -31,7 +33,7 @@ export function InventoryPage() {
         title="Medication Inventory"
         subtitle={`${db.inventory.length} items tracked · ${alerts.length} alerts`}
         variant="teal"
-        action={<Button variant="primary" onClick={() => openEdit()}>+ Add Medication</Button>}
+        action={canManageInventory ? <Button variant="primary" onClick={() => openEdit()}>+ Add Medication</Button> : undefined}
       />
       {alerts.length > 0 && (
         <div style={{ marginBottom: 16 }}>
@@ -57,12 +59,18 @@ export function InventoryPage() {
               <div style={{ fontWeight: 600, marginTop: 6 }}>{m.name}</div>
               <div className="inv-card__qty">{m.qty}</div>
               <div style={{ fontSize: 12, color: 'var(--gray4)' }}>Threshold: {m.threshold} · Exp: {fmtDate(m.expiry)}</div>
-              <div style={{ marginTop: 12 }}>
-                <RowActions>
-                  <IconAction icon="dispense" label={`Dispense ${m.name}`} variant="primary" onClick={() => openDispense(m)} />
-                  <IconAction icon="edit" label={`Edit ${m.name}`} onClick={() => openEdit(m)} />
-                </RowActions>
-              </div>
+              {(canManageInventory || canDispenseInventory) && (
+                <div style={{ marginTop: 12 }}>
+                  <RowActions>
+                    {canDispenseInventory && (
+                      <IconAction icon="dispense" label={`Dispense ${m.name}`} variant="primary" onClick={() => openDispense(m)} />
+                    )}
+                    {canManageInventory && (
+                      <IconAction icon="edit" label={`Edit ${m.name}`} onClick={() => openEdit(m)} />
+                    )}
+                  </RowActions>
+                </div>
+              )}
             </motion.div>
           ))}
         </div>

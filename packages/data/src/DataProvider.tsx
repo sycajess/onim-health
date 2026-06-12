@@ -7,6 +7,7 @@ import {
   createMedicalRecord,
   createPatient,
   createPrescription,
+  deletePatient,
   dispenseMedication,
   emptyDatabase,
   fetchDatabase,
@@ -15,12 +16,14 @@ import {
   sendMessage,
   updateAppointmentStatus,
   updateBillingStatus,
+  updatePatient,
   updatePrescriptionStatus,
   type MedicationInput,
   type NewAppointmentInput,
   type NewInvoiceInput,
   type NewLabInput,
   type NewPatientInput,
+  type UpdatePatientInput,
   type NewPrescriptionInput,
   type NewRecordInput,
 } from '@onim/supabase'
@@ -33,6 +36,8 @@ type DataContextValue = {
   getPatient: (id: string) => Patient | undefined
   searchPatients: (query: string, specialty?: string) => Patient[]
   addPatient: (input: NewPatientInput) => Promise<Patient | { error: string }>
+  updatePatient: (id: string, input: UpdatePatientInput) => Promise<Patient | { error: string }>
+  deletePatient: (id: string) => Promise<boolean | { error: string }>
   updateLabAttachment: (labId: string, attachment: LabAttachment | null) => Promise<boolean>
   updateAppointmentStatus: (id: string, status: string) => Promise<boolean>
   addAppointment: (input: NewAppointmentInput) => Promise<boolean>
@@ -107,6 +112,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if ('error' in result) return result
     await refresh()
     return result
+  }, [refresh])
+
+  const handleUpdatePatient = useCallback(async (id: string, input: UpdatePatientInput) => {
+    const result = await updatePatient(id, input)
+    if ('error' in result) return result
+    await refresh()
+    return result
+  }, [refresh])
+
+  const handleDeletePatient = useCallback(async (id: string) => {
+    const result = await deletePatient(id)
+    if (typeof result === 'object' && 'error' in result) return result
+    await refresh()
+    return true
   }, [refresh])
 
   const updateLabAttachment = useCallback(
@@ -191,6 +210,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       getPatient,
       searchPatients,
       addPatient,
+      updatePatient: handleUpdatePatient,
+      deletePatient: handleDeletePatient,
       updateLabAttachment,
       updateAppointmentStatus: handleUpdateAppointmentStatus,
       addAppointment,
@@ -212,6 +233,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       getPatient,
       searchPatients,
       addPatient,
+      handleUpdatePatient,
+      handleDeletePatient,
       updateLabAttachment,
       handleUpdateAppointmentStatus,
       addAppointment,

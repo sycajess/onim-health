@@ -365,5 +365,5 @@ export async function sendMessage(
   return true
 }
 
-export { createPatient, saveLabAttachment } from './database'
-export type { NewPatientInput } from './database'
+export { createPatient, saveLabAttachment, updatePatient, deletePatient } from './database'
+export type { NewPatientInput, UpdatePatientInput } from './database'

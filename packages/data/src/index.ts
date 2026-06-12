@@ -1,6 +1,6 @@
 export type * from './types'
 export { DataProvider, useData } from './DataProvider'
-export type { NewPatientInput } from '@onim/supabase'
+export type { NewPatientInput, UpdatePatientInput } from '@onim/supabase'
 export {
   fmtDate,
   today,

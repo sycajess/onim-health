@@ -1,19 +1,51 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName } from '@onim/data'
+import type { ModuleId } from '@onim/types'
 import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
+import { NewPatientModal } from '../../components/NewPatientModal'
 import '@onim/ui/Card.css'
 import './PatientDetail.css'
 
 const TABS = ['Overview', 'Records', 'Prescriptions', 'Labs', 'Appointments', 'Billing'] as const
 
+const TAB_MODULES: Record<(typeof TABS)[number], ModuleId | null> = {
+  Overview: null,
+  Records: 'records',
+  Prescriptions: 'prescriptions',
+  Labs: 'labs',
+  Appointments: 'appointments',
+  Billing: 'billing',
+}
+
 export function PatientDetailPage() {
   const { id } = useParams()
-  const { db, getPatient, updateLabAttachment } = useData()
+  const navigate = useNavigate()
+  const { db, getPatient, deletePatient, updateLabAttachment } = useData()
+  const { canEditPatient, canDeletePatient, canMessage, canWriteModule, canAccessModule } = usePermissions()
   const [tab, setTab] = useState<(typeof TABS)[number]>('Overview')
+  const [editOpen, setEditOpen] = useState(false)
   const patient = id ? getPatient(id) : undefined
+  const canWriteLabs = canWriteModule('labs')
+  const showHeaderActions = canEditPatient || canDeletePatient || canMessage
+  const visibleTabs = TABS.filter((t) => {
+    const module = TAB_MODULES[t]
+    return module ? canAccessModule(module) : true
+  })
+
+  async function handleDelete() {
+    if (!patient) return
+    if (!window.confirm(`Delete ${patientFullName(patient)}? This cannot be undone.`)) return
+    const result = await deletePatient(patient.id)
+    if (typeof result === 'object' && 'error' in result) {
+      window.alert(result.error)
+      return
+    }
+    navigate('/patients', { replace: true })
+  }
 
   const records = useMemo(
     () => db.records.filter((r) => r.patient_id === patient?.id),
@@ -103,13 +135,25 @@ export function PatientDetailPage() {
             <Badge>{patient.status}</Badge>
           </div>
         </div>
-        <RowActions>
-          <IconAction icon="message" label={`Message ${patientFullName(patient)}`} to={`/messaging?thread=${patient.id}`} variant="primary" />
-        </RowActions>
+        {showHeaderActions && (
+          <RowActions>
+            {canEditPatient && (
+              <IconAction icon="edit" label={`Edit ${patientFullName(patient)}`} onClick={() => setEditOpen(true)} />
+            )}
+            {canMessage && (
+              <IconAction icon="message" label={`Message ${patientFullName(patient)}`} to={`/messaging?thread=${patient.id}`} />
+            )}
+            {canDeletePatient && (
+              <IconAction icon="delete" label={`Delete ${patientFullName(patient)}`} variant="danger" onClick={() => void handleDelete()} />
+            )}
+          </RowActions>
+        )}
       </div>
 
+      <NewPatientModal open={editOpen} onClose={() => setEditOpen(false)} patient={patient} />
+
       <div className="pt-tabs">
-        {TABS.map((t) => (
+        {visibleTabs.map((t) => (
           <button key={t} type="button" className={`pt-tab${tab === t ? ' pt-tab--active' : ''}`} onClick={() => setTab(t)}>{t}</button>
         ))}
       </div>
@@ -183,11 +227,17 @@ export function PatientDetailPage() {
             <Card key={l.id} title={`${l.test} — ${fmtDate(l.date)}`}>
               <div style={{ marginBottom: 8 }}><strong>{l.result}</strong> <Badge>{l.status}</Badge></div>
               <div style={{ fontSize: 12, color: 'var(--gray4)', marginBottom: 12 }}>{l.facility} · Ref: {l.ref}</div>
-              <PdfAttachZone
-                attachment={l.attachment ? { name: l.attachment.name, dataUrl: l.attachment.data_url } : null}
-                onAttach={(file) => updateLabAttachment(l.id, { name: file.name, data_url: file.dataUrl })}
-                onRemove={() => updateLabAttachment(l.id, null)}
-              />
+              {canWriteLabs ? (
+                <PdfAttachZone
+                  attachment={l.attachment ? { name: l.attachment.name, dataUrl: l.attachment.data_url } : null}
+                  onAttach={(file) => updateLabAttachment(l.id, { name: file.name, data_url: file.dataUrl })}
+                  onRemove={() => updateLabAttachment(l.id, null)}
+                />
+              ) : l.attachment ? (
+                <a href={l.attachment.data_url} target="_blank" rel="noreferrer" className="link-cell">View report</a>
+              ) : (
+                <span style={{ fontSize: 12, color: 'var(--gray4)' }}>No report attached</span>
+              )}
             </Card>
           )) : <EmptyState icon="🧪" title="No lab results" />}
         </div>

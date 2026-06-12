@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Button, EmptyState, PageHero } from '@onim/ui'
-import { IconAction, RowActions } from '../../components/IconAction'
 import { NewRecordModal } from '../../components/modals/ClinicModals'
 
 export function RecordsPage() {
   const { db } = useData()
+  const { canWriteModule } = usePermissions()
+  const canWrite = canWriteModule('records')
   const [modalOpen, setModalOpen] = useState(false)
 
   return (
@@ -16,7 +18,7 @@ export function RecordsPage() {
         title="Medical Records"
         subtitle="Clinical notes and visit documentation"
         variant="slate"
-        action={<Button variant="primary" onClick={() => setModalOpen(true)}>+ New Record</Button>}
+        action={canWrite ? <Button variant="primary" onClick={() => setModalOpen(true)}>+ New Record</Button> : undefined}
       />
       {db.records.length ? (
         <div className="record-stack">
@@ -31,16 +33,9 @@ export function RecordsPage() {
                 transition={{ delay: i * 0.05 }}
               >
                 <div className="record-doc__meta">{fmtDate(r.date)} · {r.specialty}</div>
-                <div className="record-doc__title" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <span>
-                    {r.type}
-                    {p && <> — <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link></>}
-                  </span>
-                  {p && (
-                    <RowActions>
-                      <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />
-                    </RowActions>
-                  )}
+                <div className="record-doc__title">
+                  {r.type}
+                  {p && <> — <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link></>}
                 </div>
                 <div className="record-doc__body">{r.assessment || r.complaint || '—'}</div>
               </motion.div>

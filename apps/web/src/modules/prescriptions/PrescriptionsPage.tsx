@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, EmptyState, PageHero } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
@@ -11,6 +12,8 @@ const STATUSES = ['Active', 'Completed', 'Cancelled']
 
 export function PrescriptionsPage() {
   const { db, updatePrescriptionStatus } = useData()
+  const { canWriteModule } = usePermissions()
+  const canWrite = canWriteModule('prescriptions')
   const [modalOpen, setModalOpen] = useState(false)
 
   return (
@@ -19,7 +22,7 @@ export function PrescriptionsPage() {
         title="Prescriptions"
         subtitle="Active medications and dispense tracking"
         variant="amber"
-        action={<Button variant="primary" onClick={() => setModalOpen(true)}>+ Prescribe</Button>}
+        action={canWrite ? <Button variant="primary" onClick={() => setModalOpen(true)}>+ Prescribe</Button> : undefined}
       />
       {db.prescriptions.length ? (
         <div className="rx-list">
@@ -43,16 +46,17 @@ export function PrescriptionsPage() {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                   <Badge>{r.status}</Badge>
-                  <RowActions>
-                    {p && <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />}
-                    {r.status !== 'Completed' && (
-                      <IconAction icon="complete" label="Mark completed" variant="success" onClick={() => void updatePrescriptionStatus(r.id, 'Completed')} />
-                    )}
-                    {r.status !== 'Cancelled' && (
-                      <IconAction icon="cancel" label="Cancel prescription" variant="danger" onClick={() => void updatePrescriptionStatus(r.id, 'Cancelled')} />
-                    )}
-                    <StatusIconMenu value={r.status} options={STATUSES} onChange={(s) => void updatePrescriptionStatus(r.id, s)} />
-                  </RowActions>
+                  {canWrite && (
+                    <RowActions>
+                      {r.status !== 'Completed' && (
+                        <IconAction icon="complete" label="Mark completed" variant="success" onClick={() => void updatePrescriptionStatus(r.id, 'Completed')} />
+                      )}
+                      {r.status !== 'Cancelled' && (
+                        <IconAction icon="cancel" label="Cancel prescription" variant="danger" onClick={() => void updatePrescriptionStatus(r.id, 'Cancelled')} />
+                      )}
+                      <StatusIconMenu value={r.status} options={STATUSES} onChange={(s) => void updatePrescriptionStatus(r.id, s)} />
+                    </RowActions>
+                  )}
                 </div>
               </motion.div>
             )

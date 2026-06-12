@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
+import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, EmptyState, PageHero } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
@@ -11,6 +12,8 @@ const STATUSES = ['Pending', 'Paid – Cash', 'Paid – MoMo', 'Paid – Insuran
 
 export function BillingPage() {
   const { db, updateBillingStatus } = useData()
+  const { canWriteModule } = usePermissions()
+  const canWrite = canWriteModule('billing')
   const [modalOpen, setModalOpen] = useState(false)
   const totalPaid = db.billing.filter((b) => b.status.startsWith('Paid')).reduce((s, b) => s + b.amount, 0)
   const totalPending = db.billing.filter((b) => b.status === 'Pending').reduce((s, b) => s + b.amount, 0)
@@ -21,7 +24,7 @@ export function BillingPage() {
         title="Billing"
         subtitle={`GHS ${totalPaid.toLocaleString()} collected · GHS ${totalPending.toLocaleString()} outstanding`}
         variant="slate"
-        action={<Button variant="primary" onClick={() => setModalOpen(true)}>+ New Invoice</Button>}
+        action={canWrite ? <Button variant="primary" onClick={() => setModalOpen(true)}>+ New Invoice</Button> : undefined}
       />
       {db.billing.length ? (
         <div className="bill-grid">
@@ -40,13 +43,14 @@ export function BillingPage() {
                 <div className="bill-card__amount">GHS {b.amount.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</div>
                 {p && <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link>}
                 <div style={{ marginTop: 10, marginBottom: 8 }}><Badge>{b.status}</Badge></div>
-                <RowActions>
-                  {p && <IconAction icon="view" label={`View ${patientFullName(p)}`} to={`/patients/${p.id}`} />}
-                  {!b.status.startsWith('Paid') && (
-                    <IconAction icon="paid" label="Mark paid (MoMo)" variant="success" onClick={() => void updateBillingStatus(b.id, 'Paid – MoMo')} />
-                  )}
-                  <StatusIconMenu value={b.status} options={STATUSES} onChange={(s) => void updateBillingStatus(b.id, s)} />
-                </RowActions>
+                {canWrite && (
+                  <RowActions>
+                    {!b.status.startsWith('Paid') && (
+                      <IconAction icon="paid" label="Mark paid (MoMo)" variant="success" onClick={() => void updateBillingStatus(b.id, 'Paid – MoMo')} />
+                    )}
+                    <StatusIconMenu value={b.status} options={STATUSES} onChange={(s) => void updateBillingStatus(b.id, s)} />
+                  </RowActions>
+                )}
               </motion.div>
             )
           })}

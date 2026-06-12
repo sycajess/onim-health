@@ -259,6 +259,53 @@ export async function createPatient(input: NewPatientInput): Promise<Patient | {
   return mapPatient(row)
 }
 
+export type UpdatePatientInput = {
+  fname: string
+  lname: string
+  phone?: string
+  email?: string
+  specialty?: string
+}
+
+export async function updatePatient(
+  id: string,
+  input: UpdatePatientInput,
+): Promise<Patient | { error: string }> {
+  const supabase = getSupabase()
+  if (!supabase) return { error: 'Supabase is not configured.' }
+
+  if (!input.fname.trim() || !input.lname.trim()) {
+    return { error: 'First and last name are required.' }
+  }
+  if (!input.specialty?.trim()) {
+    return { error: 'Specialty is required.' }
+  }
+
+  const row = {
+    fname: input.fname.trim(),
+    lname: input.lname.trim(),
+    phone: input.phone?.trim() ?? '',
+    email: input.email?.trim() ?? '',
+    specialty: input.specialty.trim(),
+  }
+
+  const { data, error } = await supabase.from('patients').update(row).eq('id', id).select('*').single()
+  if (error) return { error: error.message }
+  return mapPatient(data)
+}
+
+export async function deletePatient(id: string): Promise<true | { error: string }> {
+  const supabase = getSupabase()
+  if (!supabase) return { error: 'Supabase is not configured.' }
+
+  await supabase.from('messages').delete().eq('thread_id', id)
+  await supabase.from('dispense_log').delete().eq('patient_id', id)
+
+  const { error } = await supabase.from('patients').delete().eq('id', id)
+  if (error) return { error: error.message }
+  return true
+}
+
 export async function saveLabAttachment(
   labId: string,
   attachment: LabAttachment | null,
