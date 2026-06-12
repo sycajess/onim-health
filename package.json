@@ -13,6 +13,7 @@
     "lint": "npm run lint -w @onim/web",
     "preview": "npm run preview -w @onim/web",
     "seed:users": "node scripts/seed-test-users.mjs",
+    "clear:clinic-data": "node scripts/clear-clinic-data.mjs",
     "setup:supabase": "node scripts/setup-supabase.mjs"
   },
   "devDependencies": {
