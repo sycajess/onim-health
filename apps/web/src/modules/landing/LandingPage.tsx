@@ -71,7 +71,7 @@ export function LandingPage() {
           </Link>
           <nav className="oh-nav__links" aria-label="Primary">
             <a href="#features">Modules</a>
-            <a href="#roles">Your role</a>
+            <a href="#roles">Team access</a>
           </nav>
           <Link to="/login" className="oh-nav__btn">Sign in</Link>
         </div>
@@ -85,7 +85,7 @@ export function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
           >
-            Onim Health · Staff portal
+            Onim Health
           </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
@@ -126,10 +126,7 @@ export function LandingPage() {
                 </aside>
                 <div className="oh-dash__main">
                   <div className="oh-dash__header">
-                    <div>
-                      <small>Clinic overview</small>
-                      <strong>Good morning, Dr. Admin</strong>
-                    </div>
+                    <strong>Dashboard</strong>
                     <div className="oh-dash__avatar" />
                   </div>
                   <div className="oh-dash__cards">
@@ -235,7 +232,6 @@ export function LandingPage() {
       <footer className="oh-footer">
         <div className="oh-footer__inner">
           <strong>Onim Health GH</strong>
-          <span>Internal patient records system</span>
         </div>
         <div className="oh-footer__bottom">
           <span>© {new Date().getFullYear()} Onim Health</span>
