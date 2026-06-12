@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@onim/auth'
 import { getDefaultRouteForRole } from '@onim/types'
 import { AuthShell } from '../components/AuthShell'
+import { PasswordField } from '../components/PasswordField'
 import './AuthPages.css'
 
 export function LoginPage() {
@@ -59,22 +60,15 @@ export function LoginPage() {
             />
           </div>
         </div>
-        <div className="auth-field">
-          <label className="auth-field__label" htmlFor="password">Password</label>
-          <div className="auth-field__wrap">
-            <span className="auth-field__icon">🔒</span>
-            <input
-              id="password"
-              type="password"
-              className="auth-field__input"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-          </div>
-        </div>
+        <PasswordField
+          id="password"
+          label="Password"
+          placeholder="Enter your password"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+          required
+        />
         <motion.button type="submit" className="auth-submit" disabled={loading} whileTap={{ scale: 0.98 }}>
           {loading ? 'Signing in…' : 'Sign in →'}
         </motion.button>

@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@onim/auth'
 import { getDefaultRouteForRole } from '@onim/types'
 import { AuthShell } from '../components/AuthShell'
+import { PasswordField } from '../components/PasswordField'
 import './AuthPages.css'
 
 export function SignupPage() {
@@ -64,39 +65,25 @@ export function SignupPage() {
             />
           </div>
         </div>
-        <div className="auth-field">
-          <label className="auth-field__label" htmlFor="signup-password">Password</label>
-          <div className="auth-field__wrap">
-            <span className="auth-field__icon">🔒</span>
-            <input
-              id="signup-password"
-              type="password"
-              className="auth-field__input"
-              placeholder="Min. 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="new-password"
-              minLength={8}
-              required
-            />
-          </div>
-        </div>
-        <div className="auth-field">
-          <label className="auth-field__label" htmlFor="signup-confirm">Confirm password</label>
-          <div className="auth-field__wrap">
-            <span className="auth-field__icon">✓</span>
-            <input
-              id="signup-confirm"
-              type="password"
-              className="auth-field__input"
-              placeholder="Repeat password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              autoComplete="new-password"
-              required
-            />
-          </div>
-        </div>
+        <PasswordField
+          id="signup-password"
+          label="Password"
+          placeholder="Min. 8 characters"
+          value={password}
+          onChange={setPassword}
+          autoComplete="new-password"
+          minLength={8}
+          required
+        />
+        <PasswordField
+          id="signup-confirm"
+          label="Confirm password"
+          placeholder="Repeat password"
+          value={confirm}
+          onChange={setConfirm}
+          autoComplete="new-password"
+          required
+        />
         <motion.button type="submit" className="auth-submit" disabled={loading} whileTap={{ scale: 0.98 }}>
           {loading ? 'Creating account…' : 'Create account →'}
         </motion.button>

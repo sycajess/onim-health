@@ -137,9 +137,17 @@ async function seedUsers() {
     else console.log(`  → ${user.role}`)
   }
 
+  const { data: allUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 })
+  for (const u of allUsers?.users ?? []) {
+    if (!u.email_confirmed_at) {
+      await supabase.auth.admin.updateUserById(u.id, { email_confirm: true })
+    }
+  }
+
   console.log('Test users ready (password: Test1234!).')
 }
 
 await runMigrations()
 await seedUsers()
 console.log('Setup complete.')
+console.log('Tip: In Supabase → Authentication → Providers → Email, turn OFF "Confirm email" for internal staff logins.')

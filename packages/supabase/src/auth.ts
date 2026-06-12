@@ -59,7 +59,12 @@ export async function supabaseSignIn(
     password,
   })
 
-  if (error) return { error: error.message }
+  if (error) {
+    if (/email not confirmed/i.test(error.message)) {
+      return { error: 'Your email is not confirmed yet. Ask your admin to confirm your account, or run npm run seed:users if you use a test login.' }
+    }
+    return { error: error.message }
+  }
 
   const profile = await fetchProfile(data.user.id)
   if (!profile) return { error: 'Profile not found for this account.' }
@@ -82,6 +87,10 @@ export async function supabaseSignUp(
 
   if (error) return { error: error.message }
   if (!data.user) return { error: 'Sign up failed. Please try again.' }
+
+  if (!data.session) {
+    return { error: 'Account created. Your admin must confirm your email before you can sign in (or turn off email confirmation in Supabase Auth settings).' }
+  }
 
   const profile = await fetchProfile(data.user.id)
   if (!profile) return { error: 'Account created but profile is not ready yet.' }

@@ -131,6 +131,34 @@
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.auth-field__input--password {
+  padding-right: 42px;
+}
+
+.auth-field__toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.auth-field__toggle:hover {
+  color: #374151;
+  background: #f3f4f6;
+}
+
 .auth-field__input:focus {
   outline: none;
   border-color: #10b981;
@@ -176,4 +204,19 @@
 
 .auth-page__footer a:hover {
   text-decoration: underline;
+}
+
+.auth-page__home-in-card {
+  display: block;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.auth-page__home-in-card:hover {
+  color: #111827;
 }

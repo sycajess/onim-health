@@ -32,6 +32,9 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
         {children}
 
         <div className="auth-page__footer">{footer}</div>
+        <Link to="/" className="auth-page__home-in-card">
+          ← Back to home
+        </Link>
       </div>
     </div>
   )
