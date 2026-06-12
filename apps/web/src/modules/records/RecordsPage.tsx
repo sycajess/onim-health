@@ -1,14 +1,22 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useData, fmtDate, patientFullName } from '@onim/data'
-import { EmptyState, PageHero } from '@onim/ui'
+import { Button, EmptyState, PageHero } from '@onim/ui'
+import { NewRecordModal } from '../../components/modals/ClinicModals'
 
 export function RecordsPage() {
   const { db } = useData()
+  const [modalOpen, setModalOpen] = useState(false)
 
   return (
     <div className="page--records">
-      <PageHero title="Medical Records" subtitle="Clinical notes and visit documentation" variant="slate" />
+      <PageHero
+        title="Medical Records"
+        subtitle="Clinical notes and visit documentation"
+        variant="slate"
+        action={<Button variant="primary" onClick={() => setModalOpen(true)}>+ New Record</Button>}
+      />
       {db.records.length ? (
         <div className="record-stack">
           {db.records.map((r, i) => {
@@ -26,7 +34,7 @@ export function RecordsPage() {
                   {r.type}
                   {p && <> — <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link></>}
                 </div>
-                <div className="record-doc__body">{r.assessment}</div>
+                <div className="record-doc__body">{r.assessment || r.complaint || '—'}</div>
               </motion.div>
             )
           })}
@@ -34,6 +42,7 @@ export function RecordsPage() {
       ) : (
         <EmptyState icon="📋" title="No records found" />
       )}
+      <NewRecordModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   )
 }

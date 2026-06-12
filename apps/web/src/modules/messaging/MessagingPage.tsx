@@ -1,15 +1,24 @@
 import { useState } from 'react'
 import { useData, patientFullName } from '@onim/data'
-import { Card, EmptyState } from '@onim/ui'
+import { Button, Card, EmptyState } from '@onim/ui'
 import '@onim/ui/Card.css'
 import './Messaging.css'
 
 export function MessagingPage() {
-  const { db } = useData()
-  const threadIds = Object.keys(db.messages)
+  const { db, sendMessage } = useData()
+  const threadIds = Object.keys(db.messages).length
+    ? Object.keys(db.messages)
+    : db.patients.slice(0, 10).map((p) => p.id)
   const [activeId, setActiveId] = useState(threadIds[0] ?? '')
+  const [draft, setDraft] = useState('')
   const activePatient = db.patients.find((p) => p.id === activeId)
   const messages = db.messages[activeId] ?? []
+
+  async function handleSend() {
+    if (!activeId || !draft.trim()) return
+    const ok = await sendMessage(activeId, draft.trim())
+    if (ok) setDraft('')
+  }
 
   return (
     <div className="msg-layout">
@@ -19,6 +28,7 @@ export function MessagingPage() {
             {threadIds.map((id) => {
               const p = db.patients.find((x) => x.id === id)
               if (!p) return null
+              const last = db.messages[id]?.at(-1)?.text ?? 'No messages yet'
               return (
                 <button
                   key={id}
@@ -27,9 +37,9 @@ export function MessagingPage() {
                   onClick={() => setActiveId(id)}
                 >
                   <div className="avatar">{(p.fname[0] + p.lname[0]).toUpperCase()}</div>
-                  <div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <div className="avatar-name">{patientFullName(p)}</div>
-                    <div className="avatar-sub">{db.messages[id]?.length ?? 0} messages</div>
+                    <div className="avatar-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{last}</div>
                   </div>
                 </button>
               )
@@ -51,7 +61,19 @@ export function MessagingPage() {
             ))}
           </div>
         ) : (
-          <EmptyState icon="💬" title="Select a thread" description="Choose a patient to view messages." />
+          <EmptyState icon="💬" title="No messages yet" description="Send a secure message to start the thread." />
+        )}
+        {activePatient && (
+          <div className="msg-compose">
+            <input
+              className="form-input"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Type a message…"
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void handleSend() } }}
+            />
+            <Button variant="primary" onClick={() => void handleSend()} disabled={!draft.trim()}>Send</Button>
+          </div>
         )}
       </Card>
     </div>

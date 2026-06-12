@@ -25,15 +25,16 @@ export function NewPatientModal({ open, onClose }: NewPatientModalProps) {
     setSpecialty(SPECIALTIES[0])
   }
 
-  function handleSave() {
+  async function handleSave() {
     if (!fname.trim() || !lname.trim()) return
-    const patient = addPatient({
+    const patient = await addPatient({
       fname: fname.trim(),
       lname: lname.trim(),
       phone: phone.trim(),
       email: email.trim(),
       specialty,
     })
+    if ('error' in patient) return
     reset()
     onClose()
     navigate(`/patients/${patient.id}`)

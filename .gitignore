@@ -22,6 +22,9 @@ dist-ssr
 supabase/.branches
 supabase/.temp
 
+# Local setup notes (not for public repo)
+steps.md
+
 # Keys & credentials
 *.pem
 *.key

@@ -1,7 +1,9 @@
-import { lazy } from 'react'
+import { lazy, Suspense, type ReactNode as ReactNodeType } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute, GuestRoute } from '@onim/auth'
+import { PageLoader } from '@onim/ui'
 import { AppLayout } from '../layouts/AppLayout'
+import { LandingPage } from '../modules/landing/LandingPage'
 
 const LoginPage = lazy(() => import('../modules/auth/pages/LoginPage').then((m) => ({ default: m.LoginPage })))
 const SignupPage = lazy(() => import('../modules/auth/pages/SignupPage').then((m) => ({ default: m.SignupPage })))
@@ -18,63 +20,166 @@ const MessagingPage = lazy(() => import('../modules/messaging/MessagingPage').th
 const ReportsPage = lazy(() => import('../modules/reports/ReportsPage').then((m) => ({ default: m.ReportsPage })))
 const SettingsPage = lazy(() => import('../modules/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })))
 
+function Lazy({ children }: { children: ReactNodeType }) {
+  return <Suspense fallback={<PageLoader />}>{children}</Suspense>
+}
+
 export function AppRouter() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
+
       <Route element={<GuestRoute />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
+        <Route
+          path="/login"
+          element={(
+            <Lazy>
+              <LoginPage />
+            </Lazy>
+          )}
+        />
+        <Route
+          path="/signup"
+          element={(
+            <Lazy>
+              <SignupPage />
+            </Lazy>
+          )}
+        />
       </Route>
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
+          <Route
+            path="dashboard"
+            element={(
+              <Lazy>
+                <DashboardPage />
+              </Lazy>
+            )}
+          />
 
           <Route element={<ProtectedRoute module="patients" />}>
-            <Route path="patients" element={<PatientsPage />} />
-            <Route path="patients/:id" element={<PatientDetailPage />} />
+            <Route
+              path="patients"
+              element={(
+                <Lazy>
+                  <PatientsPage />
+                </Lazy>
+              )}
+            />
+            <Route
+              path="patients/:id"
+              element={(
+                <Lazy>
+                  <PatientDetailPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="appointments" />}>
-            <Route path="appointments" element={<AppointmentsPage />} />
+            <Route
+              path="appointments"
+              element={(
+                <Lazy>
+                  <AppointmentsPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="records" />}>
-            <Route path="records" element={<RecordsPage />} />
+            <Route
+              path="records"
+              element={(
+                <Lazy>
+                  <RecordsPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="prescriptions" />}>
-            <Route path="prescriptions" element={<PrescriptionsPage />} />
+            <Route
+              path="prescriptions"
+              element={(
+                <Lazy>
+                  <PrescriptionsPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="labs" />}>
-            <Route path="labs" element={<LabsPage />} />
+            <Route
+              path="labs"
+              element={(
+                <Lazy>
+                  <LabsPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="inventory" />}>
-            <Route path="inventory" element={<InventoryPage />} />
+            <Route
+              path="inventory"
+              element={(
+                <Lazy>
+                  <InventoryPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="billing" />}>
-            <Route path="billing" element={<BillingPage />} />
+            <Route
+              path="billing"
+              element={(
+                <Lazy>
+                  <BillingPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="messaging" />}>
-            <Route path="messaging" element={<MessagingPage />} />
+            <Route
+              path="messaging"
+              element={(
+                <Lazy>
+                  <MessagingPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="reports" />}>
-            <Route path="reports" element={<ReportsPage />} />
+            <Route
+              path="reports"
+              element={(
+                <Lazy>
+                  <ReportsPage />
+                </Lazy>
+              )}
+            />
           </Route>
 
           <Route element={<ProtectedRoute module="settings" />}>
-            <Route path="settings" element={<SettingsPage />} />
+            <Route
+              path="settings"
+              element={(
+                <Lazy>
+                  <SettingsPage />
+                </Lazy>
+              )}
+            />
           </Route>
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

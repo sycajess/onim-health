@@ -1,6 +1,6 @@
 export type * from './types'
 export { DataProvider, useData } from './DataProvider'
-export { getDatabase, resetDatabase, subscribe } from './store'
+export type { NewPatientInput } from '@onim/supabase'
 export {
   fmtDate,
   today,

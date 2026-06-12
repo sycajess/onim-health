@@ -15,12 +15,6 @@ import {
   supabaseSignOut,
   supabaseSignUp,
 } from '@onim/supabase'
-import {
-  getStoredSession,
-  mockSignIn,
-  mockSignOut,
-  mockSignUp,
-} from './mockAuth'
 
 type AuthResult = { profile: Profile } | { error: string }
 
@@ -28,7 +22,6 @@ type AuthContextValue = {
   profile: Profile | null
   isAuthenticated: boolean
   isLoading: boolean
-  usingSupabase: boolean
   signIn: (email: string, password: string) => Promise<AuthResult>
   signUp: (email: string, password: string) => Promise<AuthResult>
   signOut: () => void
@@ -43,24 +36,22 @@ type AuthProviderProps = {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const usingSupabase = isSupabaseConfigured()
 
   useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      setIsLoading(false)
+      return
+    }
+
     let mounted = true
 
     async function loadSession() {
-      if (usingSupabase) {
-        const sessionProfile = await supabaseGetSession()
-        if (mounted) setProfile(sessionProfile)
-      } else if (mounted) {
-        setProfile(getStoredSession())
-      }
+      const sessionProfile = await supabaseGetSession()
+      if (mounted) setProfile(sessionProfile)
       if (mounted) setIsLoading(false)
     }
 
     loadSession()
-
-    if (!usingSupabase) return () => { mounted = false }
 
     const supabase = getSupabase()
     if (!supabase) return () => { mounted = false }
@@ -79,51 +70,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
       mounted = false
       subscription.subscription.unsubscribe()
     }
-  }, [usingSupabase])
+  }, [])
 
-  const signIn = useCallback(
-    async (email: string, password: string) => {
-      const result = usingSupabase
-        ? await supabaseSignIn(email, password)
-        : await mockSignIn(email, password)
+  const signIn = useCallback(async (email: string, password: string) => {
+    const result = await supabaseSignIn(email, password)
+    if ('error' in result) return result
+    setProfile(result.profile)
+    return result
+  }, [])
 
-      if ('error' in result) return result
-      setProfile(result.profile)
-      return result
-    },
-    [usingSupabase],
-  )
-
-  const signUp = useCallback(
-    async (email: string, password: string) => {
-      const result = usingSupabase
-        ? await supabaseSignUp(email, password)
-        : await mockSignUp(email, password)
-
-      if ('error' in result) return result
-      setProfile(result.profile)
-      return result
-    },
-    [usingSupabase],
-  )
+  const signUp = useCallback(async (email: string, password: string) => {
+    const result = await supabaseSignUp(email, password)
+    if ('error' in result) return result
+    setProfile(result.profile)
+    return result
+  }, [])
 
   const signOut = useCallback(() => {
-    if (usingSupabase) void supabaseSignOut()
-    mockSignOut()
+    void supabaseSignOut()
     setProfile(null)
-  }, [usingSupabase])
+  }, [])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       profile,
       isAuthenticated: profile !== null,
       isLoading,
-      usingSupabase,
       signIn,
       signUp,
       signOut,
     }),
-    [profile, isLoading, usingSupabase, signIn, signUp, signOut],
+    [profile, isLoading, signIn, signUp, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

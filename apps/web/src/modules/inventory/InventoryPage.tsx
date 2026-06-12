@@ -1,20 +1,42 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useData, fmtDate, daysUntil } from '@onim/data'
-import { Card, EmptyState, PageHero } from '@onim/ui'
+import type { InventoryItem } from '@onim/data'
+import { Button, Card, EmptyState, PageHero } from '@onim/ui'
 import '@onim/ui/Card.css'
+import { DispenseModal, MedicationModal } from '../../components/modals/ClinicModals'
 
 export function InventoryPage() {
   const { db } = useData()
+  const [medModalOpen, setMedModalOpen] = useState(false)
+  const [dispenseOpen, setDispenseOpen] = useState(false)
+  const [editItem, setEditItem] = useState<InventoryItem | undefined>()
+  const [dispenseItem, setDispenseItem] = useState<InventoryItem | undefined>()
   const alerts = db.inventory.filter((m) => m.qty <= m.threshold || daysUntil(m.expiry) <= 30)
+
+  function openEdit(item?: InventoryItem) {
+    setEditItem(item)
+    setMedModalOpen(true)
+  }
+
+  function openDispense(item: InventoryItem) {
+    setDispenseItem(item)
+    setDispenseOpen(true)
+  }
 
   return (
     <div className="page--inventory">
-      <PageHero title="Medication Inventory" subtitle={`${db.inventory.length} items tracked · ${alerts.length} alerts`} variant="teal" />
+      <PageHero
+        title="Medication Inventory"
+        subtitle={`${db.inventory.length} items tracked · ${alerts.length} alerts`}
+        variant="teal"
+        action={<Button variant="primary" onClick={() => openEdit()}>+ Add Medication</Button>}
+      />
       {alerts.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           {alerts.map((m) => (
             <div key={m.id} className={`alert-bar ${daysUntil(m.expiry) <= 7 ? 'alert-bar--danger' : 'alert-bar--amber'}`}>
-              ⚠️ <strong>{m.name}</strong>: {m.qty <= m.threshold ? `Low stock (${m.qty})` : `Expires in ${daysUntil(m.expiry)} days`}
+              <strong>{m.name}</strong>: {m.qty <= m.threshold ? `Low stock (${m.qty})` : `Expires in ${daysUntil(m.expiry)} days`}
             </div>
           ))}
         </div>
@@ -34,6 +56,10 @@ export function InventoryPage() {
               <div style={{ fontWeight: 600, marginTop: 6 }}>{m.name}</div>
               <div className="inv-card__qty">{m.qty}</div>
               <div style={{ fontSize: 12, color: 'var(--gray4)' }}>Threshold: {m.threshold} · Exp: {fmtDate(m.expiry)}</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <Button variant="secondary" onClick={() => openDispense(m)}>Dispense</Button>
+                <Button variant="secondary" onClick={() => openEdit(m)}>Edit</Button>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -64,6 +90,9 @@ export function InventoryPage() {
           <EmptyState icon="📋" title="No dispense history" />
         )}
       </Card>
+
+      <MedicationModal open={medModalOpen} onClose={() => { setMedModalOpen(false); setEditItem(undefined) }} item={editItem} />
+      <DispenseModal open={dispenseOpen} onClose={() => { setDispenseOpen(false); setDispenseItem(undefined) }} med={dispenseItem} />
     </div>
   )
 }

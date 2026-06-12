@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useData, fmtDate, patientFullName } from '@onim/data'
-import { Badge, EmptyState, PageHero, PdfAttachZone } from '@onim/ui'
+import { Badge, Button, EmptyState, PageHero, PdfAttachZone } from '@onim/ui'
 import type { PdfAttachment } from '@onim/ui'
+import { NewLabModal } from '../../components/modals/ClinicModals'
 
 export function LabsPage() {
   const { db, updateLabAttachment } = useData()
+  const [modalOpen, setModalOpen] = useState(false)
 
   function handleAttach(labId: string, file: PdfAttachment) {
     updateLabAttachment(labId, { name: file.name, data_url: file.dataUrl })
@@ -13,7 +16,12 @@ export function LabsPage() {
 
   return (
     <div className="page--labs">
-      <PageHero title="Lab Results" subtitle="Test values, abnormal flags, and report attachments" variant="rose" />
+      <PageHero
+        title="Lab Results"
+        subtitle="Test values, abnormal flags, and report attachments"
+        variant="rose"
+        action={<Button variant="primary" onClick={() => setModalOpen(true)}>+ Add Result</Button>}
+      />
       {db.labs.length ? (
         <div className="lab-grid">
           {db.labs.map((l, i) => {
@@ -49,6 +57,7 @@ export function LabsPage() {
       ) : (
         <EmptyState icon="🧪" title="No lab results" />
       )}
+      <NewLabModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   )
 }

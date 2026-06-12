@@ -11,6 +11,11 @@
     "dev": "npm run dev -w @onim/web",
     "build": "npm run build -w @onim/web",
     "lint": "npm run lint -w @onim/web",
-    "preview": "npm run preview -w @onim/web"
+    "preview": "npm run preview -w @onim/web",
+    "seed:users": "node scripts/seed-test-users.mjs",
+    "setup:supabase": "node scripts/setup-supabase.mjs"
+  },
+  "devDependencies": {
+    "pg": "^8.21.0"
   }
 }

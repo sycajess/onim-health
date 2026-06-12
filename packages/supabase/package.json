@@ -9,6 +9,7 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@onim/data": "*",
     "@onim/types": "*",
     "@supabase/supabase-js": "^2.86.0"
   }

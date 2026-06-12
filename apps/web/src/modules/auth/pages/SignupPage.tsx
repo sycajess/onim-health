@@ -36,8 +36,6 @@ export function SignupPage() {
     <AuthShell
       title="Create account"
       subtitle="Join your clinic's secure records platform"
-      heroTitle="Built for modern care teams."
-      heroText="Register once — your administrator assigns your role and access automatically."
       footer={
         <>
           Already have an account? <Link to="/login">Sign in</Link>
@@ -45,7 +43,6 @@ export function SignupPage() {
       }
     >
       <form onSubmit={handleSubmit} className="auth-form">
-        <p className="auth-form__hint">No role selection here — access is assigned by your admin after signup.</p>
         {error && (
           <motion.p className="auth-form__error" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
             {error}

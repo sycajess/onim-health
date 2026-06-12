@@ -1,7 +1,8 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { useData, fmtDate, today, daysUntil, patientInitials, patientFullName, SPECIALTY_COLORS } from '@onim/data'
-import { Badge, Card, PageHero, SpecialtyTag, StatCard } from '@onim/ui'
+import { useData, fmtDate, patientInitials, patientFullName, SPECIALTY_COLORS, today, daysUntil } from '@onim/data'
+import { Badge, Card, EmptyState, PageHero, StatCard } from '@onim/ui'
 import '@onim/ui/Card.css'
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
@@ -9,21 +10,48 @@ const fadeUp = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transi
 
 export function DashboardPage() {
   const { db } = useData()
-  const lowStock = db.inventory.filter((m) => m.qty <= m.threshold || daysUntil(m.expiry) <= 30)
-  const recentPts = [...db.patients].sort((a, b) => (b.created > a.created ? 1 : -1)).slice(0, 5)
-  const todayAppts = db.appointments.filter((a) => a.date === today())
-  const specCount: Record<string, number> = {}
-  db.patients.forEach((p) => { specCount[p.specialty] = (specCount[p.specialty] ?? 0) + 1 })
+  const t = today()
+
+  const data = useMemo(() => {
+    const todayAppointments = db.appointments.filter((a) => a.date === t)
+    const activeRxCount = db.prescriptions.filter((p) => p.status === 'Active').length
+    const lowStockCount = db.inventory.filter((m) => m.qty <= m.threshold).length
+    const recentPatients = db.patients.slice(0, 5)
+    const inventoryAlerts = db.inventory
+      .filter((m) => m.qty <= m.threshold || daysUntil(m.expiry) <= 30)
+      .map((m) => ({ ...m, low: m.qty <= m.threshold }))
+    const specialtyMap = new Map<string, number>()
+    for (const p of db.patients) {
+      specialtyMap.set(p.specialty, (specialtyMap.get(p.specialty) ?? 0) + 1)
+    }
+    const specialtyBreakdown = [...specialtyMap.entries()].map(([specialty, count]) => ({ specialty, count }))
+
+    return {
+      patientCount: db.patients.length,
+      todayAppointmentCount: todayAppointments.length,
+      activeRxCount,
+      lowStockCount,
+      recentPatients,
+      todayAppointments,
+      inventoryAlerts,
+      specialtyBreakdown,
+    }
+  }, [db, t])
+
+  const totalPatients = data.patientCount || 1
 
   return (
     <div className="page--dashboard">
-      <PageHero title="Good morning" subtitle={`${db.patients.length} active patients · ${todayAppts.length} appointments today`} />
+      <PageHero
+        title="Good morning"
+        subtitle={`${data.patientCount} active patients · ${data.todayAppointmentCount} appointments today`}
+      />
       <motion.div className="stats-grid" variants={stagger} initial="hidden" animate="show">
         {[
-          { icon: '👥', bg: 'var(--teal-light)', color: 'var(--teal)', label: 'Total Patients', value: db.patients.length, sub: 'Active records' },
-          { icon: '📅', bg: 'var(--blue-light)', color: 'var(--blue)', label: "Today's Appointments", value: todayAppts.length, sub: 'Scheduled today' },
-          { icon: '💊', bg: 'var(--amber-light)', color: 'var(--amber)', label: 'Active Prescriptions', value: db.prescriptions.filter((r) => r.status === 'Active').length, sub: 'Across all patients' },
-          { icon: '⚠️', bg: 'var(--danger-light)', color: 'var(--danger)', label: 'Low Stock Alerts', value: lowStock.length, sub: 'Below threshold' },
+          { icon: '👥', bg: 'var(--teal-light)', color: 'var(--teal)', label: 'Total Patients', value: data.patientCount, sub: 'Active records' },
+          { icon: '📅', bg: 'var(--blue-light)', color: 'var(--blue)', label: "Today's Appointments", value: data.todayAppointmentCount, sub: 'Scheduled today' },
+          { icon: '💊', bg: 'var(--amber-light)', color: 'var(--amber)', label: 'Active Prescriptions', value: data.activeRxCount, sub: 'Across all patients' },
+          { icon: '⚠️', bg: 'var(--danger-light)', color: 'var(--danger)', label: 'Low Stock Alerts', value: data.lowStockCount, sub: 'Below threshold' },
         ].map((s) => (
           <motion.div key={s.label} variants={fadeUp}>
             <StatCard icon={s.icon} iconBg={s.bg} iconColor={s.color} label={s.label} value={s.value} sub={s.sub} />
@@ -32,72 +60,74 @@ export function DashboardPage() {
       </motion.div>
       <div className="two-col">
         <Card title="Recent Patients" action={<Link to="/patients" className="link-cell">View All</Link>} noPadding>
-          <table className="data-table">
-            <thead><tr><th>Patient</th><th>Specialty</th><th>Registered</th></tr></thead>
-            <tbody>
-              {recentPts.map((p) => (
-                <tr key={p.id}>
-                  <td>
-                    <div className="avatar-cell">
-                      <div className="avatar">{patientInitials(p)}</div>
-                      <div>
-                        <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link>
-                        <div className="avatar-sub">{p.id}</div>
+          {data.recentPatients.length ? (
+            <table className="data-table">
+              <thead><tr><th>Patient</th><th>Specialty</th><th>Registered</th></tr></thead>
+              <tbody>
+                {data.recentPatients.map((p) => (
+                  <tr key={p.id}>
+                    <td>
+                      <div className="avatar-cell">
+                        <div className="avatar">{patientInitials(p)}</div>
+                        <div>
+                          <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link>
+                          <div className="avatar-sub">{p.id}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                  <td><SpecialtyTag specialty={p.specialty} /></td>
-                  <td>{fmtDate(p.created)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td>{p.specialty}</td>
+                    <td>{fmtDate(p.created)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <EmptyState icon="👥" title="No patients yet" description="Add patients to see them here." />
+          )}
         </Card>
         <Card title="Today's Appointments" action={<Link to="/appointments" className="link-cell">View All</Link>} noPadding>
-          <table className="data-table">
-            <thead><tr><th>Patient</th><th>Time</th><th>Type</th><th>Status</th></tr></thead>
-            <tbody>
-              {todayAppts.length ? todayAppts.map((a) => {
-                const p = db.patients.find((x) => x.id === a.patient_id)
-                return (
+          {data.todayAppointments.length ? (
+            <table className="data-table">
+              <thead><tr><th>Patient</th><th>Time</th><th>Type</th><th>Status</th></tr></thead>
+              <tbody>
+                {data.todayAppointments.map((a) => (
                   <tr key={a.id}>
-                    <td>{p ? patientFullName(p) : '–'}</td>
+                    <td>{db.patients.find((p) => p.id === a.patient_id) ? patientFullName(db.patients.find((p) => p.id === a.patient_id)!) : a.patient_id}</td>
                     <td>{a.time}</td>
                     <td>{a.type}</td>
                     <td><Badge>{a.status}</Badge></td>
                   </tr>
-                )
-              }) : (
-                <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--gray4)', padding: 20 }}>No appointments today</td></tr>
-              )}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <EmptyState icon="📅" title="No appointments today" />
+          )}
         </Card>
       </div>
       <div className="two-col">
         <Card title="Inventory Alerts">
-          {lowStock.length ? lowStock.map((m) => {
-            const exp = daysUntil(m.expiry)
-            const cls = exp <= 7 ? 'alert-bar--danger' : 'alert-bar--amber'
-            const msg = m.qty <= m.threshold ? `Low stock (${m.qty})` : `Expires in ${exp} days`
+          {data.inventoryAlerts.length ? data.inventoryAlerts.map((m) => {
+            const cls = m.low ? 'alert-bar--danger' : 'alert-bar--amber'
+            const msg = m.low ? `Low stock (${m.qty})` : `Expires soon (${fmtDate(m.expiry)})`
             return <div key={m.id} className={`alert-bar ${cls}`}>⚠️ <strong>{m.name}</strong>: {msg}</div>
           }) : <div className="alert-bar alert-bar--success">✅ All medications well-stocked.</div>}
         </Card>
         <Card title="Patients by Specialty">
-          {Object.entries(specCount).map(([s, c]) => {
-            const pct = Math.round((c / db.patients.length) * 100)
+          {data.specialtyBreakdown.length ? data.specialtyBreakdown.map(({ specialty, count }) => {
+            const pct = Math.round((count / totalPatients) * 100)
             return (
-              <div key={s} style={{ marginBottom: 10 }}>
+              <div key={specialty} style={{ marginBottom: 10 }}>
                 <div className="flex-between" style={{ marginBottom: 4 }}>
-                  <span style={{ fontSize: 12, fontWeight: 500 }}>{s}</span>
-                  <span style={{ fontSize: 12, color: 'var(--gray4)' }}>{c} patients</span>
+                  <span style={{ fontSize: 12, fontWeight: 500 }}>{specialty}</span>
+                  <span style={{ fontSize: 12, color: 'var(--gray4)' }}>{count} patients</span>
                 </div>
                 <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${pct}%`, background: SPECIALTY_COLORS[s] ?? 'var(--teal)' }} />
+                  <div className="progress-fill" style={{ width: `${pct}%`, background: SPECIALTY_COLORS[specialty] ?? 'var(--teal)' }} />
                 </div>
               </div>
             )
-          })}
+          }) : <EmptyState icon="📊" title="No specialty data yet" />}
         </Card>
       </div>
     </div>

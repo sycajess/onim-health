@@ -9,6 +9,8 @@
     ".": "./src/index.ts"
   },
   "peerDependencies": {
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "@onim/auth": "*",
+    "@onim/supabase": "*"
   }
 }

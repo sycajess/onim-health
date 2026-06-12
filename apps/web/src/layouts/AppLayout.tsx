@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import { useAuth } from '@onim/auth'
+import { useData } from '@onim/data'
 import { MODULES, ROLE_LABELS, canAccessModule } from '@onim/types'
 import { Button, PageLoader, PageTransition } from '@onim/ui'
 import { GlobalSearchBar } from '../components/GlobalSearchBar'
@@ -19,11 +20,21 @@ const SECTION_LABELS = {
 
 export function AppLayout() {
   const { profile, signOut } = useAuth()
+  const { loading: dataLoading, error: dataError } = useData()
   const location = useLocation()
   const navigate = useNavigate()
   const [patientModalOpen, setPatientModalOpen] = useState(false)
 
   if (!profile) return null
+  if (dataLoading) return <PageLoader />
+  if (dataError) {
+    return (
+      <div className="content" style={{ padding: 48 }}>
+        <h2>Could not load clinic data</h2>
+        <p style={{ color: 'var(--gray4)' }}>{dataError}</p>
+      </div>
+    )
+  }
 
   const { role } = profile
   const visibleModules = MODULES.filter((m) => canAccessModule(role, m.id))
