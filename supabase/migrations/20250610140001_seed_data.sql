@@ -1,1 +1,1 @@
--- Demo clinic seed removed — start with empty tables; add patients via the app.
+-- Demo clinic seed removed — run: npm run seed:clinic-data
