@@ -1,11 +1,9 @@
 import { Suspense, useState } from 'react'
-import { motion } from 'framer-motion'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
 import { useAuth, usePermissions } from '@onim/auth'
 import { useData } from '@onim/data'
 import { MODULES, ROLE_LABELS } from '@onim/types'
-import { Button, PageLoader, PageTransition } from '@onim/ui'
+import { Button, PageLoader } from '@onim/ui'
 import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NewPatientModal } from '../components/NewPatientModal'
 import './AppLayout.css'
@@ -48,29 +46,18 @@ export function AppLayout() {
 
   return (
     <div className="app-shell">
-      <motion.aside
-        className="sidebar"
-        initial={{ x: -24, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      >
+      <aside className="sidebar">
         <div className="sidebar__logo">
           <div className="sidebar__logo-name">Onim Health</div>
           <div className="sidebar__logo-sub">Patient Records System</div>
         </div>
 
-        {sections.map((section, si) => (
-          <motion.div
-            key={section}
-            className="sidebar__section"
-            initial={{ opacity: 0, x: -12 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 + si * 0.06, duration: 0.4 }}
-          >
+        {sections.map((section) => (
+          <div key={section} className="sidebar__section">
             <div className="sidebar__label">{SECTION_LABELS[section]}</div>
             {visibleModules
               .filter((m) => m.section === section)
-              .map((mod, mi) => (
+              .map((mod) => (
                 <NavLink
                   key={mod.id}
                   to={mod.path}
@@ -79,23 +66,11 @@ export function AppLayout() {
                   }
                   end={mod.path === '/dashboard'}
                 >
-                  <motion.span
-                    className="sidebar__nav-icon"
-                    whileHover={{ scale: 1.15, rotate: 4 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 12 }}
-                  >
-                    {mod.icon}
-                  </motion.span>
-                  <motion.span
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.15 + si * 0.06 + mi * 0.03 }}
-                  >
-                    {mod.label}
-                  </motion.span>
+                  <span className="sidebar__nav-icon">{mod.icon}</span>
+                  {mod.label}
                 </NavLink>
               ))}
-          </motion.div>
+          </div>
         ))}
 
         <div className="sidebar__footer">
@@ -106,19 +81,17 @@ export function AppLayout() {
               <div className="sidebar__role">{ROLE_LABELS[role]}</div>
             </div>
           </div>
-          <button type="button" className="sidebar__signout" onClick={handleSignOut}>
-            Sign out
-          </button>
+          <div className="sidebar__footer-row">
+            <span className="sidebar__version">v2.0 · Onim Health © 2026</span>
+            <button type="button" className="sidebar__signout" onClick={handleSignOut}>
+              Sign out
+            </button>
+          </div>
         </div>
-      </motion.aside>
+      </aside>
 
       <div className="main">
-        <motion.header
-          className="topbar"
-          initial={{ y: -12, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
-        >
+        <header className="topbar">
           <h1 className="topbar__title">
             {MODULES.find((m) => location.pathname.startsWith(m.path))?.label ??
               'Onim Health'}
@@ -131,16 +104,12 @@ export function AppLayout() {
               </Button>
             )}
           </div>
-        </motion.header>
+        </header>
 
         <main className="content">
-          <AnimatePresence mode="wait">
-            <PageTransition key={location.pathname}>
-              <Suspense fallback={<PageLoader />}>
-                <Outlet />
-              </Suspense>
-            </PageTransition>
-          </AnimatePresence>
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
 

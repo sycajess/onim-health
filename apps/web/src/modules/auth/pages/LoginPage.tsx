@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@onim/auth'
 import { getDefaultRouteForRole } from '@onim/types'
+import { Button } from '@onim/ui'
 import { AuthShell } from '../components/AuthShell'
 import { PasswordField } from '../components/PasswordField'
 import './AuthPages.css'
@@ -29,49 +29,32 @@ export function LoginPage() {
   }
 
   return (
-    <AuthShell
-      title="Welcome back"
-      subtitle="Sign in to continue to your workspace"
-      footer={
-        <>
-          No account? <Link to="/signup">Create one</Link>
-        </>
-      }
-    >
-      <form onSubmit={handleSubmit} className="auth-form">
-        {error && (
-          <motion.p className="auth-form__error" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-            {error}
-          </motion.p>
-        )}
-        <div className="auth-field">
-          <label className="auth-field__label" htmlFor="email">Email address</label>
-          <div className="auth-field__wrap">
-            <span className="auth-field__icon">✉</span>
-            <input
-              id="email"
-              type="email"
-              className="auth-field__input"
-              placeholder="you@onimhealth.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </div>
-        </div>
+    <AuthShell error={error || undefined} footer={<>No account? <Link to="/signup">Create one</Link></>}>
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="Enter email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          required
+        />
         <PasswordField
           id="password"
           label="Password"
-          placeholder="Enter your password"
+          placeholder="Enter password"
           value={password}
           onChange={setPassword}
           autoComplete="current-password"
           required
+          variant="login"
         />
-        <motion.button type="submit" className="auth-submit" disabled={loading} whileTap={{ scale: 0.98 }}>
-          {loading ? 'Signing in…' : 'Sign in →'}
-        </motion.button>
+        <Button type="submit" variant="primary" className="login-submit" disabled={loading}>
+          {loading ? 'Signing in…' : 'Sign In'}
+        </Button>
+        <div className="login-hint">Use your clinic email and password. Role is set on your account.</div>
       </form>
     </AuthShell>
   )

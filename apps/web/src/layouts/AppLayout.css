@@ -113,24 +113,29 @@
 }
 
 .sidebar__signout {
-  margin-top: 12px;
-  width: 100%;
-  font-family: var(--font);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--white);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: var(--radius-sm);
+  font-size: 10px;
+  color: var(--teal-pale);
+  background: none;
+  border: none;
   cursor: pointer;
-  text-align: center;
-  padding: 10px 14px;
-  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  font-family: var(--font);
+  padding: 0;
 }
 
 .sidebar__signout:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--white);
+}
+
+.sidebar__footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.sidebar__version {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .main {

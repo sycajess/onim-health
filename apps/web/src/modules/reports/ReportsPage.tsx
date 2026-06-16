@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import { ROLE_LABELS } from '@onim/types'
 import { useData, fmtDate, patientFullName, today, daysUntil } from '@onim/data'
-import { Card, PageHero } from '@onim/ui'
+import { Card } from '@onim/ui'
 import { ReportChartPanel } from './ReportChartPanel'
 import '@onim/ui/Card.css'
 import './Reports.css'
@@ -441,8 +441,7 @@ export function ReportsPage() {
   }
 
   return (
-    <div className="page--reports">
-      <PageHero title="Reports & Analytics" subtitle="Financial, clinical, and operational insights" variant="blue" />
+    <div>
       <div className="reports-grid">
         {REPORTS.map((r) => (
           <button key={r.id} type="button" className={`report-card${active === r.id ? ' report-card--active' : ''}`} onClick={() => setActive(r.id)}>

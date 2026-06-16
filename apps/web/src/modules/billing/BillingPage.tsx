@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
-import { Badge, Button, EmptyState, PageHero } from '@onim/ui'
+import { Badge, Button, Card, EmptyState } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
 import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { NewInvoiceModal } from '../../components/modals/ClinicModals'
+import '@onim/ui/Card.css'
 
 const STATUSES = ['Pending', 'Paid – Cash', 'Paid – MoMo', 'Paid – Insurance', 'Partial']
 
@@ -15,49 +15,48 @@ export function BillingPage() {
   const { canWriteModule } = usePermissions()
   const canWrite = canWriteModule('billing')
   const [modalOpen, setModalOpen] = useState(false)
-  const totalPaid = db.billing.filter((b) => b.status.startsWith('Paid')).reduce((s, b) => s + b.amount, 0)
-  const totalPending = db.billing.filter((b) => b.status === 'Pending').reduce((s, b) => s + b.amount, 0)
 
   return (
-    <div className="page--billing">
-      <PageHero
-        title="Billing"
-        subtitle={`GHS ${totalPaid.toLocaleString()} collected · GHS ${totalPending.toLocaleString()} outstanding`}
-        variant="slate"
+    <div>
+      <Card
+        title="Billing & Invoices"
         action={canWrite ? <Button variant="primary" onClick={() => setModalOpen(true)}>+ New Invoice</Button> : undefined}
-      />
-      {db.billing.length ? (
-        <div className="bill-grid">
-          {db.billing.map((b, i) => {
-            const p = db.patients.find((x) => x.id === b.patient_id)
-            return (
-              <motion.div
-                key={b.id}
-                className="bill-card"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                whileHover={{ y: -4 }}
-              >
-                <div style={{ fontSize: 12, color: 'var(--gray4)' }}>{b.id} · {fmtDate(b.date)}</div>
-                <div className="bill-card__amount">GHS {b.amount.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</div>
-                {p && <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link>}
-                <div style={{ marginTop: 10, marginBottom: 8 }}><Badge>{b.status}</Badge></div>
-                {canWrite && (
-                  <RowActions>
-                    {!b.status.startsWith('Paid') && (
-                      <IconAction icon="paid" label="Mark paid (MoMo)" variant="success" onClick={() => void updateBillingStatus(b.id, 'Paid – MoMo')} />
+        noPadding
+      >
+        {db.billing.length ? (
+          <table className="data-table">
+            <thead>
+              <tr><th>Invoice</th><th>Date</th><th>Patient</th><th>Amount</th><th>Status</th>{canWrite && <th>Actions</th>}</tr>
+            </thead>
+            <tbody>
+              {db.billing.map((b) => {
+                const p = db.patients.find((x) => x.id === b.patient_id)
+                return (
+                  <tr key={b.id}>
+                    <td>{b.id}</td>
+                    <td>{fmtDate(b.date)}</td>
+                    <td>{p ? <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link> : '–'}</td>
+                    <td><strong>GHS {b.amount.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</strong></td>
+                    <td><Badge>{b.status}</Badge></td>
+                    {canWrite && (
+                      <td>
+                        <RowActions>
+                          {!b.status.startsWith('Paid') && (
+                            <IconAction icon="paid" label="Mark paid (MoMo)" variant="success" onClick={() => void updateBillingStatus(b.id, 'Paid – MoMo')} />
+                          )}
+                          <StatusIconMenu value={b.status} options={STATUSES} onChange={(s) => void updateBillingStatus(b.id, s)} />
+                        </RowActions>
+                      </td>
                     )}
-                    <StatusIconMenu value={b.status} options={STATUSES} onChange={(s) => void updateBillingStatus(b.id, s)} />
-                  </RowActions>
-                )}
-              </motion.div>
-            )
-          })}
-        </div>
-      ) : (
-        <EmptyState icon="🧾" title="No invoices" />
-      )}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        ) : (
+          <EmptyState icon="🧾" title="No invoices" />
+        )}
+      </Card>
       <NewInvoiceModal open={modalOpen} onClose={() => setModalOpen(false)} />
     </div>
   )

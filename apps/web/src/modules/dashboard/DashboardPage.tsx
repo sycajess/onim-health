@@ -1,12 +1,8 @@
 import { useMemo } from 'react'
-import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { useData, fmtDate, patientInitials, patientFullName, SPECIALTY_COLORS, today, daysUntil } from '@onim/data'
-import { Badge, Card, EmptyState, PageHero, StatCard } from '@onim/ui'
+import { Badge, Card, EmptyState, StatCard } from '@onim/ui'
 import '@onim/ui/Card.css'
-
-const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } }
-const fadeUp = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transition: { duration: 0.4 } } }
 
 export function DashboardPage() {
   const { db } = useData()
@@ -41,23 +37,17 @@ export function DashboardPage() {
   const totalPatients = data.patientCount || 1
 
   return (
-    <div className="page--dashboard">
-      <PageHero
-        title="Good morning"
-        subtitle={`${data.patientCount} active patients · ${data.todayAppointmentCount} appointments today`}
-      />
-      <motion.div className="stats-grid" variants={stagger} initial="hidden" animate="show">
+    <div>
+      <div className="stats-grid">
         {[
-          { icon: '👥', bg: 'var(--teal-light)', color: 'var(--teal)', label: 'Total Patients', value: data.patientCount, sub: 'Active records' },
+          { icon: '👥', bg: 'var(--teal-light)', color: 'var(--teal)', label: 'Total Patients', value: data.patientCount, sub: '↑ Active records' },
           { icon: '📅', bg: 'var(--blue-light)', color: 'var(--blue)', label: "Today's Appointments", value: data.todayAppointmentCount, sub: 'Scheduled today' },
           { icon: '💊', bg: 'var(--amber-light)', color: 'var(--amber)', label: 'Active Prescriptions', value: data.activeRxCount, sub: 'Across all patients' },
-          { icon: '⚠️', bg: 'var(--danger-light)', color: 'var(--danger)', label: 'Low Stock Alerts', value: data.lowStockCount, sub: 'Below threshold' },
+          { icon: '⚠️', bg: 'var(--danger-light)', color: 'var(--danger)', label: 'Low Stock Alerts', value: data.lowStockCount, sub: 'Medications below threshold' },
         ].map((s) => (
-          <motion.div key={s.label} variants={fadeUp}>
-            <StatCard icon={s.icon} iconBg={s.bg} iconColor={s.color} label={s.label} value={s.value} sub={s.sub} />
-          </motion.div>
+          <StatCard key={s.label} icon={s.icon} iconBg={s.bg} iconColor={s.color} label={s.label} value={s.value} sub={s.sub} />
         ))}
-      </motion.div>
+      </div>
       <div className="two-col">
         <Card title="Recent Patients" action={<Link to="/patients" className="link-cell">View All</Link>} noPadding>
           {data.recentPatients.length ? (
@@ -93,12 +83,12 @@ export function DashboardPage() {
                 {data.todayAppointments.map((a) => {
                   const patient = db.patients.find((p) => p.id === a.patient_id)
                   return (
-                  <tr key={a.id}>
-                    <td>{patient ? patientFullName(patient) : a.patient_id}</td>
-                    <td>{a.time}</td>
-                    <td>{a.type}</td>
-                    <td><Badge>{a.status}</Badge></td>
-                  </tr>
+                    <tr key={a.id}>
+                      <td>{patient ? patientFullName(patient) : a.patient_id}</td>
+                      <td>{a.time}</td>
+                      <td>{a.type}</td>
+                      <td><Badge>{a.status}</Badge></td>
+                    </tr>
                   )
                 })}
               </tbody>

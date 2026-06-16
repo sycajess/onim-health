@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react'
-import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '@onim/auth'
 import { getDefaultRouteForRole } from '@onim/types'
+import { Button } from '@onim/ui'
 import { AuthShell } from '../components/AuthShell'
 import { PasswordField } from '../components/PasswordField'
 import './AuthPages.css'
@@ -34,37 +34,18 @@ export function SignupPage() {
   }
 
   return (
-    <AuthShell
-      title="Create account"
-      subtitle="Join your clinic's secure records platform"
-      footer={
-        <>
-          Already have an account? <Link to="/login">Sign in</Link>
-        </>
-      }
-    >
-      <form onSubmit={handleSubmit} className="auth-form">
-        {error && (
-          <motion.p className="auth-form__error" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-            {error}
-          </motion.p>
-        )}
-        <div className="auth-field">
-          <label className="auth-field__label" htmlFor="signup-email">Email address</label>
-          <div className="auth-field__wrap">
-            <span className="auth-field__icon">✉</span>
-            <input
-              id="signup-email"
-              type="email"
-              className="auth-field__input"
-              placeholder="you@onimhealth.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
-            />
-          </div>
-        </div>
+    <AuthShell error={error || undefined} footer={<>Already have an account? <Link to="/login">Sign in</Link></>}>
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="signup-email">Email</label>
+        <input
+          id="signup-email"
+          type="email"
+          placeholder="Enter email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+          required
+        />
         <PasswordField
           id="signup-password"
           label="Password"
@@ -74,6 +55,7 @@ export function SignupPage() {
           autoComplete="new-password"
           minLength={8}
           required
+          variant="login"
         />
         <PasswordField
           id="signup-confirm"
@@ -83,10 +65,11 @@ export function SignupPage() {
           onChange={setConfirm}
           autoComplete="new-password"
           required
+          variant="login"
         />
-        <motion.button type="submit" className="auth-submit" disabled={loading} whileTap={{ scale: 0.98 }}>
-          {loading ? 'Creating account…' : 'Create account →'}
-        </motion.button>
+        <Button type="submit" variant="primary" className="login-submit" disabled={loading}>
+          {loading ? 'Creating account…' : 'Create Account'}
+        </Button>
       </form>
     </AuthShell>
   )

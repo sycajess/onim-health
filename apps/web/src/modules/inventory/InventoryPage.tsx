@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, daysUntil } from '@onim/data'
 import type { InventoryItem } from '@onim/data'
-import { Button, Card, EmptyState, PageHero } from '@onim/ui'
+import { Button, Card, EmptyState } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
 import '@onim/ui/Card.css'
 import { DispenseModal, MedicationModal } from '../../components/modals/ClinicModals'
@@ -28,13 +27,7 @@ export function InventoryPage() {
   }
 
   return (
-    <div className="page--inventory">
-      <PageHero
-        title="Medication Inventory"
-        subtitle={`${db.inventory.length} items tracked · ${alerts.length} alerts`}
-        variant="teal"
-        action={canManageInventory ? <Button variant="primary" onClick={() => openEdit()}>+ Add Medication</Button> : undefined}
-      />
+    <div>
       {alerts.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           {alerts.map((m) => (
@@ -44,41 +37,47 @@ export function InventoryPage() {
           ))}
         </div>
       )}
-      {db.inventory.length ? (
-        <div className="inv-grid">
-          {db.inventory.map((m, i) => (
-            <motion.div
-              key={m.id}
-              className={`inv-card${m.qty <= m.threshold ? ' inv-card--low' : ''}`}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-              whileHover={{ y: -4 }}
-            >
-              <div style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{m.category}</div>
-              <div style={{ fontWeight: 600, marginTop: 6 }}>{m.name}</div>
-              <div className="inv-card__qty">{m.qty}</div>
-              <div style={{ fontSize: 12, color: 'var(--gray4)' }}>Threshold: {m.threshold} · Exp: {fmtDate(m.expiry)}</div>
-              {(canManageInventory || canDispenseInventory) && (
-                <div style={{ marginTop: 12 }}>
-                  <RowActions>
-                    {canDispenseInventory && (
-                      <IconAction icon="dispense" label={`Dispense ${m.name}`} variant="primary" onClick={() => openDispense(m)} />
-                    )}
-                    {canManageInventory && (
-                      <IconAction icon="edit" label={`Edit ${m.name}`} onClick={() => openEdit(m)} />
-                    )}
-                  </RowActions>
-                </div>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      ) : (
-        <EmptyState icon="📦" title="No medications found" />
-      )}
 
-      <Card title="Dispense Log" noPadding style={{ marginTop: 20 }}>
+      <Card
+        title="Medication Inventory"
+        action={canManageInventory ? <Button variant="primary" onClick={() => openEdit()}>+ Add Medication</Button> : undefined}
+        noPadding
+      >
+        {db.inventory.length ? (
+          <table className="data-table">
+            <thead>
+              <tr><th>Medication</th><th>Category</th><th>Qty</th><th>Threshold</th><th>Expiry</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              {db.inventory.map((m) => (
+                <tr key={m.id}>
+                  <td><strong>{m.name}</strong></td>
+                  <td>{m.category}</td>
+                  <td>{m.qty}</td>
+                  <td>{m.threshold}</td>
+                  <td>{fmtDate(m.expiry)}</td>
+                  <td>
+                    {(canManageInventory || canDispenseInventory) && (
+                      <RowActions>
+                        {canDispenseInventory && (
+                          <IconAction icon="dispense" label={`Dispense ${m.name}`} variant="primary" onClick={() => openDispense(m)} />
+                        )}
+                        {canManageInventory && (
+                          <IconAction icon="edit" label={`Edit ${m.name}`} onClick={() => openEdit(m)} />
+                        )}
+                      </RowActions>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <EmptyState icon="📦" title="No medications found" />
+        )}
+      </Card>
+
+      <Card title="Dispense Log" noPadding style={{ marginTop: 16 }}>
         {db.dispense_log.length ? (
           <table className="data-table">
             <thead>

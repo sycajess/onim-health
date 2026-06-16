@@ -1,11 +1,10 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
-import { useData, fmtDate, formatPatientDemographics, patientInitials, patientFullName, type Patient } from '@onim/data'
-import { Badge, Card, EmptyState, PageHero, SpecialtyTag } from '@onim/ui'
+import { useData, fmtDate, formatPatientDemographics, patientInitials, patientFullName, SPECIALTIES, type Patient } from '@onim/data'
+import { Badge, Card, EmptyState, SpecialtyTag } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
 import { NewPatientModal } from '../../components/NewPatientModal'
-import { SpecialtyFilter } from '../../components/SpecialtyFilter'
 import '@onim/ui/Card.css'
 
 export function PatientsPage() {
@@ -27,14 +26,25 @@ export function PatientsPage() {
   }
 
   return (
-    <div className="page--patients">
-      <PageHero
-        title="Patients"
-        subtitle={`${patients.length} record${patients.length === 1 ? '' : 's'}${specialty ? ` · ${specialty}` : ''}${q ? ` matching "${q}"` : ''}`}
-        variant="teal"
-      />
-      <Card title="All Patients" noPadding>
-        <SpecialtyFilter value={specialty} onChange={setSpecialty} />
+    <div>
+      <Card
+        title="All Patients"
+        action={(
+          <select
+            className="form-input"
+            style={{ width: 160 }}
+            value={specialty}
+            onChange={(e) => setSpecialty(e.target.value)}
+            aria-label="Filter by specialty"
+          >
+            <option value="">All Specialties</option>
+            {SPECIALTIES.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        )}
+        noPadding
+      >
         {patients.length ? (
           <table className="data-table">
             <thead>

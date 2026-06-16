@@ -1,36 +1,20 @@
-import { Link } from 'react-router-dom'
 import type { ReactNode } from 'react'
 
 type AuthShellProps = {
-  title: string
-  subtitle: string
   children: ReactNode
-  footer: ReactNode
+  footer?: ReactNode
+  error?: string
 }
 
-export function AuthShell({ title, subtitle, children, footer }: AuthShellProps) {
+export function AuthShell({ children, footer, error }: AuthShellProps) {
   return (
-    <div className="auth-page">
-      <div className="auth-page__card">
-        <Link to="/" className="auth-page__brand">
-          <span className="auth-page__logo" aria-hidden />
-          <span>
-            <strong>Onim Health</strong>
-            <small>GH</small>
-          </span>
-        </Link>
-
-        <div className="auth-page__head">
-          <h1>{title}</h1>
-          <p>{subtitle}</p>
-        </div>
-
+    <div className="login-screen">
+      <div className="login-box">
+        <div className="login-logo">Onim Health</div>
+        <div className="login-sub">Patient Records System</div>
+        {error ? <div className="login-error">{error}</div> : null}
         {children}
-
-        <div className="auth-page__footer">{footer}</div>
-        <Link to="/" className="auth-page__home-in-card">
-          ← Back to home
-        </Link>
+        {footer ? <div className="login-footer">{footer}</div> : null}
       </div>
     </div>
   )

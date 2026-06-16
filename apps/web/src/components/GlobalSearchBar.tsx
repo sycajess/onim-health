@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import './GlobalSearchBar.css'
 
@@ -24,15 +23,8 @@ export function GlobalSearchBar() {
   }
 
   return (
-    <motion.div
-      className="search-bar"
-      initial={{ opacity: 0, x: 12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 0.2, duration: 0.35 }}
-    >
-      <span className="search-bar__icon" aria-hidden>
-        🔍
-      </span>
+    <div className="search-bar">
+      <span className="search-bar__icon" aria-hidden>🔍</span>
       <input
         type="search"
         className="search-bar__input"
@@ -41,6 +33,6 @@ export function GlobalSearchBar() {
         onChange={(e) => handleChange(e.target.value)}
         aria-label="Global search"
       />
-    </motion.div>
+    </div>
   )
 }
