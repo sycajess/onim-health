@@ -256,7 +256,6 @@
       <option value="accountant">Accountant / Finance</option>
     </select>
     <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" onclick="doLogin()">Sign In</button>
-    <div style="margin-top:14px;font-size:11px;color:var(--gray4);text-align:center">Demo: any username/password works. Role controls access.</div>
   </div>
 </div>
 
@@ -320,8 +319,8 @@
     <div class="user-badge">
       <div class="user-avatar" id="sidebar-avatar">DR</div>
       <div>
-        <div style="font-size:12px;color:#fff;font-weight:500" id="sidebar-username">Dr. Admin</div>
-        <div style="font-size:10px;color:var(--teal-pale)" id="sidebar-role-label">Admin</div>
+        <div style="font-size:12px;color:#fff;font-weight:500" id="sidebar-username">—</div>
+        <div style="font-size:10px;color:var(--teal-pale)" id="sidebar-role-label">—</div>
       </div>
     </div>
     <div style="display:flex;justify-content:space-between;align-items:center">
@@ -604,10 +603,10 @@
           <div class="card" style="margin-bottom:16px">
             <div class="card-header"><h3>Clinic Information</h3></div>
             <div class="card-body">
-              <div class="form-group" style="margin-bottom:14px"><label>Clinic Name</label><input type="text" value="Onim Health"/></div>
-              <div class="form-group" style="margin-bottom:14px"><label>Phone</label><input type="tel" value="+233 55 714 5452"/></div>
-              <div class="form-group" style="margin-bottom:14px"><label>Email</label><input type="email" value="enquiry@onimhealth.com"/></div>
-              <div class="form-group" style="margin-bottom:14px"><label>Address</label><textarea>Offin Street, Adabraka, Accra-Ghana</textarea></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Clinic Name</label><input type="text" placeholder="Clinic name"/></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Phone</label><input type="tel" placeholder="+233 XX XXX XXXX"/></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Email</label><input type="email" placeholder="clinic@email.com"/></div>
+              <div class="form-group" style="margin-bottom:14px"><label>Address</label><textarea placeholder="Street, City, Ghana"></textarea></div>
               <div class="form-group" style="margin-bottom:14px"><label>Registration Number (FDA Ghana)</label><input type="text" placeholder="Enter FDA registration no."/></div>
               <div class="form-group" style="margin-bottom:14px"><label>Google Workspace Domain</label><input type="text" placeholder="onimhealth.com"/></div>
               <button class="btn btn-primary">Save Settings</button>
@@ -719,7 +718,7 @@
         <div class="form-group"><label>Specialty</label>
           <select id="appt-specialty"><option>Weight Loss</option><option>Sexual Health</option><option>Mental Health</option><option>Fertility</option><option>Hair</option><option>Skin</option></select>
         </div>
-        <div class="form-group"><label>Provider</label><input type="text" id="appt-provider" value="Dr. Admin"/></div>
+        <div class="form-group"><label>Provider</label><input type="text" id="appt-provider" placeholder="Provider name"/></div>
         <div class="form-group full"><label>Notes</label><textarea id="appt-notes" placeholder="Reason for visit, special instructions..."></textarea></div>
       </div>
     </div>
@@ -751,7 +750,7 @@
         <div class="form-group"><label>Vital Signs (BP)</label><input type="text" id="rec-bp" placeholder="120/80 mmHg"/></div>
         <div class="form-group"><label>Vital Signs (Temp)</label><input type="text" id="rec-temp" placeholder="36.5°C"/></div>
         <div class="form-group"><label>Weight (kg)</label><input type="number" id="rec-weight" placeholder="70"/></div>
-        <div class="form-group"><label>Provider *</label><input type="text" id="rec-provider" value="Dr. Admin"/></div>
+        <div class="form-group"><label>Provider *</label><input type="text" id="rec-provider" placeholder="Provider name"/></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -774,7 +773,7 @@
         <div class="form-group"><label>Duration</label><input type="text" id="rx-duration" placeholder="e.g. 3 months"/></div>
         <div class="form-group"><label>Refills</label><input type="number" id="rx-refills" value="0" min="0" max="12"/></div>
         <div class="form-group"><label>Prescribed Date</label><input type="date" id="rx-date"/></div>
-        <div class="form-group"><label>Provider</label><input type="text" id="rx-provider" value="Dr. Admin"/></div>
+        <div class="form-group"><label>Provider</label><input type="text" id="rx-provider" placeholder="Provider name"/></div>
         <div class="form-group full"><label>Instructions / Notes</label><textarea id="rx-notes" placeholder="Special instructions for patient..."></textarea></div>
         <div class="form-group"><label>Dispense Now?</label>
           <select id="rx-dispense"><option value="no">No – Write Rx only</option><option value="yes">Yes – Dispense from inventory</option></select>
@@ -804,7 +803,7 @@
         <div class="form-group"><label>Status</label>
           <select id="lab-status"><option>Normal</option><option>Abnormal – High</option><option>Abnormal – Low</option><option>Critical</option></select>
         </div>
-        <div class="form-group"><label>Provider</label><input type="text" id="lab-provider" value="Dr. Admin"/></div>
+        <div class="form-group"><label>Provider</label><input type="text" id="lab-provider" placeholder="Provider name"/></div>
         <div class="form-group full"><label>Notes / Interpretation</label><textarea id="lab-notes" placeholder="Clinical interpretation..."></textarea></div>
       </div>
       <div style="margin-top:16px">
@@ -998,16 +997,10 @@ let db = {
   dispenseLog: [],
   billing: [],
   messages: {},
-  staff: [
-    {name:'Dr. Admin', username:'admin', role:'admin', specialty:'General / Internal Medicine', email:'admin@onimhealth.com', phone:'+233 55 714 5452'},
-    {name:'Nurse Grace', username:'ngrace', role:'nurse', specialty:'All', email:'grace@onimhealth.com', phone:'+233 244 001 001'},
-    {name:'Abena Mensah', username:'abensah', role:'staff', specialty:'Administration', email:'abena@onimhealth.com', phone:'+233 244 002 002'},
-    {name:'Kofi Pharmacy', username:'kpharm', role:'pharmacist', specialty:'Pharmacy', email:'kofi@onimhealth.com', phone:'+233 244 003 003'},
-    {name:'Ama Nutrition', username:'anutrition', role:'nutritionist', specialty:'Weight Loss / Nutrition', email:'ama@onimhealth.com', phone:'+233 244 004 004'}
-  ]
+  staff: []
 };
 
-let nextId = { p:6, a:6, r:4, rx:4, l:4, m:7, b:4, s:6 };
+let nextId = { p:1, a:1, r:1, rx:1, l:1, m:1, b:1, s:1 };
 let currentPatientId = null;
 let currentMsgThread = null;
 let editingMedId = null;
@@ -1022,75 +1015,15 @@ function generateMeetLink() {
 // SEED DATA
 // ============================================================
 function seedData() {
-  const today = new Date().toISOString().split('T')[0];
-  const d = (offset) => {
-    const x = new Date(); x.setDate(x.getDate() + offset);
-    return x.toISOString().split('T')[0];
-  };
-
-  db.patients = [
-    {id:'P001',fname:'Abena',lname:'Sarpong',dob:'1988-04-15',sex:'Female',phone:'+233 244 123 456',email:'abena@gmail.com',address:'Labone, Accra',idNum:'GHA-123456789-0',nhis:'NHIS-88221',specialty:'Weight Loss',blood:'O+',weight:92,height:165,allergies:'None',conditions:'Hypertension',currentMeds:'Amlodipine 5mg',ecName:'Kofi Sarpong',ecRel:'Husband',ecPhone:'+233 244 987 654',status:'Active',created:d(-30)},
-    {id:'P002',fname:'Laryea',lname:'Tetteh',dob:'1975-11-22',sex:'Male',phone:'+233 277 555 001',email:'laryea@gmail.com',address:'Tema, Greater Accra',idNum:'GHA-987654321-1',nhis:'NHIS-75443',specialty:'Sexual Health',blood:'A+',weight:78,height:178,allergies:'Penicillin',conditions:'Diabetes Type 2',currentMeds:'Metformin 500mg',ecName:'Mrs Tetteh',ecRel:'Wife',ecPhone:'+233 277 555 002',status:'Active',created:d(-45)},
-    {id:'P003',fname:'Akosua',lname:'Owusu',dob:'1995-07-08',sex:'Female',phone:'+233 200 333 777',email:'akosua@yahoo.com',address:'East Legon, Accra',idNum:'GHA-111222333-2',nhis:'NHIS-95001',specialty:'Fertility',blood:'B+',weight:64,height:162,allergies:'Sulfa drugs',conditions:'PCOS',currentMeds:'None',ecName:'Kwame Owusu',ecRel:'Father',ecPhone:'+233 200 333 888',status:'Active',created:d(-20)},
-    {id:'P004',fname:'Kweku',lname:'Mensah',dob:'1982-03-30',sex:'Male',phone:'+233 233 445 566',email:'kweku@gmail.com',address:'Adabraka, Accra',idNum:'GHA-444555666-3',nhis:'',specialty:'Mental Health',blood:'AB+',weight:80,height:175,allergies:'None',conditions:'Anxiety, Depression',currentMeds:'Sertraline 50mg',ecName:'Ama Mensah',ecRel:'Sister',ecPhone:'+233 233 445 567',status:'Active',created:d(-60)},
-    {id:'P005',fname:'Esi',lname:'Asante',dob:'2000-12-01',sex:'Female',phone:'+233 266 778 899',email:'esi@gmail.com',address:'Dansoman, Accra',idNum:'GHA-777888999-4',nhis:'NHIS-2000X',specialty:'Skin',blood:'O-',weight:58,height:158,allergies:'None',conditions:'Acne Vulgaris',currentMeds:'None',ecName:'Mrs Asante',ecRel:'Mother',ecPhone:'+233 266 778 000',status:'Active',created:d(-10)}
-  ];
-
-  db.appointments = [
-    {id:'A001',patientId:'P001',date:today,time:'09:00 AM',type:'Follow-up',specialty:'Weight Loss',provider:'Dr. Admin',notes:'Check weight progress on semaglutide',status:'Confirmed',meetLink:generateMeetLink()},
-    {id:'A002',patientId:'P002',date:today,time:'10:30 AM',type:'Consultation',specialty:'Sexual Health',provider:'Dr. Admin',notes:'ED evaluation',status:'Confirmed',meetLink:generateMeetLink()},
-    {id:'A003',patientId:'P003',date:today,time:'02:00 PM',type:'Review',specialty:'Fertility',provider:'Dr. Admin',notes:'Hormone panel review',status:'Pending',meetLink:generateMeetLink()},
-    {id:'A004',patientId:'P004',date:d(2),time:'11:00 AM',type:'Follow-up',specialty:'Mental Health',provider:'Dr. Admin',notes:'Monthly mental health check-in',status:'Scheduled',meetLink:generateMeetLink()},
-    {id:'A005',patientId:'P005',date:d(3),time:'03:30 PM',type:'Consultation',specialty:'Skin',provider:'Dr. Admin',notes:'Skin treatment review',status:'Scheduled',meetLink:generateMeetLink()}
-  ];
-
-  db.records = [
-    {id:'R001',patientId:'P001',date:d(-14),type:'Consultation Note',specialty:'Weight Loss',complaint:'Weight loss support, starting GLP-1',exam:'BMI 33.8. BP 130/82. Abdomen soft. No lymphadenopathy.',assessment:'Obesity (BMI >30) with hypertension. Candidate for semaglutide.',plan:'Start Ozempic 0.25mg/week. Dietary counselling. Follow up in 4 weeks.',bp:'130/82',temp:'36.6°C',weight:92,provider:'Dr. Admin'},
-    {id:'R002',patientId:'P002',date:d(-20),type:'Consultation Note',specialty:'Sexual Health',complaint:'Erectile dysfunction x 6 months',exam:'Normal genitalia. No obvious structural abnormality.',assessment:'Erectile dysfunction, likely vasculogenic. Diabetes-related component possible.',plan:'Sildenafil 50mg PRN. Lifestyle modification. Glucose control optimization.',bp:'128/80',temp:'36.4°C',weight:78,provider:'Dr. Admin'},
-    {id:'R003',patientId:'P003',date:d(-8),type:'Progress Note',specialty:'Fertility',complaint:'Irregular cycles, trying to conceive',exam:'USG – polycystic ovaries. Hormone panel ordered.',assessment:'PCOS. Sub-fertility.',plan:'Clomiphene 50mg cycle days 2-6. Repeat USG in 2 weeks.',bp:'115/75',temp:'36.5°C',weight:64,provider:'Dr. Admin'}
-  ];
-
-  db.prescriptions = [
-    {id:'RX001',patientId:'P001',medication:'Ozempic (Semaglutide)',medId:'M001',dosage:'0.25mg',frequency:'Once weekly',duration:'3 months',refills:2,date:d(-14),provider:'Dr. Admin',notes:'Inject subcutaneously. Increase dose after 4 weeks if tolerated.',status:'Active',qtyDispensed:1},
-    {id:'RX002',patientId:'P002',medication:'Sildenafil 50mg',medId:'M002',dosage:'50mg',frequency:'As needed (PRN)',duration:'Ongoing',refills:3,date:d(-20),provider:'Dr. Admin',notes:'Take 30-60 min before activity. Not with nitrates.',status:'Active',qtyDispensed:4},
-    {id:'RX003',patientId:'P004',medication:'Sertraline 50mg',medId:'M003',dosage:'50mg',frequency:'Once daily',duration:'6 months',refills:5,date:d(-60),provider:'Dr. Admin',notes:'Take in morning. Do not abruptly stop.',status:'Active',qtyDispensed:30}
-  ];
-
-  db.labs = [
-    {id:'L001',patientId:'P001',test:'HbA1c',date:d(-14),facility:'Korle-Bu Labs',result:'5.8%',ref:'4.0–5.6%',status:'Abnormal – High',provider:'Dr. Admin',notes:'Slightly elevated. Monitor diet and repeat in 3 months.',attachment:null},
-    {id:'L002',patientId:'P002',test:'Fasting Blood Glucose',date:d(-20),facility:'Trust Hospital Lab',result:'7.2 mmol/L',ref:'3.9–5.5 mmol/L',status:'Abnormal – High',provider:'Dr. Admin',notes:'Consistent with poorly controlled T2DM.',attachment:null},
-    {id:'L003',patientId:'P003',test:'FSH',date:d(-8),facility:'Korle-Bu Labs',result:'6.1 IU/L',ref:'3.1–17.7 IU/L',status:'Normal',provider:'Dr. Admin',notes:'Normal FSH. LH and AMH pending.',attachment:null}
-  ];
-
-  db.inventory = [
-    {id:'M001',name:'Ozempic (Semaglutide)',generic:'Semaglutide',category:'Weight Loss',form:'Injection',strength:'1mg/mL',supplier:'Novo Nordisk GH',lot:'LOT-2024-OZ01',expiry:d(240),qty:24,threshold:5,cost:850,storage:'Refrigerate 2–8°C'},
-    {id:'M002',name:'Sildenafil 50mg',generic:'Sildenafil Citrate',category:'Sexual Health',form:'Tablet',strength:'50mg',supplier:'Pharma Plus GH',lot:'LOT-2024-SIL02',expiry:d(380),qty:120,threshold:20,cost:12,storage:'Room temperature'},
-    {id:'M003',name:'Sertraline 50mg',generic:'Sertraline HCl',category:'Mental Health',form:'Tablet',strength:'50mg',supplier:'MedSource Africa',lot:'LOT-2024-SER03',expiry:d(420),qty:90,threshold:15,cost:8,storage:'Room temperature'},
-    {id:'M004',name:'Clomiphene 50mg',generic:'Clomiphene Citrate',category:'Fertility',form:'Tablet',strength:'50mg',supplier:'Pharma Plus GH',lot:'LOT-2024-CLO04',expiry:d(310),qty:4,threshold:10,cost:25,storage:'Room temperature'},
-    {id:'M005',name:'Minoxidil 5% Solution',generic:'Minoxidil',category:'Hair',form:'Cream / Topical',strength:'5%',supplier:'DermCare GH',lot:'LOT-2024-MIN05',expiry:d(180),qty:8,threshold:5,cost:95,storage:'Room temperature'},
-    {id:'M006',name:'Tretinoin 0.025% Cream',generic:'Tretinoin',category:'Skin',form:'Cream / Topical',strength:'0.025%',supplier:'DermCare GH',lot:'LOT-2024-TRE06',expiry:d(16),qty:15,threshold:5,cost:60,storage:'Cool, dry place'}
-  ];
-
-  db.dispenseLog = [
-    {date:d(-14),medId:'M001',medName:'Ozempic (Semaglutide)',patientId:'P001',patientName:'Abena Sarpong',qty:1,lot:'LOT-2024-OZ01',provider:'Dr. Admin'},
-    {date:d(-20),medId:'M002',medName:'Sildenafil 50mg',patientId:'P002',patientName:'Laryea Tetteh',qty:4,lot:'LOT-2024-SIL02',provider:'Dr. Admin'}
-  ];
-
-  db.billing = [
-    {id:'B001',patientId:'P001',date:d(-14),services:'Consultation (Weight Loss) – GHS 200\nOzempic injection (1 vial) – GHS 850',amount:1050,status:'Paid – MoMo',notes:''},
-    {id:'B002',patientId:'P002',date:d(-20),services:'Consultation (Sexual Health) – GHS 200\nSildenafil 50mg x4 – GHS 48',amount:248,status:'Paid – Cash',notes:''},
-    {id:'B003',patientId:'P003',date:d(-8),services:'Consultation (Fertility) – GHS 250\nLab tests – GHS 180',amount:430,status:'Pending',notes:''}
-  ];
-
-  db.messages = {
-    P001: [{from:'provider',text:'Hello Abena! How are you feeling on the Ozempic?',time:'10:02 AM'},
-           {from:'patient',text:'Much better! I have reduced appetite and have lost 3kg already.',time:'10:15 AM'},
-           {from:'provider',text:'Excellent! Keep it up. Any nausea or side effects?',time:'10:18 AM'}],
-    P002: [{from:'provider',text:'Laryea, please remember to avoid alcohol with the sildenafil.',time:'Yesterday'},
-           {from:'patient',text:'Understood, doctor. Thank you.',time:'Yesterday'}],
-    P004: [{from:'patient',text:'Dr, I am feeling much better this week. Sleep has improved.',time:'2 days ago'},
-           {from:'provider',text:'That is great to hear Kweku! Let us keep your next appointment as scheduled.',time:'2 days ago'}]
-  };
+  db.patients = [];
+  db.appointments = [];
+  db.records = [];
+  db.prescriptions = [];
+  db.labs = [];
+  db.inventory = [];
+  db.dispenseLog = [];
+  db.billing = [];
+  db.messages = {};
 }
 
 // ============================================================
@@ -1568,7 +1501,7 @@ function dispenseModal(medId) {
   const p = pt(ptId);
   if (!p) { alert('Patient not found.'); return; }
   m.qty -= Number(qty);
-  db.dispenseLog.unshift({date:today(),medId:m.id,medName:m.name,patientId:p.id,patientName:p.fname+' '+p.lname,qty:Number(qty),lot:m.lot,provider:'Dr. Admin'});
+  db.dispenseLog.unshift({date:today(),medId:m.id,medName:m.name,patientId:p.id,patientName:p.fname+' '+p.lname,qty:Number(qty),lot:m.lot,provider:currentUser?currentUser.name:''});
   alert(`✅ Dispensed ${qty} × ${m.name} to ${p.fname} ${p.lname}`);
   renderInventory();
 }
@@ -1804,7 +1737,7 @@ function saveRx() {
     else {
       const p = pt(patientId);
       m.qty -= qty;
-      db.dispenseLog.unshift({date:today(),medId:m.id,medName:m.name,patientId,patientName:p?p.fname+' '+p.lname:'–',qty,lot:m.lot,provider:currentUser?currentUser.name:'Dr. Admin'});
+      db.dispenseLog.unshift({date:today(),medId:m.id,medName:m.name,patientId,patientName:p?p.fname+' '+p.lname:'–',qty,lot:m.lot,provider:currentUser?currentUser.name:''});
     }
   }
   closeModal('modal-rx');
