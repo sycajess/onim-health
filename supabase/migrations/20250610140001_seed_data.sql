@@ -1,1 +1,1 @@
--- Demo clinic seed removed — run: npm run seed:clinic-data
+-- Demo clinic seed removed. Add data through the app.
