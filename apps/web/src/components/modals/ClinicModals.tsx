@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@onim/auth'
 import { useData, SPECIALTIES, today, patientFullName } from '@onim/data'
 import type { InventoryItem } from '@onim/data'
-import { Button, Modal } from '@onim/ui'
+import { Button, Modal, PdfAttachZone } from '@onim/ui'
+import type { PdfAttachment } from '@onim/ui'
 import { FormField, FormGrid } from '../FormField'
 
 type PatientSelectProps = {
@@ -238,17 +239,23 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
   const [patientId, setPatientId] = useState('')
   const [test, setTest] = useState('')
   const [date, setDate] = useState(today())
+  const [facility, setFacility] = useState('')
   const [result, setResult] = useState('')
   const [ref, setRef] = useState('')
   const [status, setStatus] = useState('Normal')
+  const [notes, setNotes] = useState('')
+  const [attachment, setAttachment] = useState<PdfAttachment | null>(null)
 
   function reset() {
     setPatientId('')
     setTest('')
     setDate(today())
+    setFacility('')
     setResult('')
     setRef('')
     setStatus('Normal')
+    setNotes('')
+    setAttachment(null)
   }
 
   async function handleSave() {
@@ -257,10 +264,13 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
       patient_id: patientId,
       test: test.trim(),
       date,
+      facility,
       result,
       ref,
       status,
       provider: profile?.full_name ?? '',
+      notes,
+      attachment: attachment ? { name: attachment.name, data_url: attachment.dataUrl } : null,
     })
     if (!ok) return
     reset()
@@ -273,12 +283,24 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
         <FormField label="Test"><input className="form-input" value={test} onChange={(e) => setTest(e.target.value)} /></FormField>
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
+        <FormField label="Lab / Facility"><input className="form-input" value={facility} onChange={(e) => setFacility(e.target.value)} placeholder="Korle-Bu Labs..." /></FormField>
         <FormField label="Result"><input className="form-input" value={result} onChange={(e) => setResult(e.target.value)} /></FormField>
         <FormField label="Reference range"><input className="form-input" value={ref} onChange={(e) => setRef(e.target.value)} /></FormField>
         <FormField label="Status" span={2}>
           <select className="form-input" value={status} onChange={(e) => setStatus(e.target.value)}>
-            {['Normal', 'Abnormal', 'Critical'].map((s) => <option key={s}>{s}</option>)}
+            {['Normal', 'Abnormal – High', 'Abnormal – Low', 'Critical'].map((s) => <option key={s}>{s}</option>)}
           </select>
+        </FormField>
+        <FormField label="Notes / Interpretation" span={2}>
+          <textarea className="form-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </FormField>
+        <FormField label="Attach Lab Report PDF" span={2}>
+          <PdfAttachZone
+            attachment={attachment}
+            onAttach={setAttachment}
+            onRemove={() => setAttachment(null)}
+            label="Attach PDF"
+          />
         </FormField>
       </FormGrid>
     </ModalShell>
