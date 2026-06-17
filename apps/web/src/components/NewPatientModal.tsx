@@ -37,8 +37,23 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
   const [countryCode, setCountryCode] = useState('+233')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [email, setEmail] = useState('')
+  const [address, setAddress] = useState('')
+  const [dob, setDob] = useState('')
+  const [sex, setSex] = useState('')
+  const [ghanaCard, setGhanaCard] = useState('')
+  const [nhis, setNhis] = useState('')
   const [specialtyChoice, setSpecialtyChoice] = useState('')
   const [otherSpecialty, setOtherSpecialty] = useState('')
+  const [blood, setBlood] = useState('')
+  const [weight, setWeight] = useState('')
+  const [height, setHeight] = useState('')
+  const [allergies, setAllergies] = useState('')
+  const [conditions, setConditions] = useState('')
+  const [currentMeds, setCurrentMeds] = useState('')
+  const [ecName, setEcName] = useState('')
+  const [ecRel, setEcRel] = useState('')
+  const [ecCountryCode, setEcCountryCode] = useState('+233')
+  const [ecPhoneNumber, setEcPhoneNumber] = useState('')
 
   const resolvedSpecialty = specialtyChoice === OTHER_SPECIALTY ? otherSpecialty.trim() : specialtyChoice
 
@@ -51,9 +66,25 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
       setCountryCode(parsed.countryCode)
       setPhoneNumber(parsed.number)
       setEmail(patient.email)
+      setAddress(patient.address)
+      setDob(patient.dob || '')
+      setSex(patient.sex || '')
+      setGhanaCard(patient.id_num)
+      setNhis(patient.nhis)
       const specialtyFields = resolveSpecialtyFields(patient.specialty)
       setSpecialtyChoice(specialtyFields.choice)
       setOtherSpecialty(specialtyFields.other)
+      setBlood(patient.blood || '')
+      setWeight(patient.weight ? String(patient.weight) : '')
+      setHeight(patient.height ? String(patient.height) : '')
+      setAllergies(patient.allergies || '')
+      setConditions(patient.conditions)
+      setCurrentMeds(patient.current_meds)
+      setEcName(patient.ec_name)
+      setEcRel(patient.ec_rel)
+      const ecParsed = parsePhone(patient.ec_phone || '')
+      setEcCountryCode(ecParsed.countryCode)
+      setEcPhoneNumber(ecParsed.number)
       return
     }
     setFname('')
@@ -61,8 +92,23 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
     setCountryCode('+233')
     setPhoneNumber('')
     setEmail('')
+    setAddress('')
+    setDob('')
+    setSex('')
+    setGhanaCard('')
+    setNhis('')
     setSpecialtyChoice('')
     setOtherSpecialty('')
+    setBlood('')
+    setWeight('')
+    setHeight('')
+    setAllergies('')
+    setConditions('')
+    setCurrentMeds('')
+    setEcName('')
+    setEcRel('')
+    setEcCountryCode('+233')
+    setEcPhoneNumber('')
   }, [open, patient])
 
   async function handleSave() {
@@ -73,7 +119,21 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
       lname: lname.trim(),
       phone: formatPhone(countryCode, phoneNumber),
       email: email.trim(),
+      address: address.trim(),
+      dob,
+      sex,
+      id_num: ghanaCard.trim(),
+      nhis: nhis.trim(),
       specialty: resolvedSpecialty,
+      blood: blood.trim(),
+      weight: weight.trim() ? Number(weight) : null,
+      height: height.trim() ? Number(height) : null,
+      allergies: allergies.trim(),
+      conditions: conditions.trim(),
+      current_meds: currentMeds.trim(),
+      ec_name: ecName.trim(),
+      ec_rel: ecRel.trim(),
+      ec_phone: formatPhone(ecCountryCode, ecPhoneNumber),
     }
 
     if (isEdit && patient) {
@@ -129,6 +189,30 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
           <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Email</span>
           <input className="form-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@..." />
         </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Address (Street, Ghana)</span>
+          <textarea className="form-input" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street, City, Ghana" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Date of birth</span>
+          <input className="form-input" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Sex</span>
+          <select className="form-input" value={sex} onChange={(e) => setSex(e.target.value)}>
+            <option value="">Select sex</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+          </select>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Ghana Card number</span>
+          <input className="form-input" value={ghanaCard} onChange={(e) => setGhanaCard(e.target.value)} placeholder="GHA-123456789-0" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>NHIS number</span>
+          <input className="form-input" value={nhis} onChange={(e) => setNhis(e.target.value)} placeholder="NHIS-XXXXX" />
+        </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
           <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Specialty</span>
           <select
@@ -152,6 +236,52 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
             />
           </label>
         )}
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Blood type</span>
+          <select className="form-input" value={blood} onChange={(e) => setBlood(e.target.value)}>
+            <option value="">Select blood type</option>
+            {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((x) => (
+              <option key={x} value={x}>{x}</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Weight (kg)</span>
+          <input className="form-input" type="number" value={weight} onChange={(e) => setWeight(e.target.value)} placeholder="70" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Height (cm)</span>
+          <input className="form-input" type="number" value={height} onChange={(e) => setHeight(e.target.value)} placeholder="170" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Allergies</span>
+          <input className="form-input" value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="List allergies or none" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Chronic conditions</span>
+          <textarea className="form-input" value={conditions} onChange={(e) => setConditions(e.target.value)} placeholder="List chronic conditions" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Current medications</span>
+          <textarea className="form-input" value={currentMeds} onChange={(e) => setCurrentMeds(e.target.value)} placeholder="Current medications taken by patient" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Emergency contact name</span>
+          <input className="form-input" value={ecName} onChange={(e) => setEcName(e.target.value)} placeholder="Full name" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Relationship</span>
+          <input className="form-input" value={ecRel} onChange={(e) => setEcRel(e.target.value)} placeholder="Relationship" />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Emergency contact phone</span>
+          <PhoneInput
+            countryCode={ecCountryCode}
+            number={ecPhoneNumber}
+            onCountryCodeChange={setEcCountryCode}
+            onNumberChange={setEcPhoneNumber}
+          />
+        </label>
       </div>
     </Modal>
   )

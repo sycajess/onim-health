@@ -204,9 +204,23 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
 export type NewPatientInput = {
   fname: string
   lname: string
+  dob?: string
+  sex?: string
   phone?: string
   email?: string
+  address?: string
+  id_num?: string
+  nhis?: string
   specialty?: string
+  blood?: string
+  weight?: number | null
+  height?: number | null
+  allergies?: string
+  conditions?: string
+  current_meds?: string
+  ec_name?: string
+  ec_rel?: string
+  ec_phone?: string
 }
 
 export async function createPatient(input: NewPatientInput): Promise<Patient | { error: string }> {
@@ -233,23 +247,23 @@ export async function createPatient(input: NewPatientInput): Promise<Patient | {
     id,
     fname: input.fname.trim(),
     lname: input.lname.trim(),
-    dob: null,
-    sex: null,
+    dob: input.dob?.trim() || null,
+    sex: input.sex?.trim() || null,
     phone: input.phone?.trim() ?? '',
     email: input.email?.trim() ?? '',
-    address: '',
-    id_num: '',
-    nhis: '',
+    address: input.address?.trim() ?? '',
+    id_num: input.id_num?.trim() ?? '',
+    nhis: input.nhis?.trim() ?? '',
     specialty: input.specialty.trim(),
-    blood: null,
-    weight: null,
-    height: null,
-    allergies: null,
-    conditions: '',
-    current_meds: '',
-    ec_name: '',
-    ec_rel: '',
-    ec_phone: '',
+    blood: input.blood?.trim() || null,
+    weight: input.weight ?? null,
+    height: input.height ?? null,
+    allergies: input.allergies?.trim() || null,
+    conditions: input.conditions?.trim() ?? '',
+    current_meds: input.current_meds?.trim() ?? '',
+    ec_name: input.ec_name?.trim() ?? '',
+    ec_rel: input.ec_rel?.trim() ?? '',
+    ec_phone: input.ec_phone?.trim() ?? '',
     status: 'Active',
     created: today,
   }
@@ -262,9 +276,23 @@ export async function createPatient(input: NewPatientInput): Promise<Patient | {
 export type UpdatePatientInput = {
   fname: string
   lname: string
+  dob?: string
+  sex?: string
   phone?: string
   email?: string
+  address?: string
+  id_num?: string
+  nhis?: string
   specialty?: string
+  blood?: string
+  weight?: number | null
+  height?: number | null
+  allergies?: string
+  conditions?: string
+  current_meds?: string
+  ec_name?: string
+  ec_rel?: string
+  ec_phone?: string
 }
 
 export async function updatePatient(
@@ -284,9 +312,23 @@ export async function updatePatient(
   const row = {
     fname: input.fname.trim(),
     lname: input.lname.trim(),
+    dob: input.dob?.trim() || null,
+    sex: input.sex?.trim() || null,
     phone: input.phone?.trim() ?? '',
     email: input.email?.trim() ?? '',
+    address: input.address?.trim() ?? '',
+    id_num: input.id_num?.trim() ?? '',
+    nhis: input.nhis?.trim() ?? '',
     specialty: input.specialty.trim(),
+    blood: input.blood?.trim() || null,
+    weight: input.weight ?? null,
+    height: input.height ?? null,
+    allergies: input.allergies?.trim() || null,
+    conditions: input.conditions?.trim() ?? '',
+    current_meds: input.current_meds?.trim() ?? '',
+    ec_name: input.ec_name?.trim() ?? '',
+    ec_rel: input.ec_rel?.trim() ?? '',
+    ec_phone: input.ec_phone?.trim() ?? '',
   }
 
   const { data, error } = await supabase.from('patients').update(row).eq('id', id).select('*').single()

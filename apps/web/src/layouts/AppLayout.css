@@ -71,6 +71,10 @@
   font-weight: 500;
 }
 
+.sidebar__nav--disabled {
+  opacity: 0.55;
+}
+
 .sidebar__nav-icon {
   font-size: 16px;
   opacity: 0.85;
