@@ -36,7 +36,8 @@ export function AppLayout() {
   }
 
   const { role } = profile
-  const sections = [...new Set(MODULES.map((m) => m.section))]
+  const visibleModules = MODULES.filter((m) => canAccessModule(m.id))
+  const sections = [...new Set(visibleModules.map((m) => m.section))]
 
   function handleSignOut() {
     signOut()
@@ -54,30 +55,21 @@ export function AppLayout() {
         {sections.map((section) => (
           <div key={section} className="sidebar__section">
             <div className="sidebar__label">{SECTION_LABELS[section]}</div>
-            {MODULES
+            {visibleModules
               .filter((m) => m.section === section)
-              .map((mod) => {
-                const hasAccess = canAccessModule(mod.id)
-                return (
+              .map((mod) => (
                 <NavLink
                   key={mod.id}
                   to={mod.path}
                   className={({ isActive }) =>
-                    `sidebar__nav${isActive && hasAccess ? ' sidebar__nav--active' : ''}${!hasAccess ? ' sidebar__nav--disabled' : ''}`
+                    `sidebar__nav${isActive ? ' sidebar__nav--active' : ''}`
                   }
                   end={mod.path === '/dashboard'}
-                  onClick={(event) => {
-                    if (!hasAccess) {
-                      event.preventDefault()
-                      window.alert('Access denied. Your role does not have permission for this module.')
-                    }
-                  }}
                 >
                   <span className="sidebar__nav-icon">{mod.icon}</span>
                   {mod.label}
                 </NavLink>
-                )
-              })}
+              ))}
           </div>
         ))}
 
