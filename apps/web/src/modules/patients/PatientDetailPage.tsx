@@ -255,11 +255,18 @@ export function PatientDetailPage() {
         <Card title="Appointments" noPadding>
           {appts.length ? (
             <table className="data-table">
-              <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Status</th></tr></thead>
+              <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Google Meet</th><th>Status</th></tr></thead>
               <tbody>
                 {appts.map((a) => (
                   <tr key={a.id}>
-                    <td>{fmtDate(a.date)}</td><td>{a.time}</td><td>{a.type}</td>
+                    <td>{fmtDate(a.date)}</td>
+                    <td>{a.time}</td>
+                    <td>{a.type}</td>
+                    <td>
+                      {a.meet_link ? (
+                        <a href={a.meet_link} target="_blank" rel="noreferrer" className="link-cell">Join</a>
+                      ) : '–'}
+                    </td>
                     <td><Badge>{a.status}</Badge></td>
                   </tr>
                 ))}
