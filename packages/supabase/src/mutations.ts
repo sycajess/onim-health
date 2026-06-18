@@ -125,10 +125,11 @@ export async function updatePrescriptionStatus(id: string, status: string): Prom
 
 export type NewPrescriptionInput = {
   patient_id: string
-  med_id: string
+  med_id?: string
   medication: string
   dosage?: string
   frequency?: string
+  route?: string
   duration?: string
   refills?: number
   date?: string
@@ -147,14 +148,15 @@ export async function createPrescription(input: NewPrescriptionInput): Promise<P
   const willDispense = input.dispense ?? false
   let qtyDispensed = 0
 
-  if (willDispense && input.med_id) {
-    const { data: med } = await supabase.from('inventory').select('*').eq('id', input.med_id).single()
+  const inventoryMedId = input.med_id?.trim()
+  if (willDispense && inventoryMedId) {
+    const { data: med } = await supabase.from('inventory').select('*').eq('id', inventoryMedId).single()
     if (med && Number(med.qty) >= qty) {
       qtyDispensed = qty
-      await supabase.from('inventory').update({ qty: Number(med.qty) - qty }).eq('id', input.med_id)
+      await supabase.from('inventory').update({ qty: Number(med.qty) - qty }).eq('id', inventoryMedId)
       await supabase.from('dispense_log').insert({
         date: today(),
-        med_id: input.med_id,
+        med_id: inventoryMedId,
         med_name: String(med.name),
         patient_id: input.patient_id,
         patient_name: input.patient_name ?? '',
@@ -169,9 +171,10 @@ export async function createPrescription(input: NewPrescriptionInput): Promise<P
     id,
     patient_id: input.patient_id,
     medication: input.medication,
-    med_id: input.med_id,
+    med_id: inventoryMedId ?? '',
     dosage: input.dosage ?? '',
     frequency: input.frequency ?? '',
+    route: input.route ?? '',
     duration: input.duration ?? '',
     refills: input.refills ?? 0,
     date: input.date ?? today(),

@@ -1,10 +1,24 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@onim/auth'
-import { useData, SPECIALTIES, today, patientFullName } from '@onim/data'
+import {
+  useData,
+  SPECIALTIES,
+  today,
+  patientFullName,
+  evaluateLabResult,
+  labStatusHint,
+  BILLING_SERVICE_TYPES,
+  billingLinesTotal,
+  serializeBillingServices,
+  RX_FREQUENCIES,
+  RX_ROUTES,
+  type BillingLineItem,
+} from '@onim/data'
 import type { InventoryItem } from '@onim/data'
 import { Button, Modal, PdfAttachZone } from '@onim/ui'
 import type { PdfAttachment } from '@onim/ui'
 import { FormField, FormGrid } from '../FormField'
+import { MedicationSearch } from '../MedicationSearch'
 
 type PatientSelectProps = {
   value: string
@@ -169,37 +183,44 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
   const { db, addPrescription } = useData()
   const { profile } = useAuth()
   const [patientId, setPatientId] = useState('')
-  const [medId, setMedId] = useState('')
+  const [medication, setMedication] = useState('')
   const [dosage, setDosage] = useState('')
-  const [frequency, setFrequency] = useState('Once daily')
+  const [frequency, setFrequency] = useState<string>(RX_FREQUENCIES[0])
+  const [route, setRoute] = useState<string>(RX_ROUTES[0])
   const [duration, setDuration] = useState('30 days')
   const [qty, setQty] = useState('1')
   const [dispense, setDispense] = useState(false)
+  const [inventoryMedId, setInventoryMedId] = useState('')
+  const [customDrug, setCustomDrug] = useState(false)
 
-  const med = db.inventory.find((m) => m.id === medId)
   const patient = db.patients.find((p) => p.id === patientId)
+  const canSave = !!patientId && medication.trim().length > 0
 
   function reset() {
     setPatientId('')
-    setMedId('')
+    setMedication('')
     setDosage('')
-    setFrequency('Once daily')
+    setFrequency(RX_FREQUENCIES[0])
+    setRoute(RX_ROUTES[0])
     setDuration('30 days')
     setQty('1')
     setDispense(false)
+    setInventoryMedId('')
+    setCustomDrug(false)
   }
 
   async function handleSave() {
-    if (!patientId || !medId || !med) return
+    if (!canSave) return
     const ok = await addPrescription({
       patient_id: patientId,
-      med_id: medId,
-      medication: med.name,
+      med_id: dispense ? inventoryMedId : '',
+      medication: medication.trim(),
       dosage,
       frequency,
+      route,
       duration,
       qty: Number(qty) || 1,
-      dispense,
+      dispense: dispense && !!inventoryMedId,
       provider: profile?.full_name ?? '',
       patient_name: patient ? patientFullName(patient) : '',
     })
@@ -209,22 +230,69 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
   }
 
   return (
-    <ModalShell open={open} title="New Prescription" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId || !medId}>
+    <ModalShell open={open} title="New Prescription" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!canSave}>
       <FormGrid>
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
         <FormField label="Medication" span={2}>
-          <select className="form-input" value={medId} onChange={(e) => setMedId(e.target.value)}>
-            <option value="">Select medication…</option>
-            {db.inventory.map((m) => <option key={m.id} value={m.id}>{m.name} (stock: {m.qty})</option>)}
+          {customDrug ? (
+            <input
+              className="form-input"
+              value={medication}
+              onChange={(e) => setMedication(e.target.value)}
+              placeholder="Enter drug name (not in database)"
+            />
+          ) : (
+            <MedicationSearch
+              value={medication}
+              onChange={setMedication}
+              onSelectDrug={(drug) => {
+                if (drug.strength) setDosage(drug.strength)
+              }}
+            />
+          )}
+        </FormField>
+        <FormField label=" " span={2}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <input
+              type="checkbox"
+              checked={customDrug}
+              onChange={(e) => {
+                setCustomDrug(e.target.checked)
+                if (!e.target.checked) setMedication('')
+              }}
+            />
+            Drug not in database — enter manually
+          </label>
+        </FormField>
+        <FormField label="Strength / Dosage">
+          <input className="form-input" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="e.g. 500mg" />
+        </FormField>
+        <FormField label="Directions (frequency)">
+          <select className="form-input" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+            {RX_FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
         </FormField>
-        <FormField label="Dosage"><input className="form-input" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="e.g. 500mg" /></FormField>
-        <FormField label="Frequency"><input className="form-input" value={frequency} onChange={(e) => setFrequency(e.target.value)} /></FormField>
+        <FormField label="Route of use">
+          <select className="form-input" value={route} onChange={(e) => setRoute(e.target.value)}>
+            {RX_ROUTES.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </FormField>
         <FormField label="Duration"><input className="form-input" value={duration} onChange={(e) => setDuration(e.target.value)} /></FormField>
         <FormField label="Qty to dispense"><input className="form-input" type="number" min={1} value={qty} onChange={(e) => setQty(e.target.value)} /></FormField>
+        <FormField label="Dispense from clinic inventory" span={2}>
+          <select className="form-input" value={inventoryMedId} onChange={(e) => setInventoryMedId(e.target.value)}>
+            <option value="">Not dispensing from inventory</option>
+            {db.inventory.map((m) => <option key={m.id} value={m.id}>{m.name} — {m.strength} (stock: {m.qty})</option>)}
+          </select>
+        </FormField>
         <FormField label="Dispense now" span={2}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <input type="checkbox" checked={dispense} onChange={(e) => setDispense(e.target.checked)} />
+            <input
+              type="checkbox"
+              checked={dispense}
+              disabled={!inventoryMedId}
+              onChange={(e) => setDispense(e.target.checked)}
+            />
             Deduct from inventory immediately
           </label>
         </FormField>
@@ -243,8 +311,15 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
   const [result, setResult] = useState('')
   const [ref, setRef] = useState('')
   const [status, setStatus] = useState('Normal')
+  const [statusAuto, setStatusAuto] = useState(true)
   const [notes, setNotes] = useState('')
   const [attachment, setAttachment] = useState<PdfAttachment | null>(null)
+
+  useEffect(() => {
+    if (!statusAuto || !result.trim() || !ref.trim()) return
+    const evaluated = evaluateLabResult(result, ref)
+    if (evaluated) setStatus(evaluated)
+  }, [result, ref, statusAuto])
 
   function reset() {
     setPatientId('')
@@ -254,6 +329,7 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
     setResult('')
     setRef('')
     setStatus('Normal')
+    setStatusAuto(true)
     setNotes('')
     setAttachment(null)
   }
@@ -284,12 +360,28 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
         <FormField label="Test"><input className="form-input" value={test} onChange={(e) => setTest(e.target.value)} /></FormField>
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
         <FormField label="Lab / Facility"><input className="form-input" value={facility} onChange={(e) => setFacility(e.target.value)} placeholder="Korle-Bu Labs..." /></FormField>
-        <FormField label="Result"><input className="form-input" value={result} onChange={(e) => setResult(e.target.value)} /></FormField>
-        <FormField label="Reference range"><input className="form-input" value={ref} onChange={(e) => setRef(e.target.value)} /></FormField>
+        <FormField label="Result"><input className="form-input" value={result} onChange={(e) => setResult(e.target.value)} placeholder="e.g. 6.2%" /></FormField>
+        <FormField label="Reference range"><input className="form-input" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. 4.0–5.6%" /></FormField>
+        {result && ref && (
+          <FormField label="Range check" span={2}>
+            <div style={{ fontSize: 13, color: 'var(--gray4)' }}>{labStatusHint(result, ref)}</div>
+          </FormField>
+        )}
         <FormField label="Status" span={2}>
-          <select className="form-input" value={status} onChange={(e) => setStatus(e.target.value)}>
+          <select
+            className="form-input"
+            value={status}
+            onChange={(e) => {
+              setStatusAuto(false)
+              setStatus(e.target.value)
+            }}
+          >
             {['Normal', 'Abnormal – High', 'Abnormal – Low', 'Critical'].map((s) => <option key={s}>{s}</option>)}
           </select>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, marginTop: 8 }}>
+            <input type="checkbox" checked={statusAuto} onChange={(e) => setStatusAuto(e.target.checked)} />
+            Auto-set status from reference range
+          </label>
         </FormField>
         <FormField label="Notes / Interpretation" span={2}>
           <textarea className="form-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
@@ -417,26 +509,43 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
   const { addInvoice } = useData()
   const [patientId, setPatientId] = useState('')
   const [date, setDate] = useState(today())
-  const [services, setServices] = useState('')
-  const [amount, setAmount] = useState('')
+  const [lines, setLines] = useState<BillingLineItem[]>([
+    { type: BILLING_SERVICE_TYPES[0], description: '', amount: 0 },
+  ])
   const [status, setStatus] = useState('Pending')
+  const [notes, setNotes] = useState('')
+
+  const total = billingLinesTotal(lines)
 
   function reset() {
     setPatientId('')
     setDate(today())
-    setServices('')
-    setAmount('')
+    setLines([{ type: BILLING_SERVICE_TYPES[0], description: '', amount: 0 }])
     setStatus('Pending')
+    setNotes('')
+  }
+
+  function updateLine(index: number, patch: Partial<BillingLineItem>) {
+    setLines((prev) => prev.map((line, i) => (i === index ? { ...line, ...patch } : line)))
+  }
+
+  function addLine() {
+    setLines((prev) => [...prev, { type: BILLING_SERVICE_TYPES[0], description: '', amount: 0 }])
+  }
+
+  function removeLine(index: number) {
+    setLines((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)))
   }
 
   async function handleSave() {
-    if (!patientId || !amount) return
+    if (!patientId || total <= 0) return
     const ok = await addInvoice({
       patient_id: patientId,
       date,
-      services,
-      amount: Number(amount),
+      services: serializeBillingServices(lines),
+      amount: total,
       status,
+      notes,
     })
     if (!ok) return
     reset()
@@ -444,16 +553,33 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
   }
 
   return (
-    <ModalShell open={open} title="New Invoice" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId || !amount}>
+    <ModalShell open={open} title="New Invoice" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId || total <= 0}>
       <FormGrid>
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
-        <FormField label="Amount (GHS)"><input className="form-input" type="number" min={0} step={0.01} value={amount} onChange={(e) => setAmount(e.target.value)} /></FormField>
-        <FormField label="Services" span={2}><textarea className="form-input" rows={3} value={services} onChange={(e) => setServices(e.target.value)} /></FormField>
-        <FormField label="Status" span={2}>
+        <FormField label="Total (GHS)"><input className="form-input" value={total.toFixed(2)} readOnly /></FormField>
+        <FormField label="Services rendered" span={2}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {lines.map((line, index) => (
+              <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 0.8fr auto', gap: 8, alignItems: 'end' }}>
+                <select className="form-input" value={line.type} onChange={(e) => updateLine(index, { type: e.target.value })}>
+                  {BILLING_SERVICE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                </select>
+                <input className="form-input" value={line.description} onChange={(e) => updateLine(index, { description: e.target.value })} placeholder="Description" />
+                <input className="form-input" type="number" min={0} step={0.01} value={line.amount || ''} onChange={(e) => updateLine(index, { amount: Number(e.target.value) || 0 })} placeholder="Amount" />
+                <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeLine(index)} disabled={lines.length <= 1}>✕</button>
+              </div>
+            ))}
+            <button type="button" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }} onClick={addLine}>+ Add service line</button>
+          </div>
+        </FormField>
+        <FormField label="Payment status" span={2}>
           <select className="form-input" value={status} onChange={(e) => setStatus(e.target.value)}>
             {['Pending', 'Paid – Cash', 'Paid – MoMo', 'Paid – Insurance', 'Partial'].map((s) => <option key={s}>{s}</option>)}
           </select>
+        </FormField>
+        <FormField label="Notes" span={2}>
+          <input className="form-input" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional invoice notes" />
         </FormField>
       </FormGrid>
     </ModalShell>

@@ -212,13 +212,14 @@ export function PatientDetailPage() {
         <Card title="Prescriptions" noPadding>
           {rx.length ? (
             <table className="data-table">
-              <thead><tr><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Qty Dispensed</th><th>Status</th></tr></thead>
+              <thead><tr><th>Medication</th><th>Strength</th><th>Directions</th><th>Route</th><th>Qty Dispensed</th><th>Status</th></tr></thead>
               <tbody>
                 {rx.map((r) => (
                   <tr key={r.id}>
                     <td><strong>{r.medication}</strong></td>
-                    <td>{r.dosage}</td>
-                    <td>{r.frequency}</td>
+                    <td>{r.dosage || '–'}</td>
+                    <td>{r.frequency || '–'}</td>
+                    <td>{r.route || '–'}</td>
                     <td>{r.qty_dispensed}</td>
                     <td><Badge>{r.status}</Badge></td>
                   </tr>

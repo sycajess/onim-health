@@ -26,7 +26,7 @@ export function PrescriptionsPage() {
         {db.prescriptions.length ? (
           <table className="data-table">
             <thead>
-              <tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Frequency</th><th>Date</th><th>Status</th>{canWrite && <th>Actions</th>}</tr>
+              <tr><th>Patient</th><th>Medication</th><th>Strength</th><th>Directions</th><th>Route</th><th>Date</th><th>Status</th>{canWrite && <th>Actions</th>}</tr>
             </thead>
             <tbody>
               {db.prescriptions.map((r) => {
@@ -35,8 +35,9 @@ export function PrescriptionsPage() {
                   <tr key={r.id}>
                     <td>{p ? <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link> : '–'}</td>
                     <td><strong>{r.medication}</strong></td>
-                    <td>{r.dosage}</td>
-                    <td>{r.frequency}</td>
+                    <td>{r.dosage || '–'}</td>
+                    <td>{r.frequency || '–'}</td>
+                    <td>{r.route || '–'}</td>
                     <td>{fmtDate(r.date)}</td>
                     <td><Badge>{r.status}</Badge></td>
                     {canWrite && (

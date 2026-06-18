@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
-import { useData, fmtDate, patientFullName } from '@onim/data'
+import { useData, fmtDate, patientFullName, evaluateLabResult } from '@onim/data'
 import { Badge, Button, Card, EmptyState, PdfAttachZone } from '@onim/ui'
 import type { PdfAttachment } from '@onim/ui'
 import { NewLabModal } from '../../components/modals/ClinicModals'
@@ -35,13 +35,20 @@ export function LabsPage() {
                 const attachment = l.attachment
                   ? { name: l.attachment.name, dataUrl: l.attachment.data_url }
                   : null
+                const evaluated = evaluateLabResult(l.result, l.ref)
+                const resultStyle =
+                  evaluated === 'Abnormal – High' || evaluated === 'Critical'
+                    ? { color: 'var(--danger)', fontWeight: 600 as const }
+                    : evaluated === 'Abnormal – Low'
+                      ? { color: 'var(--amber)', fontWeight: 600 as const }
+                      : undefined
                 return (
                   <tr key={l.id}>
                     <td>{p ? <Link to={`/patients/${p.id}`} className="link-cell">{patientFullName(p)}</Link> : '–'}</td>
                     <td>{fmtDate(l.date)}</td>
                     <td><strong>{l.test}</strong></td>
-                    <td>{l.result}</td>
-                    <td>{l.ref}</td>
+                    <td style={resultStyle}>{l.result}</td>
+                    <td>{l.ref || '–'}</td>
                     <td>{l.facility}</td>
                     <td><Badge>{l.status}</Badge></td>
                     <td>

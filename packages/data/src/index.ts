@@ -14,3 +14,23 @@ export {
   SPECIALTIES,
   SPECIALTY_COLORS,
 } from './utils'
+export {
+  parseLabNumericValue,
+  parseReferenceRange,
+  evaluateLabResult,
+  labStatusHint,
+  type LabResultStatus,
+  type ReferenceRange,
+} from './labRange'
+export {
+  BILLING_SERVICE_TYPES,
+  serializeBillingServices,
+  parseBillingServices,
+  formatBillingServicesSummary,
+  billingLinesTotal,
+  isPaidBillingStatus,
+  billingPaymentMethod,
+  type BillingLineItem,
+  type BillingServiceType,
+} from './billing'
+export { RX_FREQUENCIES, RX_ROUTES } from './prescriptionOptions'

@@ -61,6 +61,7 @@ export type Prescription = {
   med_id: string
   dosage: string
   frequency: string
+  route: string
   duration: string
   refills: number
   date: string
