@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, Card, EmptyState } from '@onim/ui'
-import { IconAction, RowActions } from '../../components/IconAction'
+import { RowActions } from '../../components/IconAction'
 import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { NewPrescriptionModal } from '../../components/modals/ClinicModals'
 import '@onim/ui/Card.css'
@@ -43,12 +43,6 @@ export function PrescriptionsPage() {
                     {canWrite && (
                       <td>
                         <RowActions>
-                          {r.status !== 'Completed' && (
-                            <IconAction icon="complete" label="Mark completed" variant="success" onClick={() => void updatePrescriptionStatus(r.id, 'Completed')} />
-                          )}
-                          {r.status !== 'Cancelled' && (
-                            <IconAction icon="cancel" label="Cancel prescription" variant="danger" onClick={() => void updatePrescriptionStatus(r.id, 'Cancelled')} />
-                          )}
                           <StatusIconMenu value={r.status} options={STATUSES} onChange={(s) => void updatePrescriptionStatus(r.id, s)} />
                         </RowActions>
                       </td>

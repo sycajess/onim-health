@@ -27,6 +27,8 @@ export function StatusIconMenu({ value, options, onChange }: StatusIconMenuProps
     return () => document.removeEventListener('mousedown', onDocClick)
   }, [open])
 
+  const menuOptions = options.filter((opt) => opt !== value)
+
   return (
     <div className="status-icon-menu" ref={ref}>
       <IconAction
@@ -34,14 +36,14 @@ export function StatusIconMenu({ value, options, onChange }: StatusIconMenuProps
         label={`Status: ${value}. Change status`}
         onClick={() => setOpen((v) => !v)}
       />
-      {open && (
+      {open && menuOptions.length > 0 && (
         <div className="status-icon-menu__panel" role="menu">
-          {options.map((opt) => (
+          {menuOptions.map((opt) => (
             <button
               key={opt}
               type="button"
               role="menuitem"
-              className={`status-icon-menu__option${opt === value ? ' is-active' : ''}`}
+              className="status-icon-menu__option"
               title={opt}
               aria-label={opt}
               onClick={() => {
@@ -50,6 +52,7 @@ export function StatusIconMenu({ value, options, onChange }: StatusIconMenuProps
               }}
             >
               <IconGlyph icon={optionIcon(opt)} />
+              <span className="status-icon-menu__label">{opt}</span>
             </button>
           ))}
         </div>

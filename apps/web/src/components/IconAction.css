@@ -80,7 +80,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  min-width: 36px;
+  min-width: 160px;
   padding: 4px;
   background: var(--white, #fff);
   border: 1px solid var(--gray2, #e5e7eb);
@@ -91,10 +91,11 @@
 .status-icon-menu__option {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
+  justify-content: flex-start;
+  gap: 8px;
+  width: 100%;
+  min-height: 32px;
+  padding: 6px 10px;
   border: none;
   border-radius: 8px;
   background: none;
@@ -108,9 +109,15 @@
   color: var(--teal, #059669);
 }
 
+.status-icon-menu__label {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .status-icon-menu__option svg {
   width: 16px;
   height: 16px;
+  flex-shrink: 0;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;

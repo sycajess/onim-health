@@ -54,12 +54,7 @@ export function BillingPage() {
                           <IconAction icon="paid" label="View receipt" onClick={() => setReceiptInvoice(b)} />
                         )}
                         {canWrite && (
-                          <>
-                            {!b.status.startsWith('Paid') && (
-                              <IconAction icon="paid" label="Mark paid (MoMo)" variant="success" onClick={() => void updateBillingStatus(b.id, 'Paid – MoMo')} />
-                            )}
-                            <StatusIconMenu value={b.status} options={STATUSES} onChange={(s) => void updateBillingStatus(b.id, s)} />
-                          </>
+                          <StatusIconMenu value={b.status} options={STATUSES} onChange={(s) => void updateBillingStatus(b.id, s)} />
                         )}
                       </RowActions>
                     </td>

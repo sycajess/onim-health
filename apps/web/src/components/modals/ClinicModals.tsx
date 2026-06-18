@@ -191,7 +191,6 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
   const [qty, setQty] = useState('1')
   const [dispense, setDispense] = useState(false)
   const [inventoryMedId, setInventoryMedId] = useState('')
-  const [customDrug, setCustomDrug] = useState(false)
 
   const patient = db.patients.find((p) => p.id === patientId)
   const canSave = !!patientId && medication.trim().length > 0
@@ -206,7 +205,6 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
     setQty('1')
     setDispense(false)
     setInventoryMedId('')
-    setCustomDrug(false)
   }
 
   async function handleSave() {
@@ -234,35 +232,13 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
       <FormGrid>
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
         <FormField label="Medication" span={2}>
-          {customDrug ? (
-            <input
-              className="form-input"
-              value={medication}
-              onChange={(e) => setMedication(e.target.value)}
-              placeholder="Enter drug name (not in database)"
-            />
-          ) : (
-            <MedicationSearch
-              value={medication}
-              onChange={setMedication}
-              onSelectDrug={(drug) => {
-                if (drug.strength) setDosage(drug.strength)
-              }}
-            />
-          )}
-        </FormField>
-        <FormField label=" " span={2}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <input
-              type="checkbox"
-              checked={customDrug}
-              onChange={(e) => {
-                setCustomDrug(e.target.checked)
-                if (!e.target.checked) setMedication('')
-              }}
-            />
-            Drug not in database — enter manually
-          </label>
+          <MedicationSearch
+            value={medication}
+            onChange={setMedication}
+            onSelectDrug={(drug) => {
+              if (drug.strength) setDosage(drug.strength)
+            }}
+          />
         </FormField>
         <FormField label="Strength / Dosage">
           <input className="form-input" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="e.g. 500mg" />

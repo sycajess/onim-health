@@ -64,12 +64,26 @@ export function MedicationSearch({ value, onChange, onSelectDrug, placeholder }:
           if (e.target.value.trim().length >= 2) setOpen(true)
         }}
         onFocus={() => results.length > 0 && setOpen(true)}
-        placeholder={placeholder ?? 'Search drug database or type custom name…'}
+        placeholder={placeholder ?? 'Search drug…'}
         autoComplete="off"
       />
       {loading && (
-        <div style={{ fontSize: 11, color: 'var(--gray4)', marginTop: 4 }}>Searching RxNorm…</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, fontSize: 11, color: 'var(--gray4)' }}>
+          <span
+            style={{
+              width: 14,
+              height: 14,
+              border: '2px solid var(--gray2)',
+              borderTopColor: 'var(--teal)',
+              borderRadius: '50%',
+              display: 'inline-block',
+              animation: 'med-search-spin 0.7s linear infinite',
+            }}
+          />
+          Searching…
+        </div>
       )}
+      <style>{`@keyframes med-search-spin { to { transform: rotate(360deg); } }`}</style>
       {open && results.length > 0 && (
         <div
           style={{

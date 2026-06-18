@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, Card, EmptyState } from '@onim/ui'
-import { IconAction, RowActions } from '../../components/IconAction'
+import { RowActions } from '../../components/IconAction'
 import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { NewAppointmentModal } from '../../components/modals/ClinicModals'
 import '@onim/ui/Card.css'
@@ -56,12 +56,6 @@ export function AppointmentsPage() {
                     {canWrite && (
                       <td>
                         <RowActions>
-                          {a.status !== 'Completed' && (
-                            <IconAction icon="complete" label="Mark completed" variant="success" onClick={() => void updateAppointmentStatus(a.id, 'Completed')} />
-                          )}
-                          {a.status !== 'Cancelled' && (
-                            <IconAction icon="cancel" label="Cancel appointment" variant="danger" onClick={() => void updateAppointmentStatus(a.id, 'Cancelled')} />
-                          )}
                           <StatusIconMenu value={a.status} options={STATUSES} onChange={(s) => void updateAppointmentStatus(a.id, s)} />
                         </RowActions>
                       </td>
