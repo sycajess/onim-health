@@ -9,13 +9,13 @@ import '@onim/ui/Card.css'
 
 export function PatientsPage() {
   const { searchPatients, deletePatient } = useData()
-  const { canEditPatient, canDeletePatient, canMessage } = usePermissions()
+  const { canEditPatient, canDeletePatient } = usePermissions()
   const [params] = useSearchParams()
   const [specialty, setSpecialty] = useState('')
   const [editPatient, setEditPatient] = useState<Patient | null>(null)
   const q = params.get('q') ?? ''
   const patients = searchPatients(q, specialty || undefined)
-  const showActions = canEditPatient || canDeletePatient || canMessage
+  const showActions = canEditPatient || canDeletePatient
 
   async function handleDelete(p: Patient) {
     if (!window.confirm(`Delete ${patientFullName(p)}? This cannot be undone.`)) return
@@ -80,9 +80,6 @@ export function PatientsPage() {
                       <RowActions>
                         {canEditPatient && (
                           <IconAction icon="edit" label={`Edit ${patientFullName(p)}`} onClick={() => setEditPatient(p)} />
-                        )}
-                        {canMessage && (
-                          <IconAction icon="message" label={`Message ${patientFullName(p)}`} to={`/messaging?thread=${p.id}`} />
                         )}
                         {canDeletePatient && (
                           <IconAction icon="delete" label={`Delete ${patientFullName(p)}`} variant="danger" onClick={() => void handleDelete(p)} />

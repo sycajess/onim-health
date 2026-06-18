@@ -13,6 +13,7 @@ import type {
   StaffMember,
 } from '@onim/data'
 import { getSupabase } from './client'
+import { mapStaffMessageRow } from './messaging'
 
 export function emptyDatabase(): Database {
   return {
@@ -101,18 +102,6 @@ function mapLab(row: Record<string, unknown>): LabResult {
   }
 }
 
-function formatMessageTime(iso: string): string {
-  const d = new Date(iso)
-  const now = new Date()
-  const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000)
-  if (diffDays === 0) {
-    return d.toLocaleTimeString('en-GH', { hour: 'numeric', minute: '2-digit' })
-  }
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return `${diffDays} days ago`
-  return d.toLocaleDateString('en-GH')
-}
-
 export async function fetchDatabase(): Promise<Database | { error: string }> {
   const supabase = getSupabase()
   if (!supabase) return { error: 'Supabase is not configured.' }
@@ -138,7 +127,7 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     supabase.from('dispense_log').select('*').order('date', { ascending: false }),
     supabase.from('billing').select('*').order('date', { ascending: false }),
     supabase.from('messages').select('*').order('created_at'),
-    supabase.from('profiles').select('full_name, email, role, specialty, phone'),
+    supabase.from('profiles').select('id, full_name, email, role, specialty, phone'),
   ])
 
   const firstError = [
@@ -159,14 +148,20 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
   for (const m of messagesRes.data ?? []) {
     const thread = String(m.thread_id)
     if (!messages[thread]) messages[thread] = []
-    messages[thread].push({
-      from: m.from_role as 'provider' | 'patient',
-      text: String(m.body),
-      time: formatMessageTime(String(m.created_at)),
-    })
+    messages[thread].push(
+      mapStaffMessageRow({
+        id: String(m.id),
+        thread_id: thread,
+        sender_id: String(m.sender_id),
+        recipient_id: String(m.recipient_id),
+        body: String(m.body),
+        created_at: String(m.created_at),
+      }),
+    )
   }
 
   const staff: StaffMember[] = (profilesRes.data ?? []).map((p) => ({
+    id: String(p.id),
     name: String(p.full_name),
     username: String(p.email).split('@')[0] ?? '',
     role: String(p.role),
@@ -340,7 +335,6 @@ export async function deletePatient(id: string): Promise<true | { error: string 
   const supabase = getSupabase()
   if (!supabase) return { error: 'Supabase is not configured.' }
 
-  await supabase.from('messages').delete().eq('thread_id', id)
   await supabase.from('dispense_log').delete().eq('patient_id', id)
 
   const { error } = await supabase.from('patients').delete().eq('id', id)

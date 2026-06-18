@@ -25,12 +25,12 @@ export function PatientDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { db, getPatient, deletePatient, updateLabAttachment } = useData()
-  const { canEditPatient, canDeletePatient, canMessage, canWriteModule, canAccessModule } = usePermissions()
+  const { canEditPatient, canDeletePatient, canWriteModule, canAccessModule } = usePermissions()
   const [tab, setTab] = useState<(typeof TABS)[number]>('Overview')
   const [editOpen, setEditOpen] = useState(false)
   const patient = id ? getPatient(id) : undefined
   const canWriteLabs = canWriteModule('labs')
-  const showHeaderActions = canEditPatient || canDeletePatient || canMessage
+  const showHeaderActions = canEditPatient || canDeletePatient
   const visibleTabs = TABS.filter((t) => {
     const module = TAB_MODULES[t]
     return module ? canAccessModule(module) : true
@@ -139,9 +139,6 @@ export function PatientDetailPage() {
           <RowActions>
             {canEditPatient && (
               <IconAction icon="edit" label={`Edit ${patientFullName(patient)}`} onClick={() => setEditOpen(true)} />
-            )}
-            {canMessage && (
-              <IconAction icon="message" label={`Message ${patientFullName(patient)}`} to={`/messaging?thread=${patient.id}`} />
             )}
             {canDeletePatient && (
               <IconAction icon="delete" label={`Delete ${patientFullName(patient)}`} variant="danger" onClick={() => void handleDelete()} />

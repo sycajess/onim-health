@@ -14,6 +14,8 @@ import {
   saveLabAttachment,
   saveMedication,
   sendMessage,
+  subscribeToStaffMessages,
+  mapStaffMessageRow,
   updateAppointmentStatus,
   updateBillingStatus,
   updatePatient,
@@ -26,6 +28,7 @@ import {
   type UpdatePatientInput,
   type NewPrescriptionInput,
   type NewRecordInput,
+  type StaffMessageRow,
 } from '@onim/supabase'
 import type { Database, LabAttachment, Patient } from './types'
 
@@ -49,7 +52,7 @@ type DataContextValue = {
   dispenseMedication: (medId: string, patientId: string, qty: number, patientName: string) => Promise<boolean | { error: string }>
   updateBillingStatus: (id: string, status: string) => Promise<boolean>
   addInvoice: (input: NewInvoiceInput) => Promise<boolean>
-  sendMessage: (threadId: string, text: string) => Promise<boolean>
+  sendMessage: (recipientId: string, text: string) => Promise<boolean>
   refresh: () => Promise<void>
 }
 
@@ -60,6 +63,22 @@ async function runMutation<T>(fn: () => Promise<T | { error: string }>, refresh:
   if (typeof result === 'object' && result !== null && 'error' in result) return false
   await refresh()
   return true
+}
+
+function appendStaffMessage(db: Database, row: StaffMessageRow): Database {
+  const thread = row.thread_id
+  const message = mapStaffMessageRow(row)
+  const existing = db.messages[thread] ?? []
+  if (existing.some((m) => m.id === message.id)) return db
+  return {
+    ...db,
+    messages: {
+      ...db.messages,
+      [thread]: [...existing, message].sort(
+        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      ),
+    },
+  }
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
@@ -90,6 +109,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (authLoading) return
     void refresh()
   }, [authLoading, refresh])
+
+  useEffect(() => {
+    if (!isAuthenticated) return
+    return subscribeToStaffMessages((row) => {
+      setDb((prev) => appendStaffMessage(prev, row))
+    })
+  }, [isAuthenticated])
 
   const getPatient = useCallback((id: string) => db.patients.find((p) => p.id === id), [db.patients])
 
@@ -195,11 +221,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   )
 
   const handleSendMessage = useCallback(
-    async (threadId: string, text: string) => {
+    async (recipientId: string, text: string) => {
       if (!profile?.id) return false
-      return runMutation(() => sendMessage(threadId, text, profile.id), refresh)
+      const result = await sendMessage(recipientId, text, profile.id)
+      if ('error' in result) return false
+      setDb((prev) => appendStaffMessage(prev, result))
+      return true
     },
-    [profile, refresh],
+    [profile],
   )
 
   const value = useMemo<DataContextValue>(

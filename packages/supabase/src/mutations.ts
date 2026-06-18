@@ -8,6 +8,7 @@ import type {
   Prescription,
 } from '@onim/data'
 import { getSupabase } from './client'
+import { conversationThreadId, type StaffMessageRow } from './messaging'
 
 function today(): string {
   return new Date().toISOString().split('T')[0]!
@@ -352,20 +353,26 @@ export async function createInvoice(input: NewInvoiceInput): Promise<BillingInvo
 }
 
 export async function sendMessage(
-  threadId: string,
+  recipientId: string,
   body: string,
   senderId: string,
-): Promise<true | MutError> {
+): Promise<StaffMessageRow | MutError> {
   const supabase = getSupabase()
   if (!supabase) return notConfigured()
-  const { error } = await supabase.from('messages').insert({
-    thread_id: threadId,
-    sender_id: senderId,
-    from_role: 'provider',
-    body: body.trim(),
-  })
+  const trimmed = body.trim()
+  if (!trimmed) return { error: 'Message cannot be empty.' }
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      thread_id: conversationThreadId(senderId, recipientId),
+      sender_id: senderId,
+      recipient_id: recipientId,
+      body: trimmed,
+    })
+    .select('id, thread_id, sender_id, recipient_id, body, created_at')
+    .single()
   if (error) return { error: error.message }
-  return true
+  return data as StaffMessageRow
 }
 
 export { createPatient, saveLabAttachment, updatePatient, deletePatient } from './database'

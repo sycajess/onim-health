@@ -12,6 +12,13 @@ export {
   supabaseSignUp,
   supabaseSignOut,
 } from './auth'
+export {
+  conversationThreadId,
+  partnerIdFromThread,
+  mapStaffMessageRow,
+  subscribeToStaffMessages,
+} from './messaging'
+export type { StaffMessageRow } from './messaging'
 export { emptyDatabase, fetchDatabase } from './database'
 export {
   createPatient,

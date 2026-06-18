@@ -142,7 +142,7 @@ export const MODULES: ModuleConfig[] = [
   { id: 'labs', path: '/labs', label: 'Lab Results', icon: '🧪', section: 'clinical', roles: ['admin', 'doctor', 'nurse', 'nutritionist'] },
   { id: 'inventory', path: '/inventory', label: 'Medication Inventory', icon: '📦', section: 'operations', roles: ['admin', 'pharmacist', 'nurse', 'accountant'] },
   { id: 'billing', path: '/billing', label: 'Billing', icon: '🧾', section: 'operations', roles: ['admin', 'accountant'] },
-  { id: 'messaging', path: '/messaging', label: 'Secure Messaging', icon: '💬', section: 'operations', roles: ['admin', 'doctor', 'pharmacist', 'nutritionist', 'nurse', 'staff'] },
+  { id: 'messaging', path: '/messaging', label: 'Team Messaging', icon: '💬', section: 'operations', roles: ['admin', 'doctor', 'pharmacist', 'nutritionist', 'nurse', 'staff'] },
   { id: 'reports', path: '/reports', label: 'Reports', icon: '📊', section: 'analytics', roles: ['admin', 'doctor', 'pharmacist', 'accountant'] },
   { id: 'settings', path: '/settings', label: 'Settings', icon: '⚙️', section: 'system', roles: ['admin'] },
 ]

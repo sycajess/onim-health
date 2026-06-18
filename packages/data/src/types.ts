@@ -128,12 +128,15 @@ export type BillingInvoice = {
 }
 
 export type Message = {
-  from: 'provider' | 'patient'
+  id: string
+  senderId: string
   text: string
   time: string
+  createdAt: string
 }
 
 export type StaffMember = {
+  id: string
   name: string
   username: string
   role: string
