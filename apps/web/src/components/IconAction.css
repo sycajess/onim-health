@@ -124,3 +124,31 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+.status-icon-menu__icon--cash {
+  color: #15803d;
+}
+
+.status-icon-menu__icon--momo {
+  color: #ca8a04;
+}
+
+.status-icon-menu__icon--insurance {
+  color: #1d4ed8;
+}
+
+.status-icon-menu__icon--partial {
+  color: #c2410c;
+}
+
+.status-icon-menu__icon--pending {
+  color: #6b7280;
+}
+
+.status-icon-menu__icon--success {
+  color: #059669;
+}
+
+.status-icon-menu__icon--danger {
+  color: #dc2626;
+}

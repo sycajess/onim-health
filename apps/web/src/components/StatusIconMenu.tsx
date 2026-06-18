@@ -9,9 +9,26 @@ type StatusIconMenuProps = {
 
 function optionIcon(opt: string): IconName {
   if (/cancel/i.test(opt)) return 'cancel'
+  if (/cash/i.test(opt)) return 'cash'
+  if (/momo/i.test(opt)) return 'momo'
+  if (/insurance/i.test(opt)) return 'insurance'
+  if (/partial/i.test(opt)) return 'partial'
+  if (/pending/i.test(opt)) return 'pending'
   if (/paid/i.test(opt)) return 'paid'
   if (/complete|confirm|active/i.test(opt)) return 'complete'
+  if (/scheduled/i.test(opt)) return 'pending'
   return 'more'
+}
+
+function optionIconTone(opt: string): string {
+  if (/cash/i.test(opt)) return 'status-icon-menu__icon--cash'
+  if (/momo/i.test(opt)) return 'status-icon-menu__icon--momo'
+  if (/insurance/i.test(opt)) return 'status-icon-menu__icon--insurance'
+  if (/partial/i.test(opt)) return 'status-icon-menu__icon--partial'
+  if (/pending|scheduled/i.test(opt)) return 'status-icon-menu__icon--pending'
+  if (/cancel/i.test(opt)) return 'status-icon-menu__icon--danger'
+  if (/complete|confirm|active/i.test(opt)) return 'status-icon-menu__icon--success'
+  return ''
 }
 
 export function StatusIconMenu({ value, options, onChange }: StatusIconMenuProps) {
@@ -43,7 +60,7 @@ export function StatusIconMenu({ value, options, onChange }: StatusIconMenuProps
               key={opt}
               type="button"
               role="menuitem"
-              className="status-icon-menu__option"
+              className={`status-icon-menu__option${optionIconTone(opt) ? ` ${optionIconTone(opt)}` : ''}`}
               title={opt}
               aria-label={opt}
               onClick={() => {

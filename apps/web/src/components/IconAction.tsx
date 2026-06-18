@@ -10,6 +10,11 @@ export type IconName =
   | 'complete'
   | 'cancel'
   | 'paid'
+  | 'cash'
+  | 'momo'
+  | 'insurance'
+  | 'partial'
+  | 'pending'
   | 'message'
   | 'send'
   | 'more'
@@ -60,6 +65,43 @@ const ICONS: Record<IconName, ReactNode> = {
       <rect x="2" y="5" width="20" height="14" rx="2" />
       <path d="M2 10h20" />
       <path d="M6 15h2" />
+    </svg>
+  ),
+  cash: (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <rect x="2" y="7" width="18" height="11" rx="2" />
+      <circle cx="17" cy="17" r="4" />
+      <path d="M17 15.5v3" />
+      <path d="M15.5 17h3" />
+      <path d="M6 11h8" />
+    </svg>
+  ),
+  momo: (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <rect x="7" y="3" width="10" height="18" rx="2" />
+      <path d="M10 18h4" />
+      <rect x="9" y="6" width="6" height="8" rx="1" />
+      <path d="M10.5 10h3" />
+      <path d="M10.5 12.5h3" />
+    </svg>
+  ),
+  insurance: (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <path d="M12 3l8 4v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7l8-4Z" />
+      <path d="M9.5 12.5 11 14l3.5-4" />
+    </svg>
+  ),
+  partial: (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 4a8 8 0 0 0 0 16" />
+      <path d="M12 4v16" />
+    </svg>
+  ),
+  pending: (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <circle cx="12" cy="12" r="8" />
+      <path d="M12 8v4l3 2" />
     </svg>
   ),
   message: (
