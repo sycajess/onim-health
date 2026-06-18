@@ -81,12 +81,10 @@ export function AppLayout() {
               <div className="sidebar__role">{ROLE_LABELS[role]}</div>
             </div>
           </div>
-          <div className="sidebar__footer-row">
-            <span className="sidebar__version">v2.0 · Onim Health © 2026</span>
-            <button type="button" className="sidebar__signout" onClick={handleSignOut}>
-              Sign out
-            </button>
-          </div>
+          <div className="sidebar__footer-brand">Onim Health © 2026</div>
+          <button type="button" className="sidebar__signout" onClick={handleSignOut}>
+            Sign out
+          </button>
         </div>
       </aside>
 
