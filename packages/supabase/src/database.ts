@@ -50,6 +50,7 @@ function mapPatient(row: Record<string, unknown>): Patient {
     allergy_codes: row.allergy_codes ?? [],
     conditions: String(row.conditions ?? ''),
     condition_codes: row.condition_codes ?? [],
+    gdrg_codes: row.gdrg_codes ?? [],
     current_meds: String(row.current_meds ?? ''),
     ec_name: String(row.ec_name ?? ''),
     ec_rel: String(row.ec_rel ?? ''),
@@ -218,6 +219,7 @@ export type NewPatientInput = {
   allergy_codes?: unknown
   conditions?: string
   condition_codes?: unknown
+  gdrg_codes?: unknown
   current_meds?: string
   ec_name?: string
   ec_rel?: string
@@ -263,6 +265,7 @@ export async function createPatient(input: NewPatientInput): Promise<Patient | {
     allergy_codes: input.allergy_codes ?? [],
     conditions: input.conditions?.trim() ?? '',
     condition_codes: input.condition_codes ?? [],
+    gdrg_codes: input.gdrg_codes ?? [],
     current_meds: input.current_meds?.trim() ?? '',
     ec_name: input.ec_name?.trim() ?? '',
     ec_rel: input.ec_rel?.trim() ?? '',
@@ -294,6 +297,7 @@ export type UpdatePatientInput = {
   allergy_codes?: unknown
   conditions?: string
   condition_codes?: unknown
+  gdrg_codes?: unknown
   current_meds?: string
   ec_name?: string
   ec_rel?: string
@@ -332,6 +336,7 @@ export async function updatePatient(
     allergy_codes: input.allergy_codes ?? [],
     conditions: input.conditions?.trim() ?? '',
     condition_codes: input.condition_codes ?? [],
+    gdrg_codes: input.gdrg_codes ?? [],
     current_meds: input.current_meds?.trim() ?? '',
     ec_name: input.ec_name?.trim() ?? '',
     ec_rel: input.ec_rel?.trim() ?? '',
