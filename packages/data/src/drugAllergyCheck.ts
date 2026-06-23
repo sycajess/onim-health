@@ -54,6 +54,22 @@ export type DrugAllergyAlert = {
   matchedTerms: string[]
 }
 
+export function checkPatientMedAllergies(
+  patient: Pick<Patient, 'allergies' | 'allergy_codes'>,
+  medNames: string[],
+): DrugAllergyAlert[] {
+  const alerts: DrugAllergyAlert[] = []
+  const seen = new Set<string>()
+  for (const med of medNames) {
+    const alert = checkDrugAllergyLocal(patient, med)
+    if (alert && !seen.has(alert.message)) {
+      seen.add(alert.message)
+      alerts.push(alert)
+    }
+  }
+  return alerts
+}
+
 export function checkDrugAllergyLocal(
   patient: Pick<Patient, 'allergies' | 'allergy_codes'>,
   drugName: string,

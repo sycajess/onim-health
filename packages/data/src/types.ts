@@ -19,6 +19,7 @@ export type Patient = {
   allergy_codes: unknown
   conditions: string
   condition_codes: unknown
+  gdrg_codes: unknown
   current_meds: string
   ec_name: string
   ec_rel: string

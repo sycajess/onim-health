@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useData, SPECIALTIES, formatCodedList, parseCodedEntries, type Patient } from '@onim/data'
+import { useData, SPECIALTIES, formatCodedList, parseCodedEntries, searchGdrgCodes, type Patient } from '@onim/data'
 import { Button, Modal } from '@onim/ui'
 import { PhoneInput, formatPhone } from './PhoneInput'
 import { CodedTagInput, type SearchOption } from './SearchInput'
@@ -52,11 +52,17 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
   const [height, setHeight] = useState('')
   const [allergyTags, setAllergyTags] = useState<SearchOption[]>([])
   const [conditionTags, setConditionTags] = useState<SearchOption[]>([])
+  const [gdrgTags, setGdrgTags] = useState<SearchOption[]>([])
   const [currentMeds, setCurrentMeds] = useState('')
   const [ecName, setEcName] = useState('')
   const [ecRel, setEcRel] = useState('')
   const [ecCountryCode, setEcCountryCode] = useState('+233')
   const [ecPhoneNumber, setEcPhoneNumber] = useState('')
+
+  const searchGdrg = useCallback(
+    async (q: string) => searchGdrgCodes(q).map((g) => ({ code: g.code, name: g.name })),
+    [],
+  )
 
   const resolvedSpecialty = specialtyChoice === OTHER_SPECIALTY ? otherSpecialty.trim() : specialtyChoice
 
@@ -82,6 +88,7 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
       setHeight(patient.height ? String(patient.height) : '')
       setAllergyTags(parseCodedEntries(patient.allergy_codes).map((e) => ({ code: e.code, name: e.name })))
       setConditionTags(parseCodedEntries(patient.condition_codes).map((e) => ({ code: e.code, name: e.name })))
+      setGdrgTags(parseCodedEntries(patient.gdrg_codes).map((e) => ({ code: e.code, name: e.name })))
       setCurrentMeds(patient.current_meds)
       setEcName(patient.ec_name)
       setEcRel(patient.ec_rel)
@@ -107,6 +114,7 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
     setHeight('')
     setAllergyTags([])
     setConditionTags([])
+    setGdrgTags([])
     setCurrentMeds('')
     setEcName('')
     setEcRel('')
@@ -123,6 +131,12 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
       terms: [t.name, t.code].filter(Boolean),
     }))
     const conditionCodes = conditionTags.map((t) => ({
+      code: t.code,
+      name: t.name,
+      terms: [t.name, t.code].filter(Boolean),
+    }))
+
+    const gdrgCodes = gdrgTags.map((t) => ({
       code: t.code,
       name: t.name,
       terms: [t.name, t.code].filter(Boolean),
@@ -146,6 +160,7 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
       allergy_codes: allergyCodes,
       conditions: formatCodedList(conditionCodes),
       condition_codes: conditionCodes,
+      gdrg_codes: gdrgCodes,
       current_meds: currentMeds.trim(),
       ec_name: ecName.trim(),
       ec_rel: ecRel.trim(),
@@ -279,12 +294,21 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
           />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
-          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Chronic conditions</span>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Diagnosis (ICD-10)</span>
           <CodedTagInput
             entries={conditionTags}
             onChange={setConditionTags}
             search={searchIcd10}
             placeholder="Search ICD-10…"
+          />
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
+          <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>G-DRG</span>
+          <CodedTagInput
+            entries={gdrgTags}
+            onChange={setGdrgTags}
+            search={searchGdrg}
+            placeholder="Search G-DRG…"
           />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>

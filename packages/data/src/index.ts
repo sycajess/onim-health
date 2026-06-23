@@ -42,4 +42,4 @@ export {
   codedEntryTerms,
   type CodedEntry,
 } from './clinicalCodes'
-export { checkDrugAllergyLocal, type DrugAllergyAlert } from './drugAllergyCheck'
+export { checkDrugAllergyLocal, checkPatientMedAllergies, type DrugAllergyAlert } from './drugAllergyCheck'

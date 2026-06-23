@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
-import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, checkDrugAllergyLocal } from '@onim/data'
+import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, checkDrugAllergyLocal, checkPatientMedAllergies, formatCodedList, parseCodedEntries } from '@onim/data'
 import type { ModuleId } from '@onim/types'
 import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
@@ -71,10 +71,15 @@ export function PatientDetailPage() {
 
   const rxAllergyAlerts = useMemo(() => {
     if (!patient) return []
-    return rx
-      .filter((r) => r.status === 'Active')
-      .map((r) => ({ rx: r, alert: checkDrugAllergyLocal(patient, r.medication) }))
-      .filter((x): x is { rx: typeof rx[0]; alert: NonNullable<ReturnType<typeof checkDrugAllergyLocal>> } => !!x.alert)
+    const rxMeds = rx.filter((r) => r.status === 'Active').map((r) => r.medication)
+    const currentMeds = (patient.current_meds ?? '')
+      .split(/[,;\n]+/)
+      .map((m) => m.trim())
+      .filter(Boolean)
+    return checkPatientMedAllergies(patient, [...rxMeds, ...currentMeds]).map((alert, i) => ({
+      id: `alert-${i}`,
+      alert,
+    }))
   }, [patient, rx])
 
   const timelineEvents = useMemo<TimelineEvent[]>(() => {
@@ -168,8 +173,8 @@ export function PatientDetailPage() {
         <div className="pt-overview">
           {rxAllergyAlerts.length > 0 && (
             <div className="alert-banner alert-banner--warning" style={{ marginBottom: 16 }}>
-              {rxAllergyAlerts.map(({ rx, alert }) => (
-                <div key={rx.id}>{rx.medication}: {alert.message}</div>
+              {rxAllergyAlerts.map(({ id, alert }) => (
+                <div key={id}>{alert.message}</div>
               ))}
             </div>
           )}
@@ -185,7 +190,8 @@ export function PatientDetailPage() {
                 ['Height', displayField(patient.height, ' cm')],
                 ['NHIS', displayField(patient.nhis)],
                 ['Allergies', displayField(patient.allergies)],
-                ['Conditions', displayField(patient.conditions)],
+                ['Diagnosis (ICD-10)', displayField(patient.conditions)],
+                ['G-DRG', formatCodedList(parseCodedEntries(patient.gdrg_codes)) || '–'],
                 ['Current Meds', displayField(patient.current_meds)],
               ].map(([label, value]) => (
                 <div key={label} className="info-item">

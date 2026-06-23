@@ -4,11 +4,124 @@
  *   VITE_SUPABASE_URL
  *   SUPABASE_DB_PASSWORD
  *   SUPABASE_SERVICE_ROLE_KEY
+ * Optional (if direct host fails on IPv4-only networks):
+ *   DATABASE_URL — full Postgres URI from Supabase → Connect
+ *   SUPABASE_DB_HOST — pooler host, e.g. aws-0-eu-west-1.pooler.supabase.com
  */
 
+async function resolveHost(hostname) {
+  try {
+    const v6 = await dns.resolve6(hostname)
+    if (v6.length) return v6[0]
+  } catch {
+    /* try IPv4 */
+  }
+  try {
+    const v4 = await dns.resolve4(hostname)
+    if (v4.length) return v4[0]
+  } catch {
+    /* try nslookup fallback (Windows / restricted Node DNS) */
+  }
+
+  try {
+    const out = execSync(`nslookup ${hostname}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })
+    const lines = out.split(/\r?\n/)
+    const nameIdx = lines.findIndex((line) => line.trim().startsWith('Name:'))
+    if (nameIdx !== -1) {
+      for (let i = nameIdx + 1; i < lines.length; i++) {
+        const match = lines[i].match(/Address:\s*([^\s\r\n]+)/)
+        if (match) return match[1]
+      }
+    }
+  } catch {
+    /* fall back to hostname */
+  }
+
+  return hostname
+}
+
+async function connectPg({ projectRef, dbPassword, env }) {
+  if (env.DATABASE_URL) {
+    const client = new pg.Client({ connectionString: env.DATABASE_URL, ssl: { rejectUnauthorized: false } })
+    await client.connect()
+    console.log('Connected via DATABASE_URL')
+    return client
+  }
+
+  const attempts = []
+
+  if (env.SUPABASE_DB_HOST) {
+    attempts.push({
+      label: `pooler ${env.SUPABASE_DB_HOST}`,
+      config: {
+        host: env.SUPABASE_DB_HOST,
+        port: Number(env.SUPABASE_DB_PORT || 5432),
+        user: `postgres.${projectRef}`,
+        password: dbPassword,
+        database: 'postgres',
+        ssl: { rejectUnauthorized: false },
+      },
+    })
+  }
+
+  const poolerRegions = [
+    'us-east-1', 'us-west-1', 'eu-west-1', 'eu-central-1', 'eu-west-2', 'eu-north-1',
+    'ap-southeast-1', 'ap-northeast-1', 'ap-south-1', 'ca-central-1', 'sa-east-1',
+  ]
+  for (const prefix of ['aws-0', 'aws-1']) {
+    for (const region of poolerRegions) {
+      attempts.push({
+        label: `pooler ${prefix}-${region}.pooler.supabase.com`,
+        config: {
+          host: `${prefix}-${region}.pooler.supabase.com`,
+          port: 5432,
+          user: `postgres.${projectRef}`,
+          password: dbPassword,
+          database: 'postgres',
+          ssl: { rejectUnauthorized: false },
+        },
+      })
+    }
+  }
+
+  const directHost = `db.${projectRef}.supabase.co`
+  attempts.push({
+    label: `direct ${directHost}`,
+    config: {
+      host: await resolveHost(directHost),
+      port: 5432,
+      user: 'postgres',
+      password: dbPassword,
+      database: 'postgres',
+      ssl: { rejectUnauthorized: false },
+    },
+  })
+
+  let lastError
+  for (const { label, config } of attempts) {
+    const client = new pg.Client(config)
+    try {
+      await client.connect()
+      console.log(`Connected via ${label}`)
+      return client
+    } catch (err) {
+      lastError = err
+      const wrongTenant = err.code === 'XX000' && String(err.message).includes('not found')
+      const retryable = wrongTenant || ['ENOTFOUND', 'ENETUNREACH', 'ETIMEDOUT', 'ECONNREFUSED', '28P01'].includes(err.code)
+      if (!retryable) throw err
+    }
+  }
+
+  console.error('\nCould not connect to Supabase Postgres.')
+  console.error('Add DATABASE_URL from Supabase → Connect → Session pooler to apps/web/.env.development')
+  throw lastError ?? new Error('Could not connect to Supabase Postgres')
+}
+
 import { readFileSync, readdirSync } from 'node:fs'
+import { execSync } from 'node:child_process'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import dns from 'node:dns/promises'
 import pg from 'pg'
 import { createClient } from '@supabase/supabase-js'
 
@@ -52,17 +165,38 @@ async function runMigrations() {
     process.exit(1)
   }
 
-  const connectionString = `postgresql://postgres:${encodeURIComponent(dbPassword)}@db.${projectRef}.supabase.co:5432/postgres`
-  const client = new pg.Client({ connectionString, ssl: { rejectUnauthorized: false } })
-  await client.connect()
+  const client = await connectPg({ projectRef, dbPassword, env })
+
+  await client.query(`
+    create table if not exists public._onim_migrations (
+      filename text primary key,
+      applied_at timestamptz not null default now()
+    )
+  `)
 
   const migDir = join(root, 'supabase/migrations')
   const files = readdirSync(migDir).filter((f) => f.endsWith('.sql')).sort()
+  const skipCodes = new Set(['42710', '42P07', '42723', '42P06', '42701'])
 
   for (const file of files) {
+    const { rows } = await client.query(
+      'select 1 from public._onim_migrations where filename = $1',
+      [file],
+    )
+    if (rows.length) {
+      console.log(`Skip: ${file}`)
+      continue
+    }
+
     const sql = readFileSync(join(migDir, file), 'utf8')
     console.log(`Migration: ${file}`)
-    await client.query(sql)
+    try {
+      await client.query(sql)
+    } catch (err) {
+      if (!skipCodes.has(err.code)) throw err
+      console.warn(`  Already applied (${err.code}): ${err.message}`)
+    }
+    await client.query('insert into public._onim_migrations (filename) values ($1)', [file])
   }
 
   const seedSql = readFileSync(join(root, 'supabase/seed.sql'), 'utf8')
@@ -92,6 +226,7 @@ async function seedUsers() {
     { email: 'nutritionist@onimhealth.com', password: 'Test1234!', role: 'nutritionist', full_name: 'Ama Nutrition', specialty: 'Weight Loss / Nutrition' },
     { email: 'staff@onimhealth.com', password: 'Test1234!', role: 'staff', full_name: 'Abena Mensah', specialty: 'Administration' },
     { email: 'accountant@onimhealth.com', password: 'Test1234!', role: 'accountant', full_name: 'Esi Finance', specialty: 'Finance' },
+    { email: 'lab@onimhealth.com', password: 'Test1234!', role: 'lab_partner', full_name: 'Korle-Bu Labs', specialty: 'Laboratory' },
   ]
 
   const supabase = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } })

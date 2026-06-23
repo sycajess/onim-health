@@ -149,12 +149,12 @@ export type ModuleConfig = {
 }
 
 export const MODULES: ModuleConfig[] = [
-  { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: '⊞', section: 'overview', roles: ['admin', 'doctor', 'pharmacist', 'nutritionist', 'nurse', 'staff', 'accountant'] },
-  { id: 'patients', path: '/patients', label: 'Patients', icon: '👥', section: 'overview', roles: ['admin', 'doctor', 'nurse', 'pharmacist', 'nutritionist', 'staff'] },
+  { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: '⊞', section: 'overview', roles: ['admin', 'doctor', 'pharmacist', 'nutritionist', 'nurse', 'staff', 'accountant', 'lab_partner'] },
+  { id: 'patients', path: '/patients', label: 'Patients', icon: '👥', section: 'overview', roles: ['admin', 'doctor', 'nurse', 'pharmacist', 'nutritionist', 'staff', 'lab_partner'] },
   { id: 'appointments', path: '/appointments', label: 'Appointments', icon: '📅', section: 'overview', roles: ['admin', 'doctor', 'nurse', 'nutritionist', 'staff'] },
   { id: 'records', path: '/records', label: 'Medical Records', icon: '📋', section: 'clinical', roles: ['admin', 'doctor', 'nurse', 'nutritionist'] },
   { id: 'prescriptions', path: '/prescriptions', label: 'Prescriptions', icon: '💊', section: 'clinical', roles: ['admin', 'doctor', 'pharmacist'] },
-  { id: 'labs', path: '/labs', label: 'Lab Results', icon: '🧪', section: 'clinical', roles: ['admin', 'doctor', 'nurse', 'nutritionist'] },
+  { id: 'labs', path: '/labs', label: 'Lab Results', icon: '🧪', section: 'clinical', roles: ['admin', 'doctor', 'nurse', 'nutritionist', 'lab_partner'] },
   { id: 'inventory', path: '/inventory', label: 'Medication Inventory', icon: '📦', section: 'operations', roles: ['admin', 'pharmacist', 'nurse', 'accountant'] },
   { id: 'billing', path: '/billing', label: 'Billing', icon: '🧾', section: 'operations', roles: ['admin', 'accountant'] },
   { id: 'messaging', path: '/messaging', label: 'Team Messaging', icon: '💬', section: 'operations', roles: ['admin', 'doctor', 'pharmacist', 'nutritionist', 'nurse', 'staff'] },
