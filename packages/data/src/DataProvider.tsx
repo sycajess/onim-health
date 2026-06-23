@@ -28,6 +28,9 @@ import {
   type UpdatePatientInput,
   type NewPrescriptionInput,
   type NewRecordInput,
+  adminUpdateStaff,
+  adminDeleteStaff,
+  type AdminStaffInput,
   type StaffMessageRow,
 } from '@onim/supabase'
 import type { Database, LabAttachment, Patient } from './types'
@@ -53,6 +56,8 @@ type DataContextValue = {
   updateBillingStatus: (id: string, status: string) => Promise<boolean>
   addInvoice: (input: NewInvoiceInput) => Promise<boolean>
   sendMessage: (recipientId: string, text: string) => Promise<boolean>
+  adminUpdateStaff: (input: AdminStaffInput) => Promise<boolean>
+  adminDeleteStaff: (id: string) => Promise<boolean>
   refresh: () => Promise<void>
 }
 
@@ -231,6 +236,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [profile],
   )
 
+  const handleAdminUpdateStaff = useCallback(
+    async (input: AdminStaffInput) => runMutation(() => adminUpdateStaff(input), refresh),
+    [refresh],
+  )
+
+  const handleAdminDeleteStaff = useCallback(
+    async (id: string) => runMutation(() => adminDeleteStaff(id), refresh),
+    [refresh],
+  )
+
   const value = useMemo<DataContextValue>(
     () => ({
       db,
@@ -253,6 +268,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateBillingStatus: handleUpdateBillingStatus,
       addInvoice,
       sendMessage: handleSendMessage,
+      adminUpdateStaff: handleAdminUpdateStaff,
+      adminDeleteStaff: handleAdminDeleteStaff,
       refresh,
     }),
     [
@@ -276,6 +293,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       handleUpdateBillingStatus,
       addInvoice,
       handleSendMessage,
+      handleAdminUpdateStaff,
+      handleAdminDeleteStaff,
       refresh,
     ],
   )

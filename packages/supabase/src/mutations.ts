@@ -128,6 +128,7 @@ export type NewPrescriptionInput = {
   patient_id: string
   med_id?: string
   medication: string
+  med_rxcui?: string
   dosage?: string
   frequency?: string
   route?: string
@@ -173,6 +174,7 @@ export async function createPrescription(input: NewPrescriptionInput): Promise<P
     patient_id: input.patient_id,
     medication: input.medication,
     med_id: inventoryMedId ?? '',
+    med_rxcui: input.med_rxcui?.trim() || null,
     dosage: input.dosage ?? '',
     frequency: input.frequency ?? '',
     route: input.route ?? '',

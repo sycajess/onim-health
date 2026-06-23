@@ -6,6 +6,7 @@ export type Role =
   | 'nurse'
   | 'staff'
   | 'accountant'
+  | 'lab_partner'
 
 export type ModuleId =
   | 'dashboard'
@@ -28,6 +29,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   nurse: 'Nurse',
   staff: 'General Staff',
   accountant: 'Accountant',
+  lab_partner: 'Lab Partner',
 }
 
 export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
@@ -120,6 +122,19 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: true,
     messaging: false,
     reports: true,
+    settings: false,
+  },
+  lab_partner: {
+    dashboard: true,
+    patients: true,
+    appointments: false,
+    records: false,
+    prescriptions: false,
+    labs: true,
+    inventory: false,
+    billing: false,
+    messaging: false,
+    reports: false,
     settings: false,
   },
 }

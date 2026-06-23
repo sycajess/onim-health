@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '@onim/auth'
 import {
   useData,
@@ -10,15 +10,20 @@ import {
   BILLING_SERVICE_TYPES,
   billingLinesTotal,
   serializeBillingServices,
-  RX_FREQUENCIES,
-  RX_ROUTES,
+  checkDrugAllergyLocal,
+  searchGdrgCodes,
   type BillingLineItem,
+  type DrugAllergyAlert,
 } from '@onim/data'
 import type { InventoryItem } from '@onim/data'
 import { Button, Modal, PdfAttachZone } from '@onim/ui'
 import type { PdfAttachment } from '@onim/ui'
 import { FormField, FormGrid } from '../FormField'
 import { MedicationSearch } from '../MedicationSearch'
+import { SigCodeInput } from '../SigCodeInput'
+import { SearchInput } from '../SearchInput'
+import { searchIcd10, searchLoinc, fetchDrugIngredients } from '../../lib/clinicalTables'
+import '../SearchInput.css'
 
 type PatientSelectProps = {
   value: string
@@ -184,27 +189,45 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
   const { profile } = useAuth()
   const [patientId, setPatientId] = useState('')
   const [medication, setMedication] = useState('')
+  const [medRxcui, setMedRxcui] = useState('')
   const [dosage, setDosage] = useState('')
-  const [frequency, setFrequency] = useState<string>(RX_FREQUENCIES[0])
-  const [route, setRoute] = useState<string>(RX_ROUTES[0])
+  const [frequency, setFrequency] = useState('')
+  const [route, setRoute] = useState('By mouth (oral)')
   const [duration, setDuration] = useState('30 days')
   const [qty, setQty] = useState('1')
   const [dispense, setDispense] = useState(false)
   const [inventoryMedId, setInventoryMedId] = useState('')
+  const [allergyAlert, setAllergyAlert] = useState<DrugAllergyAlert | null>(null)
 
   const patient = db.patients.find((p) => p.id === patientId)
   const canSave = !!patientId && medication.trim().length > 0
 
+  useEffect(() => {
+    if (!patient || !medication.trim()) {
+      setAllergyAlert(null)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const ingredients = medRxcui ? await fetchDrugIngredients(medRxcui) : []
+      if (cancelled) return
+      setAllergyAlert(checkDrugAllergyLocal(patient, medication, ingredients))
+    })()
+    return () => { cancelled = true }
+  }, [patient, medication, medRxcui])
+
   function reset() {
     setPatientId('')
     setMedication('')
+    setMedRxcui('')
     setDosage('')
-    setFrequency(RX_FREQUENCIES[0])
-    setRoute(RX_ROUTES[0])
+    setFrequency('')
+    setRoute('By mouth (oral)')
     setDuration('30 days')
     setQty('1')
     setDispense(false)
     setInventoryMedId('')
+    setAllergyAlert(null)
   }
 
   async function handleSave() {
@@ -213,6 +236,7 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
       patient_id: patientId,
       med_id: dispense ? inventoryMedId : '',
       medication: medication.trim(),
+      med_rxcui: medRxcui || undefined,
       dosage,
       frequency,
       route,
@@ -231,11 +255,20 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
     <ModalShell open={open} title="New Prescription" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!canSave}>
       <FormGrid>
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
+        {allergyAlert && (
+          <FormField label=" " span={2}>
+            <div className="alert-banner alert-banner--warning">{allergyAlert.message}</div>
+          </FormField>
+        )}
         <FormField label="Medication" span={2}>
           <MedicationSearch
             value={medication}
-            onChange={setMedication}
+            onChange={(name) => {
+              setMedication(name)
+              if (!name.trim()) setMedRxcui('')
+            }}
             onSelectDrug={(drug) => {
+              setMedRxcui(drug.rxcui)
               if (drug.strength) setDosage(drug.strength)
             }}
           />
@@ -244,14 +277,10 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
           <input className="form-input" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="e.g. 500mg" />
         </FormField>
         <FormField label="Directions (frequency)">
-          <select className="form-input" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
-            {RX_FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
-          </select>
+          <SigCodeInput value={frequency} onChange={setFrequency} />
         </FormField>
         <FormField label="Route of use">
-          <select className="form-input" value={route} onChange={(e) => setRoute(e.target.value)}>
-            {RX_ROUTES.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
+          <input className="form-input" value={route} onChange={(e) => setRoute(e.target.value)} />
         </FormField>
         <FormField label="Duration"><input className="form-input" value={duration} onChange={(e) => setDuration(e.target.value)} /></FormField>
         <FormField label="Qty to dispense"><input className="form-input" type="number" min={1} value={qty} onChange={(e) => setQty(e.target.value)} /></FormField>
@@ -333,7 +362,14 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
     <ModalShell open={open} title="Add Lab Result" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId || !test.trim()}>
       <FormGrid>
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
-        <FormField label="Test"><input className="form-input" value={test} onChange={(e) => setTest(e.target.value)} /></FormField>
+        <FormField label="Test">
+          <SearchInput
+            value={test}
+            onChange={setTest}
+            search={searchLoinc}
+            placeholder="Search lab test…"
+          />
+        </FormField>
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
         <FormField label="Lab / Facility"><input className="form-input" value={facility} onChange={(e) => setFacility(e.target.value)} placeholder="Korle-Bu Labs..." /></FormField>
         <FormField label="Result"><input className="form-input" value={result} onChange={(e) => setResult(e.target.value)} placeholder="e.g. 6.2%" /></FormField>
@@ -493,6 +529,16 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
 
   const total = billingLinesTotal(lines)
 
+  const searchGdrg = useCallback(
+    async (q: string) =>
+      searchGdrgCodes(q).map((g) => ({
+        code: g.code,
+        name: g.name,
+        hint: g.tariff != null ? `GH₵ ${g.tariff}` : undefined,
+      })),
+    [],
+  )
+
   function reset() {
     setPatientId('')
     setDate(today())
@@ -535,15 +581,38 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
         <FormField label="Total (GHS)"><input className="form-input" value={total.toFixed(2)} readOnly /></FormField>
         <FormField label="Services rendered" span={2}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {lines.map((line, index) => (
-              <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr 0.8fr auto', gap: 8, alignItems: 'end' }}>
-                <select className="form-input" value={line.type} onChange={(e) => updateLine(index, { type: e.target.value })}>
-                  {BILLING_SERVICE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+              <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, border: '1px solid var(--gray2)', borderRadius: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                  <select className="form-input" value={line.type} onChange={(e) => updateLine(index, { type: e.target.value })}>
+                    {BILLING_SERVICE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <input className="form-input" type="number" min={0} step={0.01} value={line.amount || ''} onChange={(e) => updateLine(index, { amount: Number(e.target.value) || 0 })} placeholder="Amount (GHS)" />
+                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeLine(index)} disabled={lines.length <= 1}>✕</button>
+                </div>
                 <input className="form-input" value={line.description} onChange={(e) => updateLine(index, { description: e.target.value })} placeholder="Description" />
-                <input className="form-input" type="number" min={0} step={0.01} value={line.amount || ''} onChange={(e) => updateLine(index, { amount: Number(e.target.value) || 0 })} placeholder="Amount" />
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeLine(index)} disabled={lines.length <= 1}>✕</button>
+                <SearchInput
+                  value={line.icd10Name ? `${line.icd10Name} (${line.icd10})` : ''}
+                  onChange={() => {}}
+                  onSelect={(opt) => updateLine(index, { icd10: opt.code, icd10Name: opt.name })}
+                  search={searchIcd10}
+                  placeholder="ICD-10 diagnosis…"
+                />
+                <SearchInput
+                  value={line.gdrgName ? `${line.gdrgName} (${line.gdrg})` : ''}
+                  onChange={() => {}}
+                  onSelect={(opt) => {
+                    const gdrg = searchGdrgCodes(opt.code).find((g) => g.code === opt.code)
+                    updateLine(index, {
+                      gdrg: opt.code,
+                      gdrgName: opt.name,
+                      amount: line.amount || gdrg?.tariff || 0,
+                    })
+                  }}
+                  search={searchGdrg}
+                  placeholder="G-DRG code…"
+                />
               </div>
             ))}
             <button type="button" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }} onClick={addLine}>+ Add service line</button>

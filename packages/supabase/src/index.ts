@@ -19,6 +19,11 @@ export {
   subscribeToStaffMessages,
 } from './messaging'
 export type { StaffMessageRow } from './messaging'
+export {
+  adminUpdateStaff,
+  adminDeleteStaff,
+} from './staffAdmin'
+export type { AdminStaffInput } from './staffAdmin'
 export { emptyDatabase, fetchDatabase } from './database'
 export {
   createPatient,

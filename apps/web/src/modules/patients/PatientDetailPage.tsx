@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
-import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName } from '@onim/data'
+import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, checkDrugAllergyLocal } from '@onim/data'
 import type { ModuleId } from '@onim/types'
 import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
@@ -9,6 +9,7 @@ import { IconAction, RowActions } from '../../components/IconAction'
 import { NewPatientModal } from '../../components/NewPatientModal'
 import '@onim/ui/Card.css'
 import './PatientDetail.css'
+import '../../components/SearchInput.css'
 
 const TABS = ['Overview', 'Records', 'Prescriptions', 'Labs', 'Appointments', 'Billing'] as const
 
@@ -67,6 +68,14 @@ export function PatientDetailPage() {
     () => db.billing.filter((b) => b.patient_id === patient?.id),
     [db.billing, patient?.id],
   )
+
+  const rxAllergyAlerts = useMemo(() => {
+    if (!patient) return []
+    return rx
+      .filter((r) => r.status === 'Active')
+      .map((r) => ({ rx: r, alert: checkDrugAllergyLocal(patient, r.medication) }))
+      .filter((x): x is { rx: typeof rx[0]; alert: NonNullable<ReturnType<typeof checkDrugAllergyLocal>> } => !!x.alert)
+  }, [patient, rx])
 
   const timelineEvents = useMemo<TimelineEvent[]>(() => {
     if (!patient) return []
@@ -157,6 +166,13 @@ export function PatientDetailPage() {
 
       {tab === 'Overview' && (
         <div className="pt-overview">
+          {rxAllergyAlerts.length > 0 && (
+            <div className="alert-banner alert-banner--warning" style={{ marginBottom: 16 }}>
+              {rxAllergyAlerts.map(({ rx, alert }) => (
+                <div key={rx.id}>{rx.medication}: {alert.message}</div>
+              ))}
+            </div>
+          )}
           <div>
             <div className="info-grid">
               {[
@@ -211,16 +227,19 @@ export function PatientDetailPage() {
             <table className="data-table">
               <thead><tr><th>Medication</th><th>Strength</th><th>Directions</th><th>Route</th><th>Qty Dispensed</th><th>Status</th></tr></thead>
               <tbody>
-                {rx.map((r) => (
-                  <tr key={r.id}>
-                    <td><strong>{r.medication}</strong></td>
+                {rx.map((r) => {
+                  const alert = checkDrugAllergyLocal(patient, r.medication)
+                  return (
+                  <tr key={r.id} className={alert ? 'row-alert' : undefined}>
+                    <td><strong>{r.medication}</strong>{alert ? ' ⚠' : ''}</td>
                     <td>{r.dosage || '–'}</td>
                     <td>{r.frequency || '–'}</td>
                     <td>{r.route || '–'}</td>
                     <td>{r.qty_dispensed}</td>
                     <td><Badge>{r.status}</Badge></td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           ) : <EmptyState icon="💊" title="No prescriptions" />}

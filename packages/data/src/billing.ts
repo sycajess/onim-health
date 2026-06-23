@@ -16,6 +16,10 @@ export type BillingLineItem = {
   type: BillingServiceType | string
   description: string
   amount: number
+  icd10?: string
+  icd10Name?: string
+  gdrg?: string
+  gdrgName?: string
 }
 
 export type BillingServicesPayload = {
@@ -41,7 +45,11 @@ export function formatBillingServicesSummary(services: string): string {
   const lines = parseBillingServices(services)
   if (!lines.length) return '–'
   return lines
-    .map((l) => `${l.type}${l.description ? ` — ${l.description}` : ''}`)
+    .map((l) => {
+      const codes = [l.icd10, l.gdrg].filter(Boolean).join(' · ')
+      const base = `${l.type}${l.description ? ` — ${l.description}` : ''}`
+      return codes ? `${base} [${codes}]` : base
+    })
     .join('; ')
 }
 

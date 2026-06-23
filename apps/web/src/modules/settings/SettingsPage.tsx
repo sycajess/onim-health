@@ -1,27 +1,68 @@
+import { useState } from 'react'
+import { usePermissions } from '@onim/auth'
 import { useData, SPECIALTIES, SPECIALTY_COLORS } from '@onim/data'
-import { Badge, Card } from '@onim/ui'
+import type { StaffMember } from '@onim/data'
+import { Badge, Button, Card } from '@onim/ui'
+import { StaffFormModal } from './StaffFormModal'
 import '@onim/ui/Card.css'
 
 const ROLE_BADGE: Record<string, 'teal' | 'blue' | 'amber' | 'success' | 'gray' | 'danger'> = {
-  admin: 'blue', doctor: 'teal', nurse: 'blue', pharmacist: 'amber', nutritionist: 'success', staff: 'gray', accountant: 'danger',
+  admin: 'blue', doctor: 'teal', nurse: 'blue', pharmacist: 'amber', nutritionist: 'success',
+  staff: 'gray', accountant: 'danger', lab_partner: 'teal',
 }
 
 export function SettingsPage() {
-  const { db } = useData()
+  const { db, adminDeleteStaff } = useData()
+  const { role } = usePermissions()
+  const isAdmin = role === 'admin'
+  const [formOpen, setFormOpen] = useState(false)
+  const [editStaff, setEditStaff] = useState<StaffMember | null>(null)
+
   const specCount: Record<string, number> = {}
   db.patients.forEach((p) => { specCount[p.specialty] = (specCount[p.specialty] ?? 0) + 1 })
 
+  function openCreate() {
+    setEditStaff(null)
+    setFormOpen(true)
+  }
+
+  function openEdit(s: StaffMember) {
+    setEditStaff(s)
+    setFormOpen(true)
+  }
+
+  async function handleDelete(s: StaffMember) {
+    if (!window.confirm(`Delete ${s.name}?`)) return
+    const ok = await adminDeleteStaff(s.id)
+    if (!ok) window.alert('Could not delete staff.')
+  }
+
   return (
     <div>
-      <Card title="Team & Access">
+      <Card
+        title="Team & Access"
+        action={isAdmin ? <Button variant="primary" onClick={openCreate}>+ Staff</Button> : undefined}
+      >
         <div className="team-grid">
           {db.staff.map((s) => (
-            <div key={s.email} className="team-card">
+            <div key={s.id} className="team-card">
               <div className="team-card__avatar">{s.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}</div>
               <div style={{ fontWeight: 600 }}>{s.name}</div>
-              <div style={{ fontSize: 12, color: 'var(--gray4)', margin: '4px 0 8px' }}>{s.specialty}</div>
+              <div style={{ fontSize: 12, color: 'var(--gray4)', margin: '4px 0 8px' }}>{s.specialty || '—'}</div>
               <Badge variant={ROLE_BADGE[s.role] ?? 'gray'}>{s.role}</Badge>
               <div style={{ fontSize: 11, color: 'var(--gray4)', marginTop: 10 }}>{s.email}</div>
+              {s.license_number && (
+                <div style={{ fontSize: 11, color: 'var(--gray4)', marginTop: 4 }}>
+                  Lic: {s.license_number}
+                  {s.license_expiry ? ` · exp ${s.license_expiry}` : ''}
+                </div>
+              )}
+              {isAdmin && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <Button variant="secondary" onClick={() => openEdit(s)}>Edit</Button>
+                  <Button variant="danger" onClick={() => void handleDelete(s)}>Delete</Button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -38,6 +79,8 @@ export function SettingsPage() {
           ))}
         </div>
       </Card>
+
+      <StaffFormModal open={formOpen} onClose={() => setFormOpen(false)} staff={editStaff} />
     </div>
   )
 }

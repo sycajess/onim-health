@@ -47,7 +47,9 @@ function mapPatient(row: Record<string, unknown>): Patient {
     weight: row.weight != null && row.weight !== '' ? Number(row.weight) : 0,
     height: row.height != null && row.height !== '' ? Number(row.height) : 0,
     allergies: row.allergies ? String(row.allergies) : '',
+    allergy_codes: row.allergy_codes ?? [],
     conditions: String(row.conditions ?? ''),
+    condition_codes: row.condition_codes ?? [],
     current_meds: String(row.current_meds ?? ''),
     ec_name: String(row.ec_name ?? ''),
     ec_rel: String(row.ec_rel ?? ''),
@@ -127,7 +129,7 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     supabase.from('dispense_log').select('*').order('date', { ascending: false }),
     supabase.from('billing').select('*').order('date', { ascending: false }),
     supabase.from('messages').select('*').order('created_at'),
-    supabase.from('profiles').select('id, full_name, email, role, specialty, phone'),
+    supabase.from('profiles').select('id, full_name, email, role, specialty, phone, license_number, license_expiry'),
   ])
 
   const firstError = [
@@ -168,6 +170,8 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     specialty: String(p.specialty ?? ''),
     email: String(p.email),
     phone: String(p.phone ?? ''),
+    license_number: String(p.license_number ?? ''),
+    license_expiry: p.license_expiry ? String(p.license_expiry) : '',
   }))
 
   return {
@@ -211,7 +215,9 @@ export type NewPatientInput = {
   weight?: number | null
   height?: number | null
   allergies?: string
+  allergy_codes?: unknown
   conditions?: string
+  condition_codes?: unknown
   current_meds?: string
   ec_name?: string
   ec_rel?: string
@@ -254,7 +260,9 @@ export async function createPatient(input: NewPatientInput): Promise<Patient | {
     weight: input.weight ?? null,
     height: input.height ?? null,
     allergies: input.allergies?.trim() || null,
+    allergy_codes: input.allergy_codes ?? [],
     conditions: input.conditions?.trim() ?? '',
+    condition_codes: input.condition_codes ?? [],
     current_meds: input.current_meds?.trim() ?? '',
     ec_name: input.ec_name?.trim() ?? '',
     ec_rel: input.ec_rel?.trim() ?? '',
@@ -283,7 +291,9 @@ export type UpdatePatientInput = {
   weight?: number | null
   height?: number | null
   allergies?: string
+  allergy_codes?: unknown
   conditions?: string
+  condition_codes?: unknown
   current_meds?: string
   ec_name?: string
   ec_rel?: string
@@ -319,7 +329,9 @@ export async function updatePatient(
     weight: input.weight ?? null,
     height: input.height ?? null,
     allergies: input.allergies?.trim() || null,
+    allergy_codes: input.allergy_codes ?? [],
     conditions: input.conditions?.trim() ?? '',
+    condition_codes: input.condition_codes ?? [],
     current_meds: input.current_meds?.trim() ?? '',
     ec_name: input.ec_name?.trim() ?? '',
     ec_rel: input.ec_rel?.trim() ?? '',

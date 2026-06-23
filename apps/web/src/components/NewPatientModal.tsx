@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useData, SPECIALTIES, type Patient } from '@onim/data'
+import { useData, SPECIALTIES, formatCodedList, parseCodedEntries, type Patient } from '@onim/data'
 import { Button, Modal } from '@onim/ui'
 import { PhoneInput, formatPhone } from './PhoneInput'
+import { CodedTagInput, type SearchOption } from './SearchInput'
+import { searchAllergies, searchIcd10 } from '../lib/clinicalTables'
+import './SearchInput.css'
 
 const OTHER_SPECIALTY = 'Other'
 
@@ -47,8 +50,8 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
   const [blood, setBlood] = useState('')
   const [weight, setWeight] = useState('')
   const [height, setHeight] = useState('')
-  const [allergies, setAllergies] = useState('')
-  const [conditions, setConditions] = useState('')
+  const [allergyTags, setAllergyTags] = useState<SearchOption[]>([])
+  const [conditionTags, setConditionTags] = useState<SearchOption[]>([])
   const [currentMeds, setCurrentMeds] = useState('')
   const [ecName, setEcName] = useState('')
   const [ecRel, setEcRel] = useState('')
@@ -77,8 +80,8 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
       setBlood(patient.blood || '')
       setWeight(patient.weight ? String(patient.weight) : '')
       setHeight(patient.height ? String(patient.height) : '')
-      setAllergies(patient.allergies || '')
-      setConditions(patient.conditions)
+      setAllergyTags(parseCodedEntries(patient.allergy_codes).map((e) => ({ code: e.code, name: e.name })))
+      setConditionTags(parseCodedEntries(patient.condition_codes).map((e) => ({ code: e.code, name: e.name })))
       setCurrentMeds(patient.current_meds)
       setEcName(patient.ec_name)
       setEcRel(patient.ec_rel)
@@ -102,8 +105,8 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
     setBlood('')
     setWeight('')
     setHeight('')
-    setAllergies('')
-    setConditions('')
+    setAllergyTags([])
+    setConditionTags([])
     setCurrentMeds('')
     setEcName('')
     setEcRel('')
@@ -113,6 +116,17 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
 
   async function handleSave() {
     if (!fname.trim() || !lname.trim() || !resolvedSpecialty) return
+
+    const allergyCodes = allergyTags.map((t) => ({
+      code: t.code,
+      name: t.name,
+      terms: [t.name, t.code].filter(Boolean),
+    }))
+    const conditionCodes = conditionTags.map((t) => ({
+      code: t.code,
+      name: t.name,
+      terms: [t.name, t.code].filter(Boolean),
+    }))
 
     const payload = {
       fname: fname.trim(),
@@ -128,8 +142,10 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
       blood: blood.trim(),
       weight: weight.trim() ? Number(weight) : null,
       height: height.trim() ? Number(height) : null,
-      allergies: allergies.trim(),
-      conditions: conditions.trim(),
+      allergies: formatCodedList(allergyCodes) || 'None',
+      allergy_codes: allergyCodes,
+      conditions: formatCodedList(conditionCodes),
+      condition_codes: conditionCodes,
       current_meds: currentMeds.trim(),
       ec_name: ecName.trim(),
       ec_rel: ecRel.trim(),
@@ -255,11 +271,21 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
           <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Allergies</span>
-          <input className="form-input" value={allergies} onChange={(e) => setAllergies(e.target.value)} placeholder="List allergies or none" />
+          <CodedTagInput
+            entries={allergyTags}
+            onChange={setAllergyTags}
+            search={searchAllergies}
+            placeholder="Search allergy…"
+          />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
           <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Chronic conditions</span>
-          <textarea className="form-input" value={conditions} onChange={(e) => setConditions(e.target.value)} placeholder="List chronic conditions" />
+          <CodedTagInput
+            entries={conditionTags}
+            onChange={setConditionTags}
+            search={searchIcd10}
+            placeholder="Search ICD-10…"
+          />
         </label>
         <label style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: '1 / -1' }}>
           <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Current medications</span>

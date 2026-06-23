@@ -16,7 +16,9 @@ export type Patient = {
   weight: number
   height: number
   allergies: string
+  allergy_codes: unknown
   conditions: string
+  condition_codes: unknown
   current_meds: string
   ec_name: string
   ec_rel: string
@@ -59,6 +61,7 @@ export type Prescription = {
   patient_id: string
   medication: string
   med_id: string
+  med_rxcui?: string
   dosage: string
   frequency: string
   route: string
@@ -143,6 +146,8 @@ export type StaffMember = {
   specialty: string
   email: string
   phone: string
+  license_number: string
+  license_expiry: string
 }
 
 export type Database = {
