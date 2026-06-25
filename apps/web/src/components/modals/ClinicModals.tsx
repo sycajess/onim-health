@@ -8,10 +8,14 @@ import {
   evaluateLabResult,
   labStatusHint,
   BILLING_SERVICE_TYPES,
+  BILLING_TARIFF_TIERS,
+  BILLING_TARIFF_LABELS,
   billingLinesTotal,
   serializeBillingServices,
   searchGdrgCodes,
+  validateInvoiceForSave,
   type BillingLineItem,
+  type BillingTariffTier,
   type DrugAllergyAlert,
 } from '@onim/data'
 import type { InventoryItem } from '@onim/data'
@@ -519,16 +523,21 @@ export function DispenseModal({ open, onClose, med }: DispenseModalProps) {
 }
 
 export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { addInvoice } = useData()
+  const { db, addInvoice } = useData()
   const [patientId, setPatientId] = useState('')
   const [date, setDate] = useState(today())
+  const [paymentTier, setPaymentTier] = useState<BillingTariffTier>('cash')
+  const [primaryIcd10, setPrimaryIcd10] = useState('')
+  const [primaryIcd10Name, setPrimaryIcd10Name] = useState('')
   const [lines, setLines] = useState<BillingLineItem[]>([
-    { type: BILLING_SERVICE_TYPES[0], description: '', amount: 0 },
+    { type: BILLING_SERVICE_TYPES[0], description: '', cashPrice: 0, privateInsurancePrice: 0, nhisTariff: 0 },
   ])
   const [status, setStatus] = useState('Pending')
   const [notes, setNotes] = useState('')
+  const [saveError, setSaveError] = useState('')
 
-  const total = billingLinesTotal(lines)
+  const patient = db.patients.find((p) => p.id === patientId)
+  const total = billingLinesTotal(lines, paymentTier)
 
   const searchGdrg = useCallback(
     async (q: string) =>
@@ -543,9 +552,13 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
   function reset() {
     setPatientId('')
     setDate(today())
-    setLines([{ type: BILLING_SERVICE_TYPES[0], description: '', amount: 0 }])
+    setPaymentTier('cash')
+    setPrimaryIcd10('')
+    setPrimaryIcd10Name('')
+    setLines([{ type: BILLING_SERVICE_TYPES[0], description: '', cashPrice: 0, privateInsurancePrice: 0, nhisTariff: 0 }])
     setStatus('Pending')
     setNotes('')
+    setSaveError('')
   }
 
   function updateLine(index: number, patch: Partial<BillingLineItem>) {
@@ -553,7 +566,7 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
   }
 
   function addLine() {
-    setLines((prev) => [...prev, { type: BILLING_SERVICE_TYPES[0], description: '', amount: 0 }])
+    setLines((prev) => [...prev, { type: BILLING_SERVICE_TYPES[0], description: '', cashPrice: 0, privateInsurancePrice: 0, nhisTariff: 0 }])
   }
 
   function removeLine(index: number) {
@@ -561,7 +574,17 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
   }
 
   async function handleSave() {
-    if (!patientId || total <= 0) return
+    setSaveError('')
+    const validation = validateInvoiceForSave({
+      primaryIcd10,
+      paymentTier,
+      lines,
+      patientNhis: patient?.nhis ?? '',
+    })
+    if (validation) {
+      setSaveError(validation)
+      return
+    }
     const ok = await addInvoice({
       patient_id: patientId,
       date,
@@ -569,37 +592,58 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
       amount: total,
       status,
       notes,
+      payment_tier: paymentTier,
+      primary_icd10: primaryIcd10,
+      primary_icd10_name: primaryIcd10Name,
     })
-    if (!ok) return
+    if (!ok) {
+      setSaveError('Could not save invoice.')
+      return
+    }
     reset()
     onClose()
   }
 
   return (
-    <ModalShell open={open} title="New Invoice" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId || total <= 0}>
+    <ModalShell open={open} title="New Invoice" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId}>
+      {saveError && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{saveError}</p>}
       <FormGrid>
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
+        <FormField label="Tariff tier">
+          <select className="form-input" value={paymentTier} onChange={(e) => setPaymentTier(e.target.value as BillingTariffTier)}>
+            {BILLING_TARIFF_TIERS.map((t) => <option key={t} value={t}>{BILLING_TARIFF_LABELS[t]}</option>)}
+          </select>
+        </FormField>
+        <FormField label="Primary ICD-10 diagnosis" span={2}>
+          <SearchInput
+            value={primaryIcd10Name ? `${primaryIcd10Name} (${primaryIcd10})` : ''}
+            onChange={() => {}}
+            onSelect={(opt) => {
+              setPrimaryIcd10(opt.code)
+              setPrimaryIcd10Name(opt.name)
+            }}
+            search={searchIcd10}
+            placeholder="Required ICD-10…"
+          />
+        </FormField>
         <FormField label="Total (GHS)"><input className="form-input" value={total.toFixed(2)} readOnly /></FormField>
         <FormField label="Services rendered" span={2}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {lines.map((line, index) => (
               <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, border: '1px solid var(--gray2)', borderRadius: 8 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, alignItems: 'end' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'end' }}>
                   <select className="form-input" value={line.type} onChange={(e) => updateLine(index, { type: e.target.value })}>
                     {BILLING_SERVICE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
-                  <input className="form-input" type="number" min={0} step={0.01} value={line.amount || ''} onChange={(e) => updateLine(index, { amount: Number(e.target.value) || 0 })} placeholder="Amount (GHS)" />
                   <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeLine(index)} disabled={lines.length <= 1}>✕</button>
                 </div>
                 <input className="form-input" value={line.description} onChange={(e) => updateLine(index, { description: e.target.value })} placeholder="Description" />
-                <SearchInput
-                  value={line.icd10Name ? `${line.icd10Name} (${line.icd10})` : ''}
-                  onChange={() => {}}
-                  onSelect={(opt) => updateLine(index, { icd10: opt.code, icd10Name: opt.name })}
-                  search={searchIcd10}
-                  placeholder="ICD-10 diagnosis…"
-                />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                  <input className="form-input" type="number" min={0} step={0.01} value={line.cashPrice || ''} onChange={(e) => updateLine(index, { cashPrice: Number(e.target.value) || 0 })} placeholder="Cash (GHS)" />
+                  <input className="form-input" type="number" min={0} step={0.01} value={line.privateInsurancePrice || ''} onChange={(e) => updateLine(index, { privateInsurancePrice: Number(e.target.value) || 0 })} placeholder="Private ins. (GHS)" />
+                  <input className="form-input" type="number" min={0} step={0.01} value={line.nhisTariff || ''} onChange={(e) => updateLine(index, { nhisTariff: Number(e.target.value) || 0 })} placeholder="NHIS (GHS)" />
+                </div>
                 <SearchInput
                   value={line.gdrgName ? `${line.gdrgName} (${line.gdrg})` : ''}
                   onChange={() => {}}
@@ -608,7 +652,7 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
                     updateLine(index, {
                       gdrg: opt.code,
                       gdrgName: opt.name,
-                      amount: line.amount || gdrg?.tariff || 0,
+                      nhisTariff: gdrg?.tariff ?? line.nhisTariff,
                     })
                   }}
                   search={searchGdrg}

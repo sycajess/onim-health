@@ -18,6 +18,9 @@ import {
   mapStaffMessageRow,
   updateAppointmentStatus,
   updateBillingStatus,
+  updateBillingNhisCleared,
+  markBillingNhisExported,
+  saveClinicSettings,
   updatePatient,
   updatePrescriptionStatus,
   type MedicationInput,
@@ -30,6 +33,7 @@ import {
   type NewRecordInput,
   adminUpdateStaff,
   adminDeleteStaff,
+  type ClinicSettingsInput,
   type AdminStaffInput,
   type StaffMessageRow,
 } from '@onim/supabase'
@@ -54,6 +58,9 @@ type DataContextValue = {
   saveMedication: (input: MedicationInput, existingId?: string) => Promise<boolean>
   dispenseMedication: (medId: string, patientId: string, qty: number, patientName: string) => Promise<boolean | { error: string }>
   updateBillingStatus: (id: string, status: string) => Promise<boolean>
+  updateBillingNhisCleared: (id: string, cleared: boolean) => Promise<boolean>
+  markBillingNhisExported: (ids: string[]) => Promise<boolean>
+  saveClinicSettings: (input: ClinicSettingsInput) => Promise<boolean>
   addInvoice: (input: NewInvoiceInput) => Promise<boolean>
   sendMessage: (recipientId: string, text: string) => Promise<boolean>
   adminUpdateStaff: (input: AdminStaffInput) => Promise<boolean>
@@ -236,6 +243,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [profile],
   )
 
+  const handleUpdateBillingNhisCleared = useCallback(
+    async (id: string, cleared: boolean) => runMutation(() => updateBillingNhisCleared(id, cleared), refresh),
+    [refresh],
+  )
+
+  const handleMarkBillingNhisExported = useCallback(
+    async (ids: string[]) => runMutation(() => markBillingNhisExported(ids), refresh),
+    [refresh],
+  )
+
+  const handleSaveClinicSettings = useCallback(
+    async (input: ClinicSettingsInput) => runMutation(() => saveClinicSettings(input), refresh),
+    [refresh],
+  )
+
   const handleAdminUpdateStaff = useCallback(
     async (input: AdminStaffInput) => runMutation(() => adminUpdateStaff(input), refresh),
     [refresh],
@@ -266,6 +288,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       saveMedication: handleSaveMedication,
       dispenseMedication: handleDispenseMedication,
       updateBillingStatus: handleUpdateBillingStatus,
+      updateBillingNhisCleared: handleUpdateBillingNhisCleared,
+      markBillingNhisExported: handleMarkBillingNhisExported,
+      saveClinicSettings: handleSaveClinicSettings,
       addInvoice,
       sendMessage: handleSendMessage,
       adminUpdateStaff: handleAdminUpdateStaff,
@@ -291,6 +316,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       handleSaveMedication,
       handleDispenseMedication,
       handleUpdateBillingStatus,
+      handleUpdateBillingNhisCleared,
+      handleMarkBillingNhisExported,
+      handleSaveClinicSettings,
       addInvoice,
       handleSendMessage,
       handleAdminUpdateStaff,

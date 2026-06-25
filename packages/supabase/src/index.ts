@@ -40,6 +40,9 @@ export {
   dispenseMedication,
   updateBillingStatus,
   createInvoice,
+  updateBillingNhisCleared,
+  markBillingNhisExported,
+  saveClinicSettings,
   sendMessage,
 } from './mutations'
 export type {
@@ -51,4 +54,5 @@ export type {
   NewLabInput,
   MedicationInput,
   NewInvoiceInput,
+  ClinicSettingsInput,
 } from './mutations'

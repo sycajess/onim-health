@@ -24,15 +24,22 @@ export {
 } from './labRange'
 export {
   BILLING_SERVICE_TYPES,
+  BILLING_TARIFF_TIERS,
+  BILLING_TARIFF_LABELS,
   serializeBillingServices,
   parseBillingServices,
   formatBillingServicesSummary,
   billingLinesTotal,
+  billingLineAmount,
+  validateInvoiceForSave,
   isPaidBillingStatus,
+  isNhisClaimInvoice,
   billingPaymentMethod,
   type BillingLineItem,
   type BillingServiceType,
+  type BillingTariffTier,
 } from './billing'
+export { buildNhisClaimBatchXml, downloadNhisClaimXml, type ClinicNhisSettings } from './nhisXml'
 export { RX_FREQUENCIES, RX_ROUTES } from './prescriptionOptions'
 export { RX_SIG_CODES, searchRxSigCodes, expandSigCode, type RxSigCode } from './rxSigCodes'
 export { GDRG_CODES, searchGdrgCodes, type GdrgCode } from './gdrg'

@@ -334,6 +334,9 @@ export type NewInvoiceInput = {
   amount: number
   status?: string
   notes?: string
+  payment_tier?: string
+  primary_icd10?: string
+  primary_icd10_name?: string
 }
 
 export async function createInvoice(input: NewInvoiceInput): Promise<BillingInvoice | MutError> {
@@ -348,10 +351,62 @@ export async function createInvoice(input: NewInvoiceInput): Promise<BillingInvo
     amount: input.amount,
     status: input.status ?? 'Pending',
     notes: input.notes ?? '',
+    payment_tier: input.payment_tier ?? 'cash',
+    primary_icd10: input.primary_icd10?.trim() ?? '',
+    primary_icd10_name: input.primary_icd10_name?.trim() ?? '',
+    nhis_cleared: false,
   }
   const { error } = await supabase.from('billing').insert(row)
   if (error) return { error: error.message }
-  return row as BillingInvoice
+  return {
+    id,
+    patient_id: input.patient_id,
+    date: row.date,
+    services: row.services,
+    amount: row.amount,
+    status: row.status,
+    notes: row.notes,
+    payment_tier: row.payment_tier,
+    primary_icd10: row.primary_icd10,
+    primary_icd10_name: row.primary_icd10_name,
+    nhis_cleared: false,
+    nhis_exported_at: '',
+  } as BillingInvoice
+}
+
+export async function updateBillingNhisCleared(id: string, cleared: boolean): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { error } = await supabase.from('billing').update({ nhis_cleared: cleared }).eq('id', id)
+  if (error) return { error: error.message }
+  return true
+}
+
+export async function markBillingNhisExported(ids: string[]): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const stamp = new Date().toISOString()
+  const { error } = await supabase.from('billing').update({ nhis_exported_at: stamp }).in('id', ids)
+  if (error) return { error: error.message }
+  return true
+}
+
+export type ClinicSettingsInput = {
+  provider_accreditation: string
+  eclaim_authorization: string
+}
+
+export async function saveClinicSettings(input: ClinicSettingsInput): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { error } = await supabase.from('clinic_settings').upsert({
+    id: 'default',
+    provider_accreditation: input.provider_accreditation.trim(),
+    eclaim_authorization: input.eclaim_authorization.trim(),
+    updated_at: new Date().toISOString(),
+  })
+  if (error) return { error: error.message }
+  return true
 }
 
 export async function sendMessage(

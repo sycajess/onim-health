@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { usePermissions } from '@onim/auth'
 import { useData, SPECIALTIES, SPECIALTY_COLORS } from '@onim/data'
 import type { StaffMember } from '@onim/data'
@@ -12,11 +12,18 @@ const ROLE_BADGE: Record<string, 'teal' | 'blue' | 'amber' | 'success' | 'gray' 
 }
 
 export function SettingsPage() {
-  const { db, adminDeleteStaff } = useData()
+  const { db, adminDeleteStaff, saveClinicSettings } = useData()
   const { role } = usePermissions()
   const isAdmin = role === 'admin'
   const [formOpen, setFormOpen] = useState(false)
   const [editStaff, setEditStaff] = useState<StaffMember | null>(null)
+  const [providerAccreditation, setProviderAccreditation] = useState('')
+  const [eclaimAuthorization, setEclaimAuthorization] = useState('')
+
+  useEffect(() => {
+    setProviderAccreditation(db.clinicSettings.provider_accreditation)
+    setEclaimAuthorization(db.clinicSettings.eclaim_authorization)
+  }, [db.clinicSettings])
 
   const specCount: Record<string, number> = {}
   db.patients.forEach((p) => { specCount[p.specialty] = (specCount[p.specialty] ?? 0) + 1 })
@@ -67,6 +74,28 @@ export function SettingsPage() {
           ))}
         </div>
       </Card>
+
+      {isAdmin && (
+        <Card title="NHIA Provider" style={{ marginTop: 20 }}>
+          <div style={{ display: 'grid', gap: 12, maxWidth: 480 }}>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>Provider accreditation #</span>
+              <input className="form-input" value={providerAccreditation} onChange={(e) => setProviderAccreditation(e.target.value)} />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>eClaim authorization #</span>
+              <input className="form-input" value={eclaimAuthorization} onChange={(e) => setEclaimAuthorization(e.target.value)} />
+            </label>
+            <Button
+              variant="primary"
+              style={{ alignSelf: 'flex-start' }}
+              onClick={() => void saveClinicSettings({ provider_accreditation: providerAccreditation, eclaim_authorization: eclaimAuthorization })}
+            >
+              Save
+            </Button>
+          </div>
+        </Card>
+      )}
 
       <Card title="Clinic Specialties" style={{ marginTop: 20 }}>
         <div className="settings-spec-grid">

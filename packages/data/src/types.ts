@@ -129,6 +129,16 @@ export type BillingInvoice = {
   amount: number
   status: string
   notes: string
+  payment_tier: string
+  primary_icd10: string
+  primary_icd10_name: string
+  nhis_cleared: boolean
+  nhis_exported_at: string
+}
+
+export type ClinicSettings = {
+  provider_accreditation: string
+  eclaim_authorization: string
 }
 
 export type Message = {
@@ -162,4 +172,5 @@ export type Database = {
   billing: BillingInvoice[]
   messages: Record<string, Message[]>
   staff: StaffMember[]
+  clinicSettings: ClinicSettings
 }

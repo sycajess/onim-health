@@ -27,6 +27,7 @@ export function emptyDatabase(): Database {
     billing: [],
     messages: {},
     staff: [],
+    clinicSettings: { provider_accreditation: '', eclaim_authorization: '' },
   }
 }
 
@@ -120,6 +121,7 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     billingRes,
     messagesRes,
     profilesRes,
+    settingsRes,
   ] = await Promise.all([
     supabase.from('patients').select('*').order('created', { ascending: false }),
     supabase.from('appointments').select('*').order('date', { ascending: false }),
@@ -131,6 +133,7 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     supabase.from('billing').select('*').order('date', { ascending: false }),
     supabase.from('messages').select('*').order('created_at'),
     supabase.from('profiles').select('id, full_name, email, role, specialty, phone, license_number, license_expiry'),
+    supabase.from('clinic_settings').select('provider_accreditation, eclaim_authorization').eq('id', 'default').maybeSingle(),
   ])
 
   const firstError = [
@@ -193,11 +196,25 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
       provider: String(d.provider ?? ''),
     })) as DispenseLogEntry[],
     billing: (billingRes.data ?? []).map((b) => ({
-      ...b,
+      id: String(b.id),
+      patient_id: String(b.patient_id),
+      date: String(b.date),
+      services: String(b.services ?? ''),
       amount: Number(b.amount),
+      status: String(b.status),
+      notes: String(b.notes ?? ''),
+      payment_tier: String(b.payment_tier ?? 'cash'),
+      primary_icd10: String(b.primary_icd10 ?? ''),
+      primary_icd10_name: String(b.primary_icd10_name ?? ''),
+      nhis_cleared: Boolean(b.nhis_cleared),
+      nhis_exported_at: b.nhis_exported_at ? String(b.nhis_exported_at) : '',
     })) as BillingInvoice[],
     messages,
     staff,
+    clinicSettings: {
+      provider_accreditation: String(settingsRes.data?.provider_accreditation ?? ''),
+      eclaim_authorization: String(settingsRes.data?.eclaim_authorization ?? ''),
+    },
   }
 }
 

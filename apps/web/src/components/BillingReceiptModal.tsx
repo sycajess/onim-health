@@ -1,10 +1,12 @@
 import type { BillingInvoice, Patient } from '@onim/data'
 import {
+  billingLineAmount,
   billingLinesTotal,
   billingPaymentMethod,
   fmtDate,
   parseBillingServices,
   patientFullName,
+  type BillingTariffTier,
 } from '@onim/data'
 import { Button, Modal } from '@onim/ui'
 
@@ -19,7 +21,8 @@ export function BillingReceiptModal({ open, onClose, invoice, patient }: Billing
   if (!invoice) return null
 
   const lines = parseBillingServices(invoice.services)
-  const total = lines.length ? billingLinesTotal(lines) : invoice.amount
+  const tier = (invoice.payment_tier ?? 'cash') as BillingTariffTier
+  const total = lines.length ? billingLinesTotal(lines, tier) : invoice.amount
   const paid = invoice.status.startsWith('Paid')
 
   function handlePrint() {
@@ -60,7 +63,7 @@ export function BillingReceiptModal({ open, onClose, invoice, patient }: Billing
               <tr key={i}>
                 <td>{line.type}</td>
                 <td>{line.description || '–'}</td>
-                <td>{line.amount.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</td>
+                <td>{billingLineAmount(line, tier).toLocaleString('en-GH', { minimumFractionDigits: 2 })}</td>
               </tr>
             )) : (
               <tr>
