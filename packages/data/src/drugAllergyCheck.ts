@@ -2,19 +2,37 @@ import type { Patient } from './types'
 import { codedEntryTerms, parseCodedEntries, type CodedEntry } from './clinicalCodes'
 
 const ALLERGY_CLASS_ALIASES: Record<string, string[]> = {
-  sulfa: ['sulfa', 'sulfonamide', 'sulfamethoxazole', 'sulfadiazine', 'sulfasalazine', 'trimethoprim-sulfamethoxazole'],
-  penicillin: ['penicillin', 'amoxicillin', 'ampicillin', 'piperacillin', 'beta-lactam', 'cephalosporin'],
-  aspirin: ['aspirin', 'salicylate', 'nsaid', 'ibuprofen', 'naproxen'],
+  sulfa: [
+    'sulfa', 'sulfonamide', 'sulfonamides', 'sulfamethoxazole', 'sulfadiazine', 'sulfasalazine',
+    'trimethoprim-sulfamethoxazole', 'trimethoprim', 'co-trimoxazole', 'cotrimoxazole', 'tmp-smx',
+    'bactrim', 'septrin', 'septrin forte', 'fansidar',
+  ],
+  penicillin: ['penicillin', 'penicillins', 'amoxicillin', 'ampicillin', 'piperacillin', 'beta-lactam', 'cephalosporin', 'augmentin'],
+  aspirin: ['aspirin', 'salicylate', 'salicylates', 'nsaid', 'ibuprofen', 'naproxen', 'diclofenac'],
   latex: ['latex'],
-  iodine: ['iodine', 'iodinated', 'contrast'],
+  iodine: ['iodine', 'iodinated', 'contrast', 'povidone'],
   codeine: ['codeine', 'opioid'],
   morphine: ['morphine', 'opioid'],
+}
+
+function expandAllergyAliases(terms: string[]): void {
+  for (const t of [...terms]) {
+    for (const [key, aliases] of Object.entries(ALLERGY_CLASS_ALIASES)) {
+      if (t.includes(key) || aliases.some((a) => t.includes(a))) {
+        aliases.forEach((a) => terms.push(a))
+        terms.push(key)
+      }
+    }
+  }
 }
 
 function allergyTerms(entries: CodedEntry[], freeText: string): string[] {
   const terms = new Set<string>()
   for (const e of entries) codedEntryTerms(e).forEach((t) => terms.add(t))
-  for (const part of freeText.split(/[,;]+/)) {
+  const list = [...terms]
+  expandAllergyAliases(list)
+  list.forEach((t) => terms.add(t))
+  for (const part of freeText.split(/[,;\n]+/)) {
     const p = part.replace(/\([^)]*\)/g, '').trim().toLowerCase()
     if (p && p !== 'none' && p !== 'nkda') terms.add(p)
     for (const [key, aliases] of Object.entries(ALLERGY_CLASS_ALIASES)) {

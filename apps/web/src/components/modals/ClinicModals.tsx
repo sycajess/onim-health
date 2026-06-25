@@ -10,7 +10,6 @@ import {
   BILLING_SERVICE_TYPES,
   billingLinesTotal,
   serializeBillingServices,
-  checkDrugAllergyLocal,
   searchGdrgCodes,
   type BillingLineItem,
   type DrugAllergyAlert,
@@ -22,7 +21,8 @@ import { FormField, FormGrid } from '../FormField'
 import { MedicationSearch } from '../MedicationSearch'
 import { SigCodeInput } from '../SigCodeInput'
 import { SearchInput } from '../SearchInput'
-import { searchIcd10, searchLoinc, fetchDrugIngredients } from '../../lib/clinicalTables'
+import { searchIcd10, searchLoinc } from '../../lib/clinicalTables'
+import { checkDrugAllergyWithRxNorm, resolveRxcuiForSave } from '../../lib/drugAllergy'
 import '../SearchInput.css'
 
 type PatientSelectProps = {
@@ -209,9 +209,9 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
     }
     let cancelled = false
     void (async () => {
-      const ingredients = medRxcui ? await fetchDrugIngredients(medRxcui) : []
+      const alert = await checkDrugAllergyWithRxNorm(patient, medication, medRxcui)
       if (cancelled) return
-      setAllergyAlert(checkDrugAllergyLocal(patient, medication, ingredients))
+      setAllergyAlert(alert)
     })()
     return () => { cancelled = true }
   }, [patient, medication, medRxcui])
@@ -232,11 +232,12 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
 
   async function handleSave() {
     if (!canSave) return
+    const rxcui = await resolveRxcuiForSave(medication, medRxcui)
     const ok = await addPrescription({
       patient_id: patientId,
       med_id: dispense ? inventoryMedId : '',
       medication: medication.trim(),
-      med_rxcui: medRxcui || undefined,
+      med_rxcui: rxcui || undefined,
       dosage,
       frequency,
       route,

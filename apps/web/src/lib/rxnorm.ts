@@ -47,3 +47,15 @@ export async function searchRxNormDrugs(term: string): Promise<RxNormDrug[]> {
 
   return results
 }
+
+export async function resolveRxcuiForDrug(name: string): Promise<string | null> {
+  const results = await searchRxNormDrugs(name)
+  if (!results.length) return null
+  const q = name.trim().toLowerCase()
+  const exact = results.find((r) => r.name.toLowerCase() === q)
+  if (exact) return exact.rxcui
+  const starts = results.find((r) => r.name.toLowerCase().startsWith(q))
+  if (starts) return starts.rxcui
+  const contains = results.find((r) => r.name.toLowerCase().includes(q))
+  return (contains ?? results[0]).rxcui
+}

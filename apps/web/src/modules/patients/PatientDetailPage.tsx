@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
-import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, checkDrugAllergyLocal, checkPatientMedAllergies, formatCodedList, parseCodedEntries } from '@onim/data'
+import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, formatCodedList, parseCodedEntries, type DrugAllergyAlert } from '@onim/data'
+import { checkPatientMedAllergiesWithRxNorm, checkDrugAllergyWithRxNorm } from '../../lib/drugAllergy'
 import type { ModuleId } from '@onim/types'
 import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
@@ -69,17 +70,47 @@ export function PatientDetailPage() {
     [db.billing, patient?.id],
   )
 
-  const rxAllergyAlerts = useMemo(() => {
-    if (!patient) return []
-    const rxMeds = rx.filter((r) => r.status === 'Active').map((r) => r.medication)
-    const currentMeds = (patient.current_meds ?? '')
-      .split(/[,;\n]+/)
-      .map((m) => m.trim())
-      .filter(Boolean)
-    return checkPatientMedAllergies(patient, [...rxMeds, ...currentMeds]).map((alert, i) => ({
-      id: `alert-${i}`,
-      alert,
-    }))
+  const [rxAllergyAlerts, setRxAllergyAlerts] = useState<{ id: string; alert: DrugAllergyAlert }[]>([])
+  const [rxRowAlerts, setRxRowAlerts] = useState<Record<string, DrugAllergyAlert>>({})
+
+  useEffect(() => {
+    if (!patient) {
+      setRxAllergyAlerts([])
+      setRxRowAlerts({})
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const activeRx = rx.filter((r) => r.status === 'Active')
+      const currentMeds = (patient.current_meds ?? '')
+        .split(/[,;\n]+/)
+        .map((m) => m.trim())
+        .filter(Boolean)
+        .map((name) => ({ name }))
+
+      const meds = [
+        ...activeRx.map((r) => ({ name: r.medication, rxcui: r.med_rxcui })),
+        ...currentMeds,
+      ]
+
+      const alerts = await checkPatientMedAllergiesWithRxNorm(patient, meds)
+      if (cancelled) return
+      setRxAllergyAlerts(alerts.map((alert, i) => ({ id: `alert-${i}`, alert })))
+
+      const rowResults = await Promise.all(
+        rx.map(async (r) => {
+          const alert = await checkDrugAllergyWithRxNorm(patient, r.medication, r.med_rxcui)
+          return { id: r.id, alert }
+        }),
+      )
+      if (cancelled) return
+      const rowMap: Record<string, DrugAllergyAlert> = {}
+      for (const { id, alert } of rowResults) {
+        if (alert) rowMap[id] = alert
+      }
+      setRxRowAlerts(rowMap)
+    })()
+    return () => { cancelled = true }
   }, [patient, rx])
 
   const timelineEvents = useMemo<TimelineEvent[]>(() => {
@@ -234,7 +265,7 @@ export function PatientDetailPage() {
               <thead><tr><th>Medication</th><th>Strength</th><th>Directions</th><th>Route</th><th>Qty Dispensed</th><th>Status</th></tr></thead>
               <tbody>
                 {rx.map((r) => {
-                  const alert = checkDrugAllergyLocal(patient, r.medication)
+                  const alert = rxRowAlerts[r.id]
                   return (
                   <tr key={r.id} className={alert ? 'row-alert' : undefined}>
                     <td><strong>{r.medication}</strong>{alert ? ' ⚠' : ''}</td>
