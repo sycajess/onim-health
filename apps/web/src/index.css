@@ -1,3 +1,21 @@
 #root {
   min-height: 100vh;
 }
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .page-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+}

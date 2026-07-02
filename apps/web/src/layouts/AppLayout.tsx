@@ -1,4 +1,4 @@
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, usePermissions } from '@onim/auth'
 import { useData } from '@onim/data'
@@ -23,6 +23,11 @@ export function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [patientModalOpen, setPatientModalOpen] = useState(false)
+  const [navOpen, setNavOpen] = useState(false)
+
+  useEffect(() => {
+    setNavOpen(false)
+  }, [location.pathname])
 
   if (!profile) return null
   if (dataLoading) return <PageLoader />
@@ -47,7 +52,8 @@ export function AppLayout() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      {navOpen && <button type="button" className="sidebar-backdrop" aria-label="Close menu" onClick={() => setNavOpen(false)} />}
+      <aside className={`sidebar${navOpen ? ' sidebar--open' : ''}`}>
         <div className="sidebar__logo">
           <div className="sidebar__logo-name">Onim Health</div>
           <div className="sidebar__logo-sub">Patient Records System</div>
@@ -66,6 +72,7 @@ export function AppLayout() {
                     `sidebar__nav${isActive ? ' sidebar__nav--active' : ''}`
                   }
                   end={mod.path === '/dashboard'}
+                  onClick={() => setNavOpen(false)}
                 >
                   <span className="sidebar__nav-icon">{mod.icon}</span>
                   {getModuleLabel(mod, role)}
@@ -91,9 +98,12 @@ export function AppLayout() {
 
       <div className="main">
         <header className="topbar">
-          <h1 className="topbar__title">
-            {activeModule ? getModuleLabel(activeModule, role) : 'Onim Health'}
-          </h1>
+          <div className="topbar__start">
+            <button type="button" className="topbar__menu" aria-label="Open menu" onClick={() => setNavOpen(true)}>☰</button>
+            <h1 className="topbar__title">
+              {activeModule ? getModuleLabel(activeModule, role) : 'Onim Health'}
+            </h1>
+          </div>
           <div className="topbar__actions">
             <GlobalSearchBar />
             {canCreatePatient && (

@@ -388,6 +388,8 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
   const [statusAuto, setStatusAuto] = useState(true)
   const [notes, setNotes] = useState('')
   const [attachment, setAttachment] = useState<PdfAttachment | null>(null)
+  const [parsingPdf, setParsingPdf] = useState(false)
+  const [parseMessage, setParseMessage] = useState('')
 
   useEffect(() => {
     if (!open || isExternalLab) return
@@ -400,6 +402,42 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
     const evaluated = evaluateLabResult(result, ref)
     if (evaluated) setStatus(evaluated)
   }, [result, ref, statusAuto])
+
+  function applyParsed(parsed: {
+    test?: string
+    result?: string
+    ref?: string
+    date?: string
+    facility?: string
+    notes?: string
+    filled: string[]
+  }) {
+    if (parsed.test) setTest(parsed.test)
+    if (parsed.result) setResult(parsed.result)
+    if (parsed.ref) setRef(parsed.ref)
+    if (parsed.date) setDate(parsed.date)
+    if (parsed.facility) setFacility(parsed.facility)
+    if (parsed.notes) setNotes(parsed.notes)
+    if (parsed.filled.length) setStatusAuto(true)
+  }
+
+  async function handleLabAttach(file: PdfAttachment) {
+    setAttachment(file)
+    setParsingPdf(true)
+    setParseMessage('')
+    try {
+      const { parseLabReportFromDataUrl } = await import('../../lib/labReportParser')
+      const parsed = await parseLabReportFromDataUrl(file.dataUrl, file.name)
+      applyParsed(parsed)
+      if (parsed.filled.length) {
+        setParseMessage(`Filled from report: ${parsed.filled.join(', ')}. Review and edit before saving.`)
+      } else if (parsed.notes) {
+        setParseMessage(parsed.notes)
+      }
+    } finally {
+      setParsingPdf(false)
+    }
+  }
 
   function reset() {
     setPatientId('')
@@ -414,6 +452,8 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
     setStatusAuto(true)
     setNotes('')
     setAttachment(null)
+    setParsingPdf(false)
+    setParseMessage('')
   }
 
   const canSave =
@@ -452,6 +492,23 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
     >
       <FormGrid>
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
+        <FormField label="Attach Lab Report PDF" span={2}>
+          <PdfAttachZone
+            attachment={attachment}
+            onAttach={(file) => void handleLabAttach(file)}
+            onRemove={() => {
+              setAttachment(null)
+              setParseMessage('')
+            }}
+            label={parsingPdf ? 'Reading report…' : 'Attach PDF'}
+          />
+          {parsingPdf && (
+            <div style={{ fontSize: 12, color: 'var(--gray4)', marginTop: 8 }}>Extracting lab details from PDF…</div>
+          )}
+          {parseMessage && !parsingPdf && (
+            <div className="alert-banner alert-banner--info" style={{ marginTop: 10 }}>{parseMessage}</div>
+          )}
+        </FormField>
         <FormField label="Test">
           <SearchInput
             value={test}
@@ -510,14 +567,6 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
         </FormField>
         <FormField label="Notes / Interpretation" span={2}>
           <textarea className="form-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
-        </FormField>
-        <FormField label="Attach Lab Report PDF" span={2}>
-          <PdfAttachZone
-            attachment={attachment}
-            onAttach={setAttachment}
-            onRemove={() => setAttachment(null)}
-            label="Attach PDF"
-          />
         </FormField>
       </FormGrid>
     </ModalShell>

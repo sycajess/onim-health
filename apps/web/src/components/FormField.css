@@ -1,0 +1,31 @@
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid .form-field--span-2 {
+    grid-column: span 1;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-field--span-2 {
+  grid-column: span 2;
+}
+
+.form-field__label {
+  font-size: 11px;
+  color: var(--gray4);
+  text-transform: uppercase;
+}

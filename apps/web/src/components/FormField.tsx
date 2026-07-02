@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import './FormField.css'
 
 type FormFieldProps = {
   label: string
@@ -8,24 +9,13 @@ type FormFieldProps = {
 
 export function FormField({ label, children, span }: FormFieldProps) {
   return (
-    <label
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 5,
-        gridColumn: span ? `span ${span}` : undefined,
-      }}
-    >
-      <span style={{ fontSize: 11, color: 'var(--gray4)', textTransform: 'uppercase' }}>{label}</span>
+    <label className={`form-field${span ? ' form-field--span-2' : ''}`}>
+      <span className="form-field__label">{label}</span>
       {children}
     </label>
   )
 }
 
 export function FormGrid({ children }: { children: ReactNode }) {
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-      {children}
-    </div>
-  )
+  return <div className="form-grid">{children}</div>
 }
