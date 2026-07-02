@@ -14,6 +14,7 @@ import {
   supabaseSignIn,
   supabaseSignOut,
   supabaseSignUp,
+  supabaseRefreshProfile,
 } from '@onim/supabase'
 
 type AuthResult = { profile: Profile } | { error: string }
@@ -25,6 +26,7 @@ type AuthContextValue = {
   signIn: (email: string, password: string) => Promise<AuthResult>
   signUp: (email: string, password: string) => Promise<AuthResult>
   signOut: () => void
+  refreshProfile: () => Promise<void>
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
@@ -91,6 +93,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setProfile(null)
   }, [])
 
+  const refreshProfile = useCallback(async () => {
+    const next = await supabaseRefreshProfile()
+    setProfile(next)
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       profile,
@@ -99,8 +106,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       signIn,
       signUp,
       signOut,
+      refreshProfile,
     }),
-    [profile, isLoading, signIn, signUp, signOut],
+    [profile, isLoading, signIn, signUp, signOut, refreshProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

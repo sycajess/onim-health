@@ -2,7 +2,7 @@ import { Suspense, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, usePermissions } from '@onim/auth'
 import { useData } from '@onim/data'
-import { MODULES, ROLE_LABELS } from '@onim/types'
+import { MODULES, ROLE_LABELS, getModuleLabel } from '@onim/types'
 import { Button, PageLoader } from '@onim/ui'
 import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NewPatientModal } from '../components/NewPatientModal'
@@ -38,6 +38,7 @@ export function AppLayout() {
   const { role } = profile
   const visibleModules = MODULES.filter((m) => canAccessModule(m.id))
   const sections = [...new Set(visibleModules.map((m) => m.section))]
+  const activeModule = MODULES.find((m) => location.pathname.startsWith(m.path))
 
   function handleSignOut() {
     signOut()
@@ -67,7 +68,7 @@ export function AppLayout() {
                   end={mod.path === '/dashboard'}
                 >
                   <span className="sidebar__nav-icon">{mod.icon}</span>
-                  {mod.label}
+                  {getModuleLabel(mod, role)}
                 </NavLink>
               ))}
           </div>
@@ -91,8 +92,7 @@ export function AppLayout() {
       <div className="main">
         <header className="topbar">
           <h1 className="topbar__title">
-            {MODULES.find((m) => location.pathname.startsWith(m.path))?.label ??
-              'Onim Health'}
+            {activeModule ? getModuleLabel(activeModule, role) : 'Onim Health'}
           </h1>
           <div className="topbar__actions">
             <GlobalSearchBar />

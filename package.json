@@ -18,6 +18,8 @@
     "setup:supabase": "node scripts/setup-supabase.mjs"
   },
   "devDependencies": {
+    "@supabase/supabase-js": "^2.110.0",
+    "@vercel/node": "^5.8.22",
     "pg": "^8.21.0"
   }
 }

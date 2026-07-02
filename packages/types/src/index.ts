@@ -29,7 +29,7 @@ export const ROLE_LABELS: Record<Role, string> = {
   nurse: 'Nurse',
   staff: 'General Staff',
   accountant: 'Accountant',
-  lab_partner: 'Lab Partner',
+  lab_partner: 'External Lab',
 }
 
 export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
@@ -175,11 +175,18 @@ export type Profile = {
   specialty?: string
   phone?: string
   avatar_initials: string
+  google_calendar_connected?: boolean
+  google_calendar_email?: string
 }
 
 export function getDefaultRouteForRole(role: Role): string {
   const first = MODULES.find((m) => canAccessModule(role, m.id))
   return first?.path ?? '/dashboard'
+}
+
+export function getModuleLabel(module: ModuleConfig, role?: Role): string {
+  if (module.id === 'labs' && role === 'lab_partner') return 'External Labs'
+  return module.label
 }
 
 export function getInitials(name: string): string {

@@ -70,3 +70,12 @@
   text-align: center;
   padding: 20px;
 }
+
+.timeline__item--clickable {
+  cursor: pointer;
+}
+
+.timeline__item--clickable:focus-visible .timeline__content {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}

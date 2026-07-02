@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
-import { usePermissions } from '@onim/auth'
+import { useSearchParams } from 'react-router-dom'
+import { useAuth, usePermissions } from '@onim/auth'
 import { useData, SPECIALTIES, SPECIALTY_COLORS } from '@onim/data'
 import type { StaffMember } from '@onim/data'
 import { Badge, Button, Card } from '@onim/ui'
+import { disconnectGoogleCalendar, startGoogleCalendarConnect } from '../../lib/googleCalendar'
 import { StaffFormModal } from './StaffFormModal'
 import '@onim/ui/Card.css'
 
@@ -13,17 +15,31 @@ const ROLE_BADGE: Record<string, 'teal' | 'blue' | 'amber' | 'success' | 'gray' 
 
 export function SettingsPage() {
   const { db, adminDeleteStaff, saveClinicSettings } = useData()
-  const { role } = usePermissions()
+  const { profile, refreshProfile } = useAuth()
+  const { role, canWriteModule } = usePermissions()
   const isAdmin = role === 'admin'
+  const canSchedule = canWriteModule('appointments')
+  const [searchParams, setSearchParams] = useSearchParams()
   const [formOpen, setFormOpen] = useState(false)
   const [editStaff, setEditStaff] = useState<StaffMember | null>(null)
   const [providerAccreditation, setProviderAccreditation] = useState('')
   const [eclaimAuthorization, setEclaimAuthorization] = useState('')
+  const [googleMsg, setGoogleMsg] = useState('')
 
   useEffect(() => {
     setProviderAccreditation(db.clinicSettings.provider_accreditation)
     setEclaimAuthorization(db.clinicSettings.eclaim_authorization)
   }, [db.clinicSettings])
+
+  useEffect(() => {
+    const status = searchParams.get('google')
+    if (!status) return
+    void refreshProfile().then(() => {
+      if (status === 'connected') setGoogleMsg('Google Calendar connected.')
+      if (status === 'error') setGoogleMsg('Google connection failed. Try again.')
+      setSearchParams({}, { replace: true })
+    })
+  }, [searchParams, setSearchParams, refreshProfile])
 
   const specCount: Record<string, number> = {}
   db.patients.forEach((p) => { specCount[p.specialty] = (specCount[p.specialty] ?? 0) + 1 })
@@ -46,6 +62,37 @@ export function SettingsPage() {
 
   return (
     <div>
+      {canSchedule && (
+        <Card title="Google Calendar & Meet" style={{ marginBottom: 20 }}>
+          <p style={{ fontSize: 13, color: 'var(--gray4)', marginTop: 0, marginBottom: 12 }}>
+            Connect your Google account to create real Meet links for telemedicine appointments on your calendar.
+          </p>
+          {googleMsg && (
+            <div className="alert-banner alert-banner--warning" style={{ marginBottom: 12 }}>{googleMsg}</div>
+          )}
+          {profile?.google_calendar_connected ? (
+            <>
+              <div style={{ fontSize: 13, marginBottom: 12 }}>
+                Connected{profile.google_calendar_email ? ` as ${profile.google_calendar_email}` : ''}.
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => void disconnectGoogleCalendar().then((r) => {
+                  if (r.error) window.alert(r.error)
+                  else void refreshProfile()
+                })}
+              >
+                Disconnect
+              </Button>
+            </>
+          ) : (
+            <Button variant="primary" onClick={() => void startGoogleCalendarConnect()}>
+              Connect Google Calendar
+            </Button>
+          )}
+        </Card>
+      )}
+
       <Card
         title="Team & Access"
         action={isAdmin ? <Button variant="primary" onClick={openCreate}>+ Staff</Button> : undefined}

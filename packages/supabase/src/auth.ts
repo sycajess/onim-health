@@ -9,6 +9,8 @@ type DbProfile = {
   specialty: string | null
   phone: string | null
   avatar_initials: string
+  google_calendar_connected: boolean | null
+  google_calendar_email: string | null
 }
 
 function mapProfile(row: DbProfile): Profile {
@@ -20,6 +22,8 @@ function mapProfile(row: DbProfile): Profile {
     specialty: row.specialty ?? undefined,
     phone: row.phone ?? undefined,
     avatar_initials: row.avatar_initials,
+    google_calendar_connected: row.google_calendar_connected ?? false,
+    google_calendar_email: row.google_calendar_email ?? undefined,
   }
 }
 
@@ -27,11 +31,25 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
   const supabase = getSupabase()
   if (!supabase) return null
 
-  const { data, error } = await supabase
+  const baseSelect =
+    'id, email, full_name, role, specialty, phone, avatar_initials'
+  const fullSelect = `${baseSelect}, google_calendar_connected, google_calendar_email`
+
+  let { data, error } = await supabase
     .from('profiles')
-    .select('id, email, full_name, role, specialty, phone, avatar_initials')
+    .select(fullSelect)
     .eq('id', userId)
     .single()
+
+  if (error && /google_calendar/i.test(error.message)) {
+    const fallback = await supabase.from('profiles').select(baseSelect).eq('id', userId).single()
+    if (fallback.error || !fallback.data) return null
+    return mapProfile({
+      ...(fallback.data as Omit<DbProfile, 'google_calendar_connected' | 'google_calendar_email'>),
+      google_calendar_connected: false,
+      google_calendar_email: null,
+    })
+  }
 
   if (error || !data) return null
   return mapProfile(data as DbProfile)
@@ -102,4 +120,8 @@ export async function supabaseSignOut(): Promise<void> {
   const supabase = getSupabase()
   if (!supabase) return
   await supabase.auth.signOut()
+}
+
+export async function supabaseRefreshProfile(): Promise<Profile | null> {
+  return supabaseGetSession()
 }

@@ -14,13 +14,6 @@ function today(): string {
   return new Date().toISOString().split('T')[0]!
 }
 
-function generateMeetLink(): string {
-  const chars = 'abcdefghijklmnopqrstuvwxyz'
-  const seg = (n: number) =>
-    Array.from({ length: n }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
-  return `https://meet.google.com/${seg(3)}-${seg(4)}-${seg(3)}`
-}
-
 type MutError = { error: string }
 
 async function nextId(table: string, prefix: string, pad = 3): Promise<string> {
@@ -54,12 +47,14 @@ export type NewAppointmentInput = {
   specialty?: string
   provider?: string
   notes?: string
+  meet_link?: string
 }
 
 export async function createAppointment(input: NewAppointmentInput): Promise<Appointment | MutError> {
   const supabase = getSupabase()
   if (!supabase) return notConfigured()
   const id = await nextId('appointments', 'A')
+  const isTelemedicine = input.type.trim().toLowerCase() === 'telemedicine'
   const row = {
     id,
     patient_id: input.patient_id,
@@ -70,7 +65,7 @@ export async function createAppointment(input: NewAppointmentInput): Promise<App
     provider: input.provider ?? '',
     notes: input.notes ?? '',
     status: 'Scheduled',
-    meet_link: generateMeetLink(),
+    meet_link: isTelemedicine ? (input.meet_link ?? '') : '',
   }
   const { error } = await supabase.from('appointments').insert(row)
   if (error) return { error: error.message }
@@ -200,6 +195,8 @@ export type NewLabInput = {
   ref?: string
   status?: string
   provider?: string
+  uploader_name?: string
+  uploader_contact?: string
   notes?: string
   attachment?: LabAttachment | null
 }
@@ -218,6 +215,8 @@ export async function createLabResult(input: NewLabInput): Promise<LabResult | M
     ref: input.ref ?? '',
     status: input.status ?? 'Normal',
     provider: input.provider ?? '',
+    uploader_name: input.uploader_name ?? '',
+    uploader_contact: input.uploader_contact ?? '',
     notes: input.notes ?? '',
     attachment_path: input.attachment ? JSON.stringify(input.attachment) : null,
   }
@@ -233,6 +232,8 @@ export async function createLabResult(input: NewLabInput): Promise<LabResult | M
     ref: row.ref,
     status: row.status,
     provider: row.provider,
+    uploader_name: row.uploader_name,
+    uploader_contact: row.uploader_contact,
     notes: row.notes,
     attachment: input.attachment ?? undefined,
   }

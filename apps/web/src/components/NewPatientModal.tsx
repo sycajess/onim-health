@@ -65,6 +65,13 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
   )
 
   const resolvedSpecialty = specialtyChoice === OTHER_SPECIALTY ? otherSpecialty.trim() : specialtyChoice
+  const hasPhone = phoneNumber.replace(/\D/g, '').length > 0
+  const canSave =
+    fname.trim().length > 0 &&
+    lname.trim().length > 0 &&
+    hasPhone &&
+    dob.trim().length > 0 &&
+    sex.trim().length > 0
 
   useEffect(() => {
     if (!open) return
@@ -123,7 +130,7 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
   }, [open, patient])
 
   async function handleSave() {
-    if (!fname.trim() || !lname.trim() || !resolvedSpecialty) return
+    if (!canSave) return
 
     const allergyCodes = allergyTags.map((t) => ({
       code: t.code,
@@ -152,7 +159,7 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
       sex,
       id_num: ghanaCard.trim(),
       nhis: nhis.trim(),
-      specialty: resolvedSpecialty,
+      specialty: resolvedSpecialty || '',
       blood: blood.trim(),
       weight: weight.trim() ? Number(weight) : null,
       height: height.trim() ? Number(height) : null,
@@ -191,7 +198,7 @@ export function NewPatientModal({ open, onClose, patient }: NewPatientModalProps
           <Button
             variant="primary"
             onClick={() => void handleSave()}
-            disabled={!fname.trim() || !lname.trim() || !resolvedSpecialty}
+            disabled={!canSave}
           >
             {isEdit ? 'Save Changes' : 'Save Patient'}
           </Button>

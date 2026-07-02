@@ -1,4 +1,4 @@
-import type { Patient } from './types'
+import type { Patient, LabResult } from './types'
 
 export function fmtDate(d: string | undefined): string {
   if (!d) return '–'
@@ -79,4 +79,9 @@ export const SPECIALTY_COLORS: Record<string, string> = {
   Fertility: '#D4537E',
   Hair: 'var(--amber)',
   Skin: 'var(--success)',
+}
+
+export function formatLabSource(l: Pick<LabResult, 'facility' | 'uploader_name' | 'uploader_contact'>): string {
+  const parts = [l.facility, l.uploader_name, l.uploader_contact].filter(Boolean)
+  return parts.join(' · ')
 }

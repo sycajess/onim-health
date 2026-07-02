@@ -101,6 +101,8 @@ function mapLab(row: Record<string, unknown>): LabResult {
     ref: String(row.ref ?? ''),
     status: String(row.status ?? ''),
     provider: String(row.provider ?? ''),
+    uploader_name: String(row.uploader_name ?? ''),
+    uploader_contact: String(row.uploader_contact ?? ''),
     notes: String(row.notes ?? ''),
     attachment: parseAttachment(row.attachment_path),
   }
@@ -259,22 +261,28 @@ export async function createPatient(input: NewPatientInput): Promise<Patient | {
   if (!input.fname.trim() || !input.lname.trim()) {
     return { error: 'First and last name are required.' }
   }
-  if (!input.specialty?.trim()) {
-    return { error: 'Specialty is required.' }
+  if (!input.phone?.trim()) {
+    return { error: 'Phone is required.' }
+  }
+  if (!input.dob?.trim()) {
+    return { error: 'Date of birth is required.' }
+  }
+  if (!input.sex?.trim()) {
+    return { error: 'Sex is required.' }
   }
 
   const row = {
     id,
     fname: input.fname.trim(),
     lname: input.lname.trim(),
-    dob: input.dob?.trim() || null,
-    sex: input.sex?.trim() || null,
-    phone: input.phone?.trim() ?? '',
+    dob: input.dob.trim(),
+    sex: input.sex.trim(),
+    phone: input.phone.trim(),
     email: input.email?.trim() ?? '',
     address: input.address?.trim() ?? '',
     id_num: input.id_num?.trim() ?? '',
     nhis: input.nhis?.trim() ?? '',
-    specialty: input.specialty.trim(),
+    specialty: input.specialty?.trim() ?? '',
     blood: input.blood?.trim() || null,
     weight: input.weight ?? null,
     height: input.height ?? null,
@@ -331,21 +339,27 @@ export async function updatePatient(
   if (!input.fname.trim() || !input.lname.trim()) {
     return { error: 'First and last name are required.' }
   }
-  if (!input.specialty?.trim()) {
-    return { error: 'Specialty is required.' }
+  if (!input.phone?.trim()) {
+    return { error: 'Phone is required.' }
+  }
+  if (!input.dob?.trim()) {
+    return { error: 'Date of birth is required.' }
+  }
+  if (!input.sex?.trim()) {
+    return { error: 'Sex is required.' }
   }
 
   const row = {
     fname: input.fname.trim(),
     lname: input.lname.trim(),
-    dob: input.dob?.trim() || null,
-    sex: input.sex?.trim() || null,
-    phone: input.phone?.trim() ?? '',
+    dob: input.dob.trim(),
+    sex: input.sex.trim(),
+    phone: input.phone.trim(),
     email: input.email?.trim() ?? '',
     address: input.address?.trim() ?? '',
     id_num: input.id_num?.trim() ?? '',
     nhis: input.nhis?.trim() ?? '',
-    specialty: input.specialty.trim(),
+    specialty: input.specialty?.trim() ?? '',
     blood: input.blood?.trim() || null,
     weight: input.weight ?? null,
     height: input.height ?? null,

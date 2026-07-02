@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
-import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, formatCodedList, parseCodedEntries, type DrugAllergyAlert } from '@onim/data'
+import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, formatCodedList, parseCodedEntries, formatLabSource, type DrugAllergyAlert, type MedicalRecord } from '@onim/data'
 import { checkPatientMedAllergiesWithRxNorm, checkDrugAllergyWithRxNorm } from '../../lib/drugAllergy'
 import type { ModuleId } from '@onim/types'
 import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
 import { NewPatientModal } from '../../components/NewPatientModal'
+import { RecordDetailModal } from '../../components/RecordDetailModal'
+import '../../components/RecordDetailModal.css'
 import '@onim/ui/Card.css'
 import './PatientDetail.css'
 import '../../components/SearchInput.css'
@@ -30,6 +32,7 @@ export function PatientDetailPage() {
   const { canEditPatient, canDeletePatient, canWriteModule, canAccessModule } = usePermissions()
   const [tab, setTab] = useState<(typeof TABS)[number]>('Overview')
   const [editOpen, setEditOpen] = useState(false)
+  const [recordDetail, setRecordDetail] = useState<MedicalRecord | null>(null)
   const patient = id ? getPatient(id) : undefined
   const canWriteLabs = canWriteModule('labs')
   const showHeaderActions = canEditPatient || canDeletePatient
@@ -193,6 +196,11 @@ export function PatientDetailPage() {
       </div>
 
       <NewPatientModal open={editOpen} onClose={() => setEditOpen(false)} patient={patient} />
+      <RecordDetailModal
+        record={recordDetail}
+        open={!!recordDetail}
+        onClose={() => setRecordDetail(null)}
+      />
 
       <div className="pt-tabs">
         {visibleTabs.map((t) => (
@@ -238,7 +246,14 @@ export function PatientDetailPage() {
             </Card>
           </div>
           <Card title="Activity Timeline">
-            <Timeline events={timelineEvents} />
+            <Timeline
+              events={timelineEvents}
+              clickableTypes={['Record']}
+              onEventClick={(ev) => {
+                const record = records.find((r) => r.id === ev.id)
+                if (record) setRecordDetail(record)
+              }}
+            />
           </Card>
         </div>
       )}
@@ -250,7 +265,16 @@ export function PatientDetailPage() {
               <thead><tr><th>Date</th><th>Type</th><th>Specialty</th><th>Assessment</th></tr></thead>
               <tbody>
                 {records.map((r) => (
-                  <tr key={r.id}><td>{fmtDate(r.date)}</td><td>{r.type}</td><td>{r.specialty}</td><td>{r.assessment}</td></tr>
+                  <tr
+                    key={r.id}
+                    className="record-row-clickable"
+                    onClick={() => setRecordDetail(r)}
+                  >
+                    <td>{fmtDate(r.date)}</td>
+                    <td><span className="link-cell">{r.type}</span></td>
+                    <td>{r.specialty}</td>
+                    <td>{r.assessment || r.complaint || '–'}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -285,10 +309,14 @@ export function PatientDetailPage() {
 
       {tab === 'Labs' && (
         <div className="pt-labs-list">
-          {labs.length ? labs.map((l) => (
+          {labs.length ? labs.map((l) => {
+            const source = formatLabSource(l)
+            return (
             <Card key={l.id} title={`${l.test} — ${fmtDate(l.date)}`}>
               <div style={{ marginBottom: 8 }}><strong>{l.result}</strong> <Badge>{l.status}</Badge></div>
-              <div style={{ fontSize: 12, color: 'var(--gray4)', marginBottom: 12 }}>{l.facility} · Ref: {l.ref}</div>
+              <div style={{ fontSize: 12, color: 'var(--gray4)', marginBottom: 12 }}>
+                {source ? `${source} · ` : ''}Ref: {l.ref || '–'}
+              </div>
               {canWriteLabs ? (
                 <PdfAttachZone
                   attachment={l.attachment ? { name: l.attachment.name, dataUrl: l.attachment.data_url } : null}
@@ -301,7 +329,8 @@ export function PatientDetailPage() {
                 <span style={{ fontSize: 12, color: 'var(--gray4)' }}>No report attached</span>
               )}
             </Card>
-          )) : <EmptyState icon="🧪" title="No lab results" />}
+            )
+          }) : <EmptyState icon="🧪" title="No lab results" />}
         </div>
       )}
 

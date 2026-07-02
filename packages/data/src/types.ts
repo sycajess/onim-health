@@ -90,6 +90,8 @@ export type LabResult = {
   ref: string
   status: string
   provider: string
+  uploader_name: string
+  uploader_contact: string
   notes: string
   attachment?: LabAttachment
 }

@@ -11,6 +11,7 @@ export {
   formatPatientDemographics,
   displayField,
   patientFullName,
+  formatLabSource,
   SPECIALTIES,
   SPECIALTY_COLORS,
 } from './utils'

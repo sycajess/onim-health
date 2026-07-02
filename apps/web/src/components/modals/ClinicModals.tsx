@@ -27,6 +27,7 @@ import { SigCodeInput } from '../SigCodeInput'
 import { SearchInput } from '../SearchInput'
 import { searchIcd10, searchLoinc } from '../../lib/clinicalTables'
 import { checkDrugAllergyWithRxNorm, resolveRxcuiForSave } from '../../lib/drugAllergy'
+import { createGoogleMeetLink } from '../../lib/googleCalendar'
 import '../SearchInput.css'
 
 type PatientSelectProps = {
@@ -75,7 +76,7 @@ function ModalShell({ open, title, onClose, onSave, saveLabel = 'Save', saveDisa
 }
 
 export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { addAppointment } = useData()
+  const { db, addAppointment } = useData()
   const { profile } = useAuth()
   const [patientId, setPatientId] = useState('')
   const [date, setDate] = useState(today())
@@ -83,6 +84,10 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
   const [type, setType] = useState('Consultation')
   const [specialty, setSpecialty] = useState<string>(SPECIALTIES[0])
   const [notes, setNotes] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const isTelemedicine = type === 'Telemedicine'
 
   function reset() {
     setPatientId('')
@@ -91,10 +96,36 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
     setType('Consultation')
     setSpecialty(SPECIALTIES[0])
     setNotes('')
+    setError('')
   }
 
   async function handleSave() {
-    if (!patientId) return
+    if (!patientId || saving) return
+    setError('')
+
+    if (isTelemedicine && !profile?.google_calendar_connected) {
+      setError('Connect your Google Calendar in Settings before scheduling telemedicine.')
+      return
+    }
+
+    setSaving(true)
+    let meetLink = ''
+    if (isTelemedicine) {
+      const patient = db.patients.find((p) => p.id === patientId)
+      const meet = await createGoogleMeetLink({
+        date,
+        time,
+        title: `Telemedicine — ${patient ? patientFullName(patient) : patientId}`,
+        notes,
+      })
+      if ('error' in meet) {
+        setError(meet.error)
+        setSaving(false)
+        return
+      }
+      meetLink = meet.meetLink
+    }
+
     const ok = await addAppointment({
       patient_id: patientId,
       date,
@@ -103,15 +134,36 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
       specialty,
       provider: profile?.full_name ?? '',
       notes,
+      meet_link: meetLink,
     })
+    setSaving(false)
     if (!ok) return
     reset()
     onClose()
   }
 
   return (
-    <ModalShell open={open} title="Schedule Appointment" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId}>
+    <ModalShell
+      open={open}
+      title="Schedule Appointment"
+      onClose={() => { reset(); onClose() }}
+      onSave={handleSave}
+      saveDisabled={!patientId || saving}
+      saveLabel={saving ? 'Saving…' : 'Save'}
+    >
       <FormGrid>
+        {error && (
+          <FormField label=" " span={2}>
+            <div className="alert-banner alert-banner--warning">{error}</div>
+          </FormField>
+        )}
+        {isTelemedicine && !profile?.google_calendar_connected && (
+          <FormField label=" " span={2}>
+            <div className="alert-banner alert-banner--warning">
+              Connect Google Calendar in Settings to create a real Meet link.
+            </div>
+          </FormField>
+        )}
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
         <FormField label="Time"><input className="form-input" value={time} onChange={(e) => setTime(e.target.value)} placeholder="09:00 AM" /></FormField>
@@ -274,7 +326,6 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
             }}
             onSelectDrug={(drug) => {
               setMedRxcui(drug.rxcui)
-              if (drug.strength) setDosage(drug.strength)
             }}
           />
         </FormField>
@@ -314,16 +365,25 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
 export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { addLabResult } = useData()
   const { profile } = useAuth()
+  const isExternalLab = profile?.role === 'lab_partner'
   const [patientId, setPatientId] = useState('')
   const [test, setTest] = useState('')
   const [date, setDate] = useState(today())
   const [facility, setFacility] = useState('')
+  const [uploaderName, setUploaderName] = useState('')
+  const [uploaderContact, setUploaderContact] = useState('')
   const [result, setResult] = useState('')
   const [ref, setRef] = useState('')
   const [status, setStatus] = useState('Normal')
   const [statusAuto, setStatusAuto] = useState(true)
   const [notes, setNotes] = useState('')
   const [attachment, setAttachment] = useState<PdfAttachment | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    setUploaderName(profile?.full_name ?? '')
+    setUploaderContact(profile?.phone ?? '')
+  }, [open, profile?.full_name, profile?.phone])
 
   useEffect(() => {
     if (!statusAuto || !result.trim() || !ref.trim()) return
@@ -336,6 +396,8 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
     setTest('')
     setDate(today())
     setFacility('')
+    setUploaderName('')
+    setUploaderContact('')
     setResult('')
     setRef('')
     setStatus('Normal')
@@ -344,17 +406,24 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
     setAttachment(null)
   }
 
+  const canSave =
+    !!patientId &&
+    !!test.trim() &&
+    (!isExternalLab || (!!facility.trim() && !!uploaderName.trim() && !!uploaderContact.trim()))
+
   async function handleSave() {
-    if (!patientId || !test.trim()) return
+    if (!canSave) return
     const ok = await addLabResult({
       patient_id: patientId,
       test: test.trim(),
       date,
-      facility,
+      facility: facility.trim(),
       result,
       ref,
       status,
-      provider: profile?.full_name ?? '',
+      provider: uploaderName.trim() || profile?.full_name || '',
+      uploader_name: uploaderName.trim(),
+      uploader_contact: uploaderContact.trim(),
       notes,
       attachment: attachment ? { name: attachment.name, data_url: attachment.dataUrl } : null,
     })
@@ -364,7 +433,13 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
   }
 
   return (
-    <ModalShell open={open} title="Add Lab Result" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId || !test.trim()}>
+    <ModalShell
+      open={open}
+      title={isExternalLab ? 'Upload External Lab Result' : 'Add Lab Result'}
+      onClose={() => { reset(); onClose() }}
+      onSave={handleSave}
+      saveDisabled={!canSave}
+    >
       <FormGrid>
         <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
         <FormField label="Test">
@@ -376,7 +451,30 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
           />
         </FormField>
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
-        <FormField label="Lab / Facility"><input className="form-input" value={facility} onChange={(e) => setFacility(e.target.value)} placeholder="Korle-Bu Labs..." /></FormField>
+        <FormField label={isExternalLab ? 'Lab / Hospital name *' : 'Lab / Hospital name'}>
+          <input
+            className="form-input"
+            value={facility}
+            onChange={(e) => setFacility(e.target.value)}
+            placeholder="e.g. City Hospital Laboratory"
+          />
+        </FormField>
+        <FormField label={isExternalLab ? 'Uploaded by *' : 'Uploaded by'}>
+          <input
+            className="form-input"
+            value={uploaderName}
+            onChange={(e) => setUploaderName(e.target.value)}
+            placeholder="Name of person uploading"
+          />
+        </FormField>
+        <FormField label={isExternalLab ? 'Uploader contact *' : 'Uploader contact'} span={2}>
+          <input
+            className="form-input"
+            value={uploaderContact}
+            onChange={(e) => setUploaderContact(e.target.value)}
+            placeholder="Phone or email"
+          />
+        </FormField>
         <FormField label="Result"><input className="form-input" value={result} onChange={(e) => setResult(e.target.value)} placeholder="e.g. 6.2%" /></FormField>
         <FormField label="Reference range"><input className="form-input" value={ref} onChange={(e) => setRef(e.target.value)} placeholder="e.g. 4.0–5.6%" /></FormField>
         {result && ref && (

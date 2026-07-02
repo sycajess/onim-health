@@ -24,6 +24,7 @@ supabase/.temp
 
 # Local setup notes (not for public repo)
 steps.md
+client.md
 
 # Keys & credentials
 *.pem

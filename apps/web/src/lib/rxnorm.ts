@@ -19,31 +19,28 @@ export async function searchRxNormDrugs(term: string): Promise<RxNormDrug[]> {
   const q = term.trim()
   if (q.length < 2) return []
 
-  const url = `https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(q)}`
-  const res = await fetch(url)
+  const params = new URLSearchParams({ terms: q, maxList: '20' })
+  const res = await fetch(`https://clinicaltables.nlm.nih.gov/api/rxterms/v3/search?${params}`)
   if (!res.ok) return []
 
-  const data = (await res.json()) as {
-    drugGroup?: { conceptGroup?: { conceptProperties?: { rxcui: string; name: string }[] }[] }
-  }
+  const data = (await res.json()) as [number, string[], unknown, string[]]
+  const codes = data[1] ?? []
+  const names = data[3] ?? []
 
   const seen = new Set<string>()
   const results: RxNormDrug[] = []
 
-  for (const group of data.drugGroup?.conceptGroup ?? []) {
-    for (const concept of group.conceptProperties ?? []) {
-      const name = cleanDrugName(concept.name)
-      const key = `${concept.rxcui}:${name}`
-      if (!name || seen.has(key)) continue
-      seen.add(key)
-      results.push({
-        rxcui: concept.rxcui,
-        name,
-        strength: extractStrength(name),
-      })
-      if (results.length >= 20) return results
-    }
-  }
+  codes.forEach((rxcui, i) => {
+    const name = cleanDrugName(String(names[i] ?? ''))
+    const key = `${rxcui}:${name}`
+    if (!name || seen.has(key)) return
+    seen.add(key)
+    results.push({
+      rxcui: String(rxcui),
+      name,
+      strength: extractStrength(name),
+    })
+  })
 
   return results
 }
