@@ -93,7 +93,7 @@ export async function clearGoogleTokens(userId: string) {
 export async function getValidGoogleAccessToken(userId: string): Promise<string> {
   const tokens = await loadGoogleTokens(userId)
   if (!tokens?.google_refresh_token || !tokens.google_calendar_connected) {
-    throw new Error('Connect Google Calendar in Settings first.')
+    throw new Error('Connect Google first (Settings or when creating a Meet link).')
   }
 
   const expiryMs = tokens.google_token_expiry ? Date.parse(tokens.google_token_expiry) : 0

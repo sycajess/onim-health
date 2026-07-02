@@ -97,6 +97,25 @@
   flex-shrink: 0;
 }
 
+.meet-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.meet-cell__btn {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.meet-cell__synced {
+  font-size: 11px;
+  color: var(--gray4);
+}
+
 .flex-center {
   display: flex;
   align-items: center;

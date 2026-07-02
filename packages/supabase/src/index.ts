@@ -33,6 +33,7 @@ export {
   saveLabAttachment,
   updateAppointmentStatus,
   updateAppointmentMeetLink,
+  updateAppointmentCalendarSync,
   createAppointment,
   createMedicalRecord,
   updatePrescriptionStatus,

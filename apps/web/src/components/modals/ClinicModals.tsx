@@ -27,7 +27,7 @@ import { SigCodeInput } from '../SigCodeInput'
 import { SearchInput } from '../SearchInput'
 import { searchIcd10, searchLoinc } from '../../lib/clinicalTables'
 import { checkDrugAllergyWithRxNorm, resolveRxcuiForSave } from '../../lib/drugAllergy'
-import { createGoogleMeetLink } from '../../lib/googleCalendar'
+import { createGoogleMeetLink, ensureGoogleConnected } from '../../lib/googleCalendar'
 import '../SearchInput.css'
 
 type PatientSelectProps = {
@@ -76,7 +76,7 @@ function ModalShell({ open, title, onClose, onSave, saveLabel = 'Save', saveDisa
 }
 
 export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { db, addAppointment } = useData()
+  const { addAppointment } = useData()
   const { profile } = useAuth()
   const [patientId, setPatientId] = useState('')
   const [date, setDate] = useState(today())
@@ -103,21 +103,14 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
     if (!patientId || saving) return
     setError('')
 
-    if (addGoogleMeet && !profile?.google_calendar_connected) {
-      setError('Connect your Google Calendar in Settings to add a Meet link.')
-      return
-    }
-
     setSaving(true)
     let meetLink = ''
     if (addGoogleMeet) {
-      const patient = db.patients.find((p) => p.id === patientId)
-      const meet = await createGoogleMeetLink({
-        date,
-        time,
-        title: `${type} — ${patient ? patientFullName(patient) : patientId}`,
-        notes,
-      })
+      if (!(await ensureGoogleConnected(profile?.google_calendar_connected))) {
+        setSaving(false)
+        return
+      }
+      const meet = await createGoogleMeetLink()
       if ('error' in meet) {
         setError(meet.error)
         setSaving(false)
@@ -159,8 +152,8 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
         )}
         {addGoogleMeet && !profile?.google_calendar_connected && (
           <FormField label=" " span={2}>
-            <div className="alert-banner alert-banner--warning">
-              Connect Google Calendar in Settings to add a Meet link.
+            <div className="alert-banner alert-banner--info">
+              You&apos;ll sign in with Google to create the Meet link. Add it to your calendar afterward if you want.
             </div>
           </FormField>
         )}
@@ -185,7 +178,7 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
               checked={addGoogleMeet}
               onChange={(e) => setAddGoogleMeet(e.target.checked)}
             />
-            Add Google Meet link (optional)
+            Add Google Meet link (optional — calendar sync comes after)
           </label>
         </FormField>
       </FormGrid>

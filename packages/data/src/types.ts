@@ -39,6 +39,8 @@ export type Appointment = {
   notes: string
   status: string
   meet_link: string
+  calendar_event_id: string
+  calendar_synced: boolean
 }
 
 export type MedicalRecord = {

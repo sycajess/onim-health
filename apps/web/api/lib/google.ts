@@ -1,4 +1,5 @@
 const SCOPES = [
+  'https://www.googleapis.com/auth/meetings.space.created',
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/userinfo.email',
 ].join(' ')
@@ -111,55 +112,55 @@ export function parseAppointmentStart(date: string, time: string): Date {
   return new Date(iso)
 }
 
-export async function createMeetEvent(input: {
+export async function createMeetSpace(accessToken: string): Promise<string> {
+  const res = await fetch('https://meet.googleapis.com/v2/spaces', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  })
+  const data = (await res.json()) as {
+    meetingUri?: string
+    error?: { message?: string; status?: string }
+  }
+  if (!res.ok || !data.meetingUri) {
+    throw new Error(data.error?.message || 'Could not create Google Meet link.')
+  }
+  return data.meetingUri
+}
+
+export async function addMeetToCalendarEvent(input: {
   accessToken: string
   title: string
   date: string
   time: string
   notes?: string
+  meetLink: string
 }): Promise<string> {
   const start = parseAppointmentStart(input.date, input.time)
   const end = new Date(start.getTime() + 30 * 60 * 1000)
-  const requestId = `onim-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+  const description = [input.notes?.trim(), `Join Google Meet: ${input.meetLink}`].filter(Boolean).join('\n\n')
 
-  const res = await fetch(
-    'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1',
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${input.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        summary: input.title,
-        description: input.notes ?? '',
-        start: { dateTime: start.toISOString(), timeZone: 'Africa/Accra' },
-        end: { dateTime: end.toISOString(), timeZone: 'Africa/Accra' },
-        conferenceData: {
-          createRequest: {
-            requestId,
-            conferenceSolutionKey: { type: 'hangoutsMeet' },
-          },
-        },
-      }),
+  const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${input.accessToken}`,
+      'Content-Type': 'application/json',
     },
-  )
+    body: JSON.stringify({
+      summary: input.title,
+      description,
+      location: input.meetLink,
+      start: { dateTime: start.toISOString(), timeZone: 'Africa/Accra' },
+      end: { dateTime: end.toISOString(), timeZone: 'Africa/Accra' },
+    }),
+  })
 
-  const data = (await res.json()) as {
-    hangoutLink?: string
-    conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] }
-    error?: { message?: string }
+  const data = (await res.json()) as { id?: string; error?: { message?: string } }
+  if (!res.ok || !data.id) {
+    throw new Error(data.error?.message || 'Could not add appointment to Google Calendar.')
   }
-
-  if (!res.ok) {
-    throw new Error(data.error?.message || 'Could not create Google Calendar event.')
-  }
-
-  const meetLink =
-    data.hangoutLink ||
-    data.conferenceData?.entryPoints?.find((p) => p.entryPointType === 'video')?.uri ||
-    ''
-
-  if (!meetLink) throw new Error('Meet link was not returned by Google.')
-  return meetLink
+  return data.id
 }

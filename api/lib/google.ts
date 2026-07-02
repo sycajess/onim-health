@@ -1,4 +1,5 @@
 const SCOPES = [
+  'https://www.googleapis.com/auth/meetings.space.created',
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/userinfo.email',
 ].join(' ')
@@ -109,6 +110,59 @@ export function parseAppointmentStart(date: string, time: string): Date {
   if (meridiem === 'AM' && hours === 12) hours = 0
   const iso = `${date}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`
   return new Date(iso)
+}
+
+export async function createMeetSpace(accessToken: string): Promise<string> {
+  const res = await fetch('https://meet.googleapis.com/v2/spaces', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({}),
+  })
+  const data = (await res.json()) as {
+    meetingUri?: string
+    error?: { message?: string; status?: string }
+  }
+  if (!res.ok || !data.meetingUri) {
+    throw new Error(data.error?.message || 'Could not create Google Meet link.')
+  }
+  return data.meetingUri
+}
+
+export async function addMeetToCalendarEvent(input: {
+  accessToken: string
+  title: string
+  date: string
+  time: string
+  notes?: string
+  meetLink: string
+}): Promise<string> {
+  const start = parseAppointmentStart(input.date, input.time)
+  const end = new Date(start.getTime() + 30 * 60 * 1000)
+  const description = [input.notes?.trim(), `Join Google Meet: ${input.meetLink}`].filter(Boolean).join('\n\n')
+
+  const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${input.accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      summary: input.title,
+      description,
+      location: input.meetLink,
+      start: { dateTime: start.toISOString(), timeZone: 'Africa/Accra' },
+      end: { dateTime: end.toISOString(), timeZone: 'Africa/Accra' },
+    }),
+  })
+
+  const data = (await res.json()) as { id?: string; error?: { message?: string } }
+  if (!res.ok || !data.id) {
+    throw new Error(data.error?.message || 'Could not add appointment to Google Calendar.')
+  }
+  return data.id
 }
 
 export async function createMeetEvent(input: {

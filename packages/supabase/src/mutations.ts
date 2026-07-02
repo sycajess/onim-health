@@ -42,7 +42,25 @@ export async function updateAppointmentStatus(id: string, status: string): Promi
 export async function updateAppointmentMeetLink(id: string, meet_link: string): Promise<true | MutError> {
   const supabase = getSupabase()
   if (!supabase) return notConfigured()
-  const { error } = await supabase.from('appointments').update({ meet_link }).eq('id', id)
+  const { error } = await supabase.from('appointments').update({
+    meet_link,
+    calendar_synced: false,
+    calendar_event_id: null,
+  }).eq('id', id)
+  if (error) return { error: error.message }
+  return true
+}
+
+export async function updateAppointmentCalendarSync(
+  id: string,
+  calendar_event_id: string,
+): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { error } = await supabase.from('appointments').update({
+    calendar_event_id,
+    calendar_synced: true,
+  }).eq('id', id)
   if (error) return { error: error.message }
   return true
 }
@@ -73,6 +91,8 @@ export async function createAppointment(input: NewAppointmentInput): Promise<App
     notes: input.notes ?? '',
     status: 'Scheduled',
     meet_link: input.meet_link ?? '',
+    calendar_event_id: '',
+    calendar_synced: false,
   }
   const { error } = await supabase.from('appointments').insert(row)
   if (error) return { error: error.message }

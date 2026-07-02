@@ -38,20 +38,11 @@ export async function disconnectGoogleCalendar(): Promise<{ error?: string }> {
   }
 }
 
-export async function createGoogleMeetLink(input: {
-  date: string
-  time: string
-  title: string
-  notes?: string
-}): Promise<{ meetLink: string } | { error: string }> {
+export async function createGoogleMeetLink(): Promise<{ meetLink: string } | { error: string }> {
   try {
     const res = await fetch(`${appOrigin()}/api/google/create-meet`, {
       method: 'POST',
-      headers: {
-        ...(await authHeaders()),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(input),
+      headers: await authHeaders(),
     })
     const data = (await res.json()) as { meetLink?: string; error?: string }
     if (!res.ok || !data.meetLink) {
@@ -61,4 +52,36 @@ export async function createGoogleMeetLink(input: {
   } catch {
     return { error: 'Could not create Meet link.' }
   }
+}
+
+export async function addMeetToGoogleCalendar(input: {
+  date: string
+  time: string
+  title: string
+  notes?: string
+  meetLink: string
+}): Promise<{ calendarEventId: string } | { error: string }> {
+  try {
+    const res = await fetch(`${appOrigin()}/api/google/add-to-calendar`, {
+      method: 'POST',
+      headers: {
+        ...(await authHeaders()),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    })
+    const data = (await res.json()) as { calendarEventId?: string; error?: string }
+    if (!res.ok || !data.calendarEventId) {
+      return { error: data.error || 'Could not add to Google Calendar.' }
+    }
+    return { calendarEventId: data.calendarEventId }
+  } catch {
+    return { error: 'Could not add to Google Calendar.' }
+  }
+}
+
+export async function ensureGoogleConnected(profileConnected: boolean | undefined): Promise<boolean> {
+  if (profileConnected) return true
+  await startGoogleCalendarConnect()
+  return false
 }

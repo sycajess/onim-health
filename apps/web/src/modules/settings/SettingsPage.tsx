@@ -35,7 +35,7 @@ export function SettingsPage() {
     const status = searchParams.get('google')
     if (!status) return
     void refreshProfile().then(() => {
-      if (status === 'connected') setGoogleMsg('Google Calendar connected.')
+      if (status === 'connected') setGoogleMsg('Google connected.')
       if (status === 'error') setGoogleMsg('Google connection failed. Try again.')
       setSearchParams({}, { replace: true })
     })
@@ -63,9 +63,9 @@ export function SettingsPage() {
   return (
     <div>
       {canSchedule && (
-        <Card title="Google Calendar & Meet" style={{ marginBottom: 20 }}>
+        <Card title="Google Meet & Calendar" style={{ marginBottom: 20 }}>
           <p style={{ fontSize: 13, color: 'var(--gray4)', marginTop: 0, marginBottom: 12 }}>
-            Connect your Google account to create real Meet links for telemedicine appointments on your calendar.
+            Connect Google to create Meet links. Calendar sync is optional — add it per appointment after the Meet link is created.
           </p>
           {googleMsg && (
             <div className="alert-banner alert-banner--warning" style={{ marginBottom: 12 }}>{googleMsg}</div>
@@ -82,12 +82,12 @@ export function SettingsPage() {
                   else void refreshProfile()
                 })}
               >
-                Disconnect
+                Disconnect Google
               </Button>
             </>
           ) : (
             <Button variant="primary" onClick={() => void startGoogleCalendarConnect()}>
-              Connect Google Calendar
+              Connect Google
             </Button>
           )}
         </Card>
