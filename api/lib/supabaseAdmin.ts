@@ -2,11 +2,23 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 let admin: SupabaseClient | null = null
 
-export function getSupabaseAdmin() {
-  if (admin) return admin
+function readSupabaseAdminEnv() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!url || !key) throw new Error('Supabase admin is not configured.')
+  return { url: url?.trim(), key: key?.trim() }
+}
+
+export function getSupabaseAdmin() {
+  if (admin) return admin
+  const { url, key } = readSupabaseAdminEnv()
+  if (!url || !key) {
+    const missing: string[] = []
+    if (!url) missing.push('SUPABASE_URL')
+    if (!key) missing.push('SUPABASE_SERVICE_ROLE_KEY')
+    throw new Error(
+      `Missing on Vercel: ${missing.join(', ')}. Add under Project → Settings → Environment Variables (check Production), then Redeploy. Use the service_role key from Supabase → Settings → API — not the anon key.`,
+    )
+  }
   admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
   return admin
 }
