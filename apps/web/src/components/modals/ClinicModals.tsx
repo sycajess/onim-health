@@ -84,10 +84,9 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
   const [type, setType] = useState('Consultation')
   const [specialty, setSpecialty] = useState<string>(SPECIALTIES[0])
   const [notes, setNotes] = useState('')
+  const [addGoogleMeet, setAddGoogleMeet] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-
-  const isTelemedicine = type === 'Telemedicine'
 
   function reset() {
     setPatientId('')
@@ -96,6 +95,7 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
     setType('Consultation')
     setSpecialty(SPECIALTIES[0])
     setNotes('')
+    setAddGoogleMeet(false)
     setError('')
   }
 
@@ -103,19 +103,19 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
     if (!patientId || saving) return
     setError('')
 
-    if (isTelemedicine && !profile?.google_calendar_connected) {
-      setError('Connect your Google Calendar in Settings before scheduling telemedicine.')
+    if (addGoogleMeet && !profile?.google_calendar_connected) {
+      setError('Connect your Google Calendar in Settings to add a Meet link.')
       return
     }
 
     setSaving(true)
     let meetLink = ''
-    if (isTelemedicine) {
+    if (addGoogleMeet) {
       const patient = db.patients.find((p) => p.id === patientId)
       const meet = await createGoogleMeetLink({
         date,
         time,
-        title: `Telemedicine — ${patient ? patientFullName(patient) : patientId}`,
+        title: `${type} — ${patient ? patientFullName(patient) : patientId}`,
         notes,
       })
       if ('error' in meet) {
@@ -157,10 +157,10 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
             <div className="alert-banner alert-banner--warning">{error}</div>
           </FormField>
         )}
-        {isTelemedicine && !profile?.google_calendar_connected && (
+        {addGoogleMeet && !profile?.google_calendar_connected && (
           <FormField label=" " span={2}>
             <div className="alert-banner alert-banner--warning">
-              Connect Google Calendar in Settings to create a real Meet link.
+              Connect Google Calendar in Settings to add a Meet link.
             </div>
           </FormField>
         )}
@@ -178,6 +178,16 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
           </select>
         </FormField>
         <FormField label="Notes" span={2}><textarea className="form-input" rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} /></FormField>
+        <FormField label="Google Meet" span={2}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <input
+              type="checkbox"
+              checked={addGoogleMeet}
+              onChange={(e) => setAddGoogleMeet(e.target.checked)}
+            />
+            Add Google Meet link (optional)
+          </label>
+        </FormField>
       </FormGrid>
     </ModalShell>
   )
@@ -380,10 +390,10 @@ export function NewLabModal({ open, onClose }: { open: boolean; onClose: () => v
   const [attachment, setAttachment] = useState<PdfAttachment | null>(null)
 
   useEffect(() => {
-    if (!open) return
+    if (!open || isExternalLab) return
     setUploaderName(profile?.full_name ?? '')
     setUploaderContact(profile?.phone ?? '')
-  }, [open, profile?.full_name, profile?.phone])
+  }, [open, isExternalLab, profile?.full_name, profile?.phone])
 
   useEffect(() => {
     if (!statusAuto || !result.trim() || !ref.trim()) return

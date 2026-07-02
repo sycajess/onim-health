@@ -226,7 +226,7 @@ async function seedUsers() {
     { email: 'nutritionist@onimhealth.com', password: 'Test1234!', role: 'nutritionist', full_name: 'Ama Nutrition', specialty: 'Weight Loss / Nutrition' },
     { email: 'staff@onimhealth.com', password: 'Test1234!', role: 'staff', full_name: 'Abena Mensah', specialty: 'Administration' },
     { email: 'accountant@onimhealth.com', password: 'Test1234!', role: 'accountant', full_name: 'Esi Finance', specialty: 'Finance' },
-    { email: 'lab@onimhealth.com', password: 'Test1234!', role: 'lab_partner', full_name: 'External Labs Demo', specialty: 'Laboratory' },
+    { email: 'lab@onimhealth.com', password: 'Test1234!', role: 'lab_partner', full_name: 'External Labs', specialty: 'Laboratory' },
   ]
 
   const supabase = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } })

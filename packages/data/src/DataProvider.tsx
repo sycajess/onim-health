@@ -17,6 +17,7 @@ import {
   subscribeToStaffMessages,
   mapStaffMessageRow,
   updateAppointmentStatus,
+  updateAppointmentMeetLink,
   updateBillingStatus,
   updateBillingNhisCleared,
   markBillingNhisExported,
@@ -50,6 +51,7 @@ type DataContextValue = {
   deletePatient: (id: string) => Promise<boolean | { error: string }>
   updateLabAttachment: (labId: string, attachment: LabAttachment | null) => Promise<boolean>
   updateAppointmentStatus: (id: string, status: string) => Promise<boolean>
+  updateAppointmentMeetLink: (id: string, meetLink: string) => Promise<boolean>
   addAppointment: (input: NewAppointmentInput) => Promise<boolean>
   addRecord: (input: NewRecordInput) => Promise<boolean>
   updatePrescriptionStatus: (id: string, status: string) => Promise<boolean>
@@ -181,6 +183,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const handleUpdateAppointmentMeetLink = useCallback(
+    async (id: string, meetLink: string) => runMutation(() => updateAppointmentMeetLink(id, meetLink), refresh),
+    [refresh],
+  )
+
   const addAppointment = useCallback(
     async (input: NewAppointmentInput) => runMutation(() => createAppointment(input), refresh),
     [refresh],
@@ -280,6 +287,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deletePatient: handleDeletePatient,
       updateLabAttachment,
       updateAppointmentStatus: handleUpdateAppointmentStatus,
+      updateAppointmentMeetLink: handleUpdateAppointmentMeetLink,
       addAppointment,
       addRecord,
       updatePrescriptionStatus: handleUpdatePrescriptionStatus,
@@ -308,6 +316,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       handleDeletePatient,
       updateLabAttachment,
       handleUpdateAppointmentStatus,
+      handleUpdateAppointmentMeetLink,
       addAppointment,
       addRecord,
       handleUpdatePrescriptionStatus,

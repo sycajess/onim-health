@@ -7,6 +7,7 @@ import type { ModuleId } from '@onim/types'
 import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
+import { AppointmentMeetCell } from '../../components/AppointmentMeetCell'
 import { NewPatientModal } from '../../components/NewPatientModal'
 import { RecordDetailModal } from '../../components/RecordDetailModal'
 import '../../components/RecordDetailModal.css'
@@ -35,6 +36,7 @@ export function PatientDetailPage() {
   const [recordDetail, setRecordDetail] = useState<MedicalRecord | null>(null)
   const patient = id ? getPatient(id) : undefined
   const canWriteLabs = canWriteModule('labs')
+  const canWriteAppointments = canWriteModule('appointments')
   const showHeaderActions = canEditPatient || canDeletePatient
   const visibleTabs = TABS.filter((t) => {
     const module = TAB_MODULES[t]
@@ -346,9 +348,7 @@ export function PatientDetailPage() {
                     <td>{a.time}</td>
                     <td>{a.type}</td>
                     <td>
-                      {a.meet_link ? (
-                        <a href={a.meet_link} target="_blank" rel="noreferrer" className="link-cell">Join</a>
-                      ) : '–'}
+                      <AppointmentMeetCell appointment={a} patient={patient} canAdd={canWriteAppointments} />
                     </td>
                     <td><Badge>{a.status}</Badge></td>
                   </tr>

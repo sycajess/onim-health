@@ -39,6 +39,14 @@ export async function updateAppointmentStatus(id: string, status: string): Promi
   return true
 }
 
+export async function updateAppointmentMeetLink(id: string, meet_link: string): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { error } = await supabase.from('appointments').update({ meet_link }).eq('id', id)
+  if (error) return { error: error.message }
+  return true
+}
+
 export type NewAppointmentInput = {
   patient_id: string
   date: string
@@ -54,7 +62,6 @@ export async function createAppointment(input: NewAppointmentInput): Promise<App
   const supabase = getSupabase()
   if (!supabase) return notConfigured()
   const id = await nextId('appointments', 'A')
-  const isTelemedicine = input.type.trim().toLowerCase() === 'telemedicine'
   const row = {
     id,
     patient_id: input.patient_id,
@@ -65,7 +72,7 @@ export async function createAppointment(input: NewAppointmentInput): Promise<App
     provider: input.provider ?? '',
     notes: input.notes ?? '',
     status: 'Scheduled',
-    meet_link: isTelemedicine ? (input.meet_link ?? '') : '',
+    meet_link: input.meet_link ?? '',
   }
   const { error } = await supabase.from('appointments').insert(row)
   if (error) return { error: error.message }

@@ -4,6 +4,7 @@ import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, patientFullName } from '@onim/data'
 import { Badge, Button, Card, EmptyState } from '@onim/ui'
 import { RowActions } from '../../components/IconAction'
+import { AppointmentMeetCell } from '../../components/AppointmentMeetCell'
 import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { NewAppointmentModal } from '../../components/modals/ClinicModals'
 import '@onim/ui/Card.css'
@@ -48,9 +49,7 @@ export function AppointmentsPage() {
                     <td>{a.specialty}</td>
                     <td>{a.provider || '–'}</td>
                     <td>
-                      {a.meet_link ? (
-                        <a href={a.meet_link} className="link-cell" target="_blank" rel="noreferrer">Join</a>
-                      ) : '–'}
+                      <AppointmentMeetCell appointment={a} patient={p} canAdd={canWrite} />
                     </td>
                     <td><Badge>{a.status}</Badge></td>
                     {canWrite && (

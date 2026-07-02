@@ -18,6 +18,7 @@ export function MedicationSearch({ value, onChange, onSelectDrug, placeholder }:
   const [loading, setLoading] = useState(false)
   const wrapRef = useRef<HTMLDivElement>(null)
   const requestId = useRef(0)
+  const lastPicked = useRef<string | null>(null)
 
   useEffect(() => {
     setQuery(value)
@@ -26,6 +27,14 @@ export function MedicationSearch({ value, onChange, onSelectDrug, placeholder }:
   useEffect(() => {
     const trimmed = query.trim()
     if (trimmed.length < MIN_QUERY) {
+      setResults([])
+      setOpen(false)
+      setLoading(false)
+      return
+    }
+
+    if (trimmed === lastPicked.current) {
+      lastPicked.current = null
       setResults([])
       setOpen(false)
       setLoading(false)
@@ -60,9 +69,11 @@ export function MedicationSearch({ value, onChange, onSelectDrug, placeholder }:
   }, [])
 
   function pick(drug: RxNormDrug) {
+    lastPicked.current = drug.name
     onChange(drug.name)
     onSelectDrug?.(drug)
     setQuery(drug.name)
+    setResults([])
     setOpen(false)
   }
 
@@ -74,6 +85,7 @@ export function MedicationSearch({ value, onChange, onSelectDrug, placeholder }:
         className="form-input"
         value={query}
         onChange={(e) => {
+          lastPicked.current = null
           setQuery(e.target.value)
           onChange(e.target.value)
           if (e.target.value.trim().length >= MIN_QUERY) setOpen(true)
@@ -109,7 +121,10 @@ export function MedicationSearch({ value, onChange, onSelectDrug, placeholder }:
             <button
               key={`${drug.rxcui}-${drug.name}`}
               type="button"
-              onClick={() => pick(drug)}
+              onMouseDown={(e) => {
+                e.preventDefault()
+                pick(drug)
+              }}
               style={{
                 display: 'block',
                 width: '100%',

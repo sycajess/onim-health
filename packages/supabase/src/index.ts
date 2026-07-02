@@ -32,6 +32,7 @@ export {
   deletePatient,
   saveLabAttachment,
   updateAppointmentStatus,
+  updateAppointmentMeetLink,
   createAppointment,
   createMedicalRecord,
   updatePrescriptionStatus,

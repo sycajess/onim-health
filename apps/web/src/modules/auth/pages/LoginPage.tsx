@@ -54,7 +54,6 @@ export function LoginPage() {
         <Button type="submit" variant="primary" className="login-submit" disabled={loading}>
           {loading ? 'Signing in…' : 'Sign In'}
         </Button>
-        <div className="login-hint">Use your clinic email and password. Role is set on your account.</div>
       </form>
     </AuthShell>
   )
