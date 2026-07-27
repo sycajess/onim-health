@@ -12,6 +12,8 @@ export {
   supabaseSignUp,
   supabaseSignOut,
   supabaseRefreshProfile,
+  supabaseRequestPasswordReset,
+  supabaseUpdatePassword,
 } from './auth'
 export {
   conversationThreadId,

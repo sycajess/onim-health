@@ -5,6 +5,8 @@ import { PageLoader } from '@onim/ui'
 import { AppLayout } from '../layouts/AppLayout'
 import { LoginPage } from '../modules/auth/pages/LoginPage'
 import { SignupPage } from '../modules/auth/pages/SignupPage'
+import { ForgotPasswordPage } from '../modules/auth/pages/ForgotPasswordPage'
+import { ResetPasswordPage } from '../modules/auth/pages/ResetPasswordPage'
 import { LandingPage } from '../modules/landing/LandingPage'
 import { DashboardPage } from '../modules/dashboard/DashboardPage'
 import { lazyRoute } from '../utils/lazyRoute'
@@ -33,6 +35,8 @@ export function AppRouter() {
       <Route element={<GuestRoute />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>

@@ -14,12 +14,16 @@ export function ProtectedRoute({
   module,
   loginPath = '/login',
 }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading, profile } = useAuth()
+  const { isAuthenticated, isLoading, profile, isPasswordRecovery } = useAuth()
 
   if (isLoading) return <AuthLoading />
 
   if (!isAuthenticated || !profile) {
     return <Navigate to={loginPath} replace />
+  }
+
+  if (isPasswordRecovery) {
+    return <Navigate to="/reset-password" replace />
   }
 
   if (profile.approved === false) {

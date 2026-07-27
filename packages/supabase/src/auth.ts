@@ -128,3 +128,33 @@ export async function supabaseSignOut(): Promise<void> {
 export async function supabaseRefreshProfile(): Promise<Profile | null> {
   return supabaseGetSession()
 }
+
+export async function supabaseRequestPasswordReset(
+  email: string,
+  redirectTo: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = getSupabase()
+  if (!supabase) return { error: 'Supabase is not configured.' }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+    redirectTo,
+  })
+
+  if (error) return { error: error.message }
+  return { ok: true }
+}
+
+export async function supabaseUpdatePassword(
+  password: string,
+): Promise<{ ok: true } | { error: string }> {
+  const supabase = getSupabase()
+  if (!supabase) return { error: 'Supabase is not configured.' }
+
+  if (password.length < 8) {
+    return { error: 'Password must be at least 8 characters.' }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password })
+  if (error) return { error: error.message }
+  return { ok: true }
+}

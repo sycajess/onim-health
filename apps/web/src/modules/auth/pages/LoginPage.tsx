@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@onim/auth'
 import { getDefaultRouteForRole } from '@onim/types'
 import { Button } from '@onim/ui'
@@ -10,10 +10,12 @@ import './AuthPages.css'
 export function LoginPage() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const resetOk = Boolean((location.state as { passwordReset?: boolean } | null)?.passwordReset)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -30,6 +32,11 @@ export function LoginPage() {
 
   return (
     <AuthShell error={error || undefined} footer={<>No account? <Link to="/signup">Create one</Link></>}>
+      {resetOk && (
+        <p style={{ fontSize: 13, color: 'var(--teal)', margin: '0 0 14px' }}>
+          Password updated. Sign in with your new password.
+        </p>
+      )}
       <form onSubmit={handleSubmit}>
         <label htmlFor="email">Email</label>
         <input
@@ -51,6 +58,9 @@ export function LoginPage() {
           required
           variant="login"
         />
+        <div className="login-forgot">
+          <Link to="/forgot-password">Forgot password?</Link>
+        </div>
         <Button type="submit" variant="primary" className="login-submit" disabled={loading}>
           {loading ? 'Signing in…' : 'Sign In'}
         </Button>
