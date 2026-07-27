@@ -107,6 +107,7 @@ export type NewRecordInput = {
   complaint?: string
   exam?: string
   assessment?: string
+  labs_ordered?: string
   plan?: string
   bp?: string
   temp?: string
@@ -127,6 +128,7 @@ export async function createMedicalRecord(input: NewRecordInput): Promise<Medica
     complaint: input.complaint ?? '',
     exam: input.exam ?? '',
     assessment: input.assessment ?? '',
+    labs_ordered: input.labs_ordered ?? '',
     plan: input.plan ?? '',
     bp: input.bp ?? '',
     temp: input.temp ?? '',

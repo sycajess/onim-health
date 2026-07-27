@@ -71,6 +71,7 @@ function mapRecord(row: Record<string, unknown>): MedicalRecord {
     complaint: String(row.complaint ?? ''),
     exam: String(row.exam ?? ''),
     assessment: String(row.assessment ?? ''),
+    labs_ordered: String(row.labs_ordered ?? ''),
     plan: String(row.plan ?? ''),
     bp: String(row.bp ?? ''),
     temp: String(row.temp ?? ''),

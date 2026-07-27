@@ -15,6 +15,15 @@
   padding: 20px;
 }
 
+.pt-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .pt-avatar-lg {
   width: 60px;
   height: 60px;
@@ -93,6 +102,15 @@
 
 @media (max-width: 768px) {
   .info-grid { grid-template-columns: 1fr; }
+
+  .pt-header {
+    flex-wrap: wrap;
+  }
+
+  .pt-header__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
 }
 
 .info-item {

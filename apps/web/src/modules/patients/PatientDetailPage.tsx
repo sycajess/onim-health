@@ -4,11 +4,12 @@ import { usePermissions } from '@onim/auth'
 import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, formatCodedList, parseCodedEntries, formatLabSource, type DrugAllergyAlert, type MedicalRecord } from '@onim/data'
 import { checkPatientMedAllergiesWithRxNorm, checkDrugAllergyWithRxNorm } from '../../lib/drugAllergy'
 import type { ModuleId } from '@onim/types'
-import { Badge, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
+import { Badge, Button, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
 import type { TimelineEvent } from '@onim/ui'
 import { IconAction, RowActions } from '../../components/IconAction'
 import { AppointmentMeetCell } from '../../components/AppointmentMeetCell'
 import { NewPatientModal } from '../../components/NewPatientModal'
+import { NewRecordModal } from '../../components/modals/ClinicModals'
 import { RecordDetailModal } from '../../components/RecordDetailModal'
 import '../../components/RecordDetailModal.css'
 import '@onim/ui/Card.css'
@@ -33,11 +34,13 @@ export function PatientDetailPage() {
   const { canEditPatient, canDeletePatient, canWriteModule, canAccessModule } = usePermissions()
   const [tab, setTab] = useState<(typeof TABS)[number]>('Overview')
   const [editOpen, setEditOpen] = useState(false)
+  const [recordModalOpen, setRecordModalOpen] = useState(false)
   const [recordDetail, setRecordDetail] = useState<MedicalRecord | null>(null)
   const patient = id ? getPatient(id) : undefined
+  const canWriteRecords = canWriteModule('records')
   const canWriteLabs = canWriteModule('labs')
   const canWriteAppointments = canWriteModule('appointments')
-  const showHeaderActions = canEditPatient || canDeletePatient
+  const showHeaderActions = canEditPatient || canDeletePatient || canWriteRecords
   const visibleTabs = TABS.filter((t) => {
     const module = TAB_MODULES[t]
     return module ? canAccessModule(module) : true
@@ -186,18 +189,30 @@ export function PatientDetailPage() {
           </div>
         </div>
         {showHeaderActions && (
-          <RowActions>
-            {canEditPatient && (
-              <IconAction icon="edit" label={`Edit ${patientFullName(patient)}`} onClick={() => setEditOpen(true)} />
+          <div className="pt-header__actions">
+            {canWriteRecords && (
+              <Button variant="primary" onClick={() => setRecordModalOpen(true)}>
+                + New Medical Record
+              </Button>
             )}
-            {canDeletePatient && (
-              <IconAction icon="delete" label={`Delete ${patientFullName(patient)}`} variant="danger" onClick={() => void handleDelete()} />
-            )}
-          </RowActions>
+            <RowActions>
+              {canEditPatient && (
+                <IconAction icon="edit" label={`Edit ${patientFullName(patient)}`} onClick={() => setEditOpen(true)} />
+              )}
+              {canDeletePatient && (
+                <IconAction icon="delete" label={`Delete ${patientFullName(patient)}`} variant="danger" onClick={() => void handleDelete()} />
+              )}
+            </RowActions>
+          </div>
         )}
       </div>
 
       <NewPatientModal open={editOpen} onClose={() => setEditOpen(false)} patient={patient} />
+      <NewRecordModal
+        open={recordModalOpen}
+        onClose={() => setRecordModalOpen(false)}
+        patientId={patient.id}
+      />
       <RecordDetailModal
         record={recordDetail}
         open={!!recordDetail}
@@ -261,7 +276,15 @@ export function PatientDetailPage() {
       )}
 
       {tab === 'Records' && (
-        <Card title="Medical Records" noPadding>
+        <Card
+          title="Medical Records"
+          action={canWriteRecords ? (
+            <Button variant="primary" onClick={() => setRecordModalOpen(true)}>
+              + New Medical Record
+            </Button>
+          ) : undefined}
+          noPadding
+        >
           {records.length ? (
             <table className="data-table">
               <thead><tr><th>Date</th><th>Type</th><th>Specialty</th><th>Assessment</th></tr></thead>

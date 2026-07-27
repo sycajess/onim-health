@@ -52,6 +52,7 @@ export type MedicalRecord = {
   complaint: string
   exam: string
   assessment: string
+  labs_ordered: string
   plan: string
   bp: string
   temp: string

@@ -43,10 +43,12 @@ export function RecordDetailModal({ record, open, onClose }: RecordDetailModalPr
         <DetailBlock label="Chief complaint" value={record.complaint} />
         <DetailBlock label="Examination" value={record.exam} />
         <DetailBlock label="Assessment" value={record.assessment} />
+        <DetailBlock label="Labs to be ordered" value={record.labs_ordered} />
         <DetailBlock label="Plan" value={record.plan} />
         {!record.complaint.trim() &&
         !record.exam.trim() &&
         !record.assessment.trim() &&
+        !record.labs_ordered.trim() &&
         !record.plan.trim() ? (
           <p className="record-detail__empty">No note content recorded.</p>
         ) : null}

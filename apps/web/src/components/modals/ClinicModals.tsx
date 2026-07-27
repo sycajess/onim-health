@@ -186,24 +186,39 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
   )
 }
 
-export function NewRecordModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function NewRecordModal({
+  open,
+  onClose,
+  patientId: lockedPatientId,
+}: {
+  open: boolean
+  onClose: () => void
+  patientId?: string
+}) {
   const { addRecord } = useData()
   const { profile } = useAuth()
-  const [patientId, setPatientId] = useState('')
+  const [patientId, setPatientId] = useState(lockedPatientId ?? '')
   const [date, setDate] = useState(today())
   const [type, setType] = useState('Consultation Note')
   const [specialty, setSpecialty] = useState<string>(SPECIALTIES[0])
   const [complaint, setComplaint] = useState('')
   const [assessment, setAssessment] = useState('')
+  const [labsOrdered, setLabsOrdered] = useState('')
   const [plan, setPlan] = useState('')
 
+  useEffect(() => {
+    if (!open) return
+    if (lockedPatientId) setPatientId(lockedPatientId)
+  }, [open, lockedPatientId])
+
   function reset() {
-    setPatientId('')
+    setPatientId(lockedPatientId ?? '')
     setDate(today())
     setType('Consultation Note')
     setSpecialty(SPECIALTIES[0])
     setComplaint('')
     setAssessment('')
+    setLabsOrdered('')
     setPlan('')
   }
 
@@ -216,6 +231,7 @@ export function NewRecordModal({ open, onClose }: { open: boolean; onClose: () =
       specialty,
       complaint,
       assessment,
+      labs_ordered: labsOrdered,
       plan,
       provider: profile?.full_name ?? '',
     })
@@ -227,7 +243,9 @@ export function NewRecordModal({ open, onClose }: { open: boolean; onClose: () =
   return (
     <ModalShell open={open} title="New Medical Record" onClose={() => { reset(); onClose() }} onSave={handleSave} saveDisabled={!patientId}>
       <FormGrid>
-        <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
+        {!lockedPatientId && (
+          <FormField label="Patient" span={2}><PatientSelect value={patientId} onChange={setPatientId} /></FormField>
+        )}
         <FormField label="Date"><input className="form-input" type="date" value={date} onChange={(e) => setDate(e.target.value)} /></FormField>
         <FormField label="Type"><input className="form-input" value={type} onChange={(e) => setType(e.target.value)} /></FormField>
         <FormField label="Specialty" span={2}>
@@ -237,6 +255,15 @@ export function NewRecordModal({ open, onClose }: { open: boolean; onClose: () =
         </FormField>
         <FormField label="Chief complaint" span={2}><textarea className="form-input" rows={2} value={complaint} onChange={(e) => setComplaint(e.target.value)} /></FormField>
         <FormField label="Assessment" span={2}><textarea className="form-input" rows={2} value={assessment} onChange={(e) => setAssessment(e.target.value)} /></FormField>
+        <FormField label="Labs to be ordered" span={2}>
+          <textarea
+            className="form-input"
+            rows={2}
+            value={labsOrdered}
+            onChange={(e) => setLabsOrdered(e.target.value)}
+            placeholder="e.g. CBC, HbA1c, Lipid panel"
+          />
+        </FormField>
         <FormField label="Plan" span={2}><textarea className="form-input" rows={2} value={plan} onChange={(e) => setPlan(e.target.value)} /></FormField>
       </FormGrid>
     </ModalShell>
