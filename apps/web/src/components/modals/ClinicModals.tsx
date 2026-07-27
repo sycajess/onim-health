@@ -153,7 +153,7 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
         {addGoogleMeet && !profile?.google_calendar_connected && (
           <FormField label=" " span={2}>
             <div className="alert-banner alert-banner--info">
-              You&apos;ll sign in with Google to create the Meet link. Add it to your calendar afterward if you want.
+              Creates a Meet link only. After saving, use “Add to Calendar” on the appointment if you want it on Google Calendar.
             </div>
           </FormField>
         )}
@@ -178,7 +178,7 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
               checked={addGoogleMeet}
               onChange={(e) => setAddGoogleMeet(e.target.checked)}
             />
-            Add Google Meet link (optional — calendar sync comes after)
+            Create Meet link now (optional — add to calendar after)
           </label>
         </FormField>
       </FormGrid>

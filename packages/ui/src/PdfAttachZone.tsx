@@ -56,7 +56,7 @@ export function PdfAttachZone({ attachment, onAttach, onRemove, label = 'Attach 
         <input ref={inputRef} type="file" accept=".pdf,image/*" onChange={handleFile} hidden />
         <div className="pdf-attach-zone__icon">📎</div>
         <div className="pdf-attach-zone__title">{loading ? 'Uploading…' : label}</div>
-        <div className="pdf-attach-zone__hint">PDF or image · max 5 MB</div>
+        <div className="pdf-attach-zone__hint">PDF or image · max 5 MB · scanned PDFs use OCR</div>
       </button>
       {error && <div className="pdf-attach__error">{error}</div>}
     </div>

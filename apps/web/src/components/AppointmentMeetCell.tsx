@@ -31,10 +31,15 @@ export function AppointmentMeetCell({ appointment, patient, canAdd }: Appointmen
     }
     await updateAppointmentMeetLink(appointment.id, meet.meetLink)
     setBusy(null)
+    const addNow = window.confirm(
+      'Meet link created.\n\nAdd this appointment to your Google Calendar now?\n\nYou can also do this later with “Add to Calendar”.',
+    )
+    if (addNow) {
+      await syncCalendar(meet.meetLink)
+    }
   }
 
-  async function handleAddToCalendar() {
-    if (!appointment.meet_link) return
+  async function syncCalendar(meetLink: string) {
     if (!(await ensureGoogleConnected(profile?.google_calendar_connected))) return
     setBusy('calendar')
     const result = await addMeetToGoogleCalendar({
@@ -42,7 +47,7 @@ export function AppointmentMeetCell({ appointment, patient, canAdd }: Appointmen
       time: appointment.time,
       title,
       notes: appointment.notes,
-      meetLink: appointment.meet_link,
+      meetLink,
     })
     if ('error' in result) {
       window.alert(result.error)
@@ -51,6 +56,11 @@ export function AppointmentMeetCell({ appointment, patient, canAdd }: Appointmen
     }
     await updateAppointmentCalendarSync(appointment.id, result.calendarEventId)
     setBusy(null)
+  }
+
+  async function handleAddToCalendar() {
+    if (!appointment.meet_link) return
+    await syncCalendar(appointment.meet_link)
   }
 
   if (!canAdd && !appointment.meet_link) return <>–</>
@@ -63,7 +73,7 @@ export function AppointmentMeetCell({ appointment, patient, canAdd }: Appointmen
         </a>
       ) : canAdd ? (
         <button type="button" className="link-cell meet-cell__btn" onClick={() => void handleCreateMeet()} disabled={!!busy}>
-          {busy === 'meet' ? 'Creating…' : 'Create Meet'}
+          {busy === 'meet' ? 'Creating Meet…' : '1. Create Meet'}
         </button>
       ) : (
         <>–</>
@@ -75,11 +85,11 @@ export function AppointmentMeetCell({ appointment, patient, canAdd }: Appointmen
           onClick={() => void handleAddToCalendar()}
           disabled={!!busy}
         >
-          {busy === 'calendar' ? 'Adding…' : 'Add to Calendar'}
+          {busy === 'calendar' ? 'Adding to calendar…' : '2. Add to Calendar'}
         </button>
       )}
       {appointment.calendar_synced && (
-        <span className="meet-cell__synced">On calendar</span>
+        <span className="meet-cell__synced">Meet + calendar ✓</span>
       )}
     </div>
   )

@@ -65,7 +65,7 @@ export function SettingsPage() {
       {canSchedule && (
         <Card title="Google Meet & Calendar" style={{ marginBottom: 20 }}>
           <p style={{ fontSize: 13, color: 'var(--gray4)', marginTop: 0, marginBottom: 12 }}>
-            Connect Google to create Meet links. Calendar sync is optional — add it per appointment after the Meet link is created.
+            Connect Google once. Then: create a Meet link first, and optionally add the appointment to your calendar afterward.
           </p>
           {googleMsg && (
             <div className="alert-banner alert-banner--warning" style={{ marginBottom: 12 }}>{googleMsg}</div>

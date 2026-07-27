@@ -48,6 +48,7 @@ const FACILITY_RE = /\b(laboratory|laboratories|diagnostic|diagnostics|hospital|
 const DATE_RE =
   /\b(20\d{2}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+20\d{2})\b/i
 const RANGE_RE = /(\d+(?:\.\d+)?)\s*(?:–|—|-|\sto\s)\s*(\d+(?:\.\d+)?)/
+const MIN_TEXT_CHARS = 40
 
 function normalizeText(text: string): string {
   return text
@@ -55,6 +56,15 @@ function normalizeText(text: string): string {
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
+}
+
+function dataUrlToBytes(dataUrl: string): Uint8Array {
+  const base64 = dataUrl.split(',')[1]
+  if (!base64) throw new Error('Invalid file data.')
+  const binary = atob(base64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  return bytes
 }
 
 function normalizeDate(raw: string): string | undefined {
@@ -146,11 +156,7 @@ function pickBestTest(lines: string[]): TestMatch | null {
 }
 
 async function extractPdfText(dataUrl: string): Promise<string> {
-  const base64 = dataUrl.split(',')[1]
-  if (!base64) throw new Error('Invalid PDF file.')
-  const binary = atob(base64)
-  const bytes = new Uint8Array(binary.length)
-  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  const bytes = dataUrlToBytes(dataUrl)
   const pdf = await getDocument({ data: bytes }).promise
   const chunks: string[] = []
   for (let page = 1; page <= pdf.numPages; page += 1) {
@@ -161,6 +167,40 @@ async function extractPdfText(dataUrl: string): Promise<string> {
     chunks.push(pageText)
   }
   return normalizeText(chunks.join('\n'))
+}
+
+async function renderPdfPagesToImages(dataUrl: string, maxPages = 2): Promise<string[]> {
+  const bytes = dataUrlToBytes(dataUrl)
+  const pdf = await getDocument({ data: bytes }).promise
+  const images: string[] = []
+  const limit = Math.min(pdf.numPages, maxPages)
+  for (let i = 1; i <= limit; i += 1) {
+    const page = await pdf.getPage(i)
+    const viewport = page.getViewport({ scale: 2 })
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.floor(viewport.width)
+    canvas.height = Math.floor(viewport.height)
+    const ctx = canvas.getContext('2d')
+    if (!ctx) continue
+    await page.render({ canvasContext: ctx, viewport, canvas }).promise
+    images.push(canvas.toDataURL('image/png'))
+  }
+  return images
+}
+
+async function ocrImages(images: string[]): Promise<string> {
+  const { createWorker } = await import('tesseract.js')
+  const worker = await createWorker('eng')
+  try {
+    const parts: string[] = []
+    for (const image of images) {
+      const { data } = await worker.recognize(image)
+      if (data.text?.trim()) parts.push(data.text)
+    }
+    return normalizeText(parts.join('\n'))
+  } finally {
+    await worker.terminate()
+  }
 }
 
 export function parseLabReportText(text: string): ParsedLabReport {
@@ -208,18 +248,60 @@ export function parseLabReportText(text: string): ParsedLabReport {
   return out
 }
 
+function isImageFile(fileName: string, dataUrl: string): boolean {
+  const lower = fileName.toLowerCase()
+  return (
+    /\.(png|jpe?g|webp|gif|bmp)$/i.test(lower) ||
+    dataUrl.startsWith('data:image/')
+  )
+}
+
+function isPdfFile(fileName: string, dataUrl: string): boolean {
+  return fileName.toLowerCase().endsWith('.pdf') || dataUrl.includes('application/pdf')
+}
+
 export async function parseLabReportFromDataUrl(dataUrl: string, fileName: string): Promise<ParsedLabReport> {
-  const isPdf = fileName.toLowerCase().endsWith('.pdf') || dataUrl.includes('application/pdf')
-  if (!isPdf) {
-    return { filled: [], notes: 'Auto-fill works best with PDF lab reports. Enter details manually or upload a PDF.' }
-  }
   try {
-    const text = await extractPdfText(dataUrl)
-    if (!text.trim()) {
-      return { filled: [], notes: 'Could not read text from this PDF. It may be scanned — enter details manually.' }
+    if (isImageFile(fileName, dataUrl)) {
+      const text = await ocrImages([dataUrl])
+      if (!text.trim()) {
+        return { filled: [], notes: 'Could not read text from this image. Enter details manually.' }
+      }
+      const parsed = parseLabReportText(text)
+      if (parsed.filled.length) {
+        parsed.notes = 'Auto-filled via OCR from image — please review all fields before saving.'
+      }
+      return parsed
     }
-    return parseLabReportText(text)
+
+    if (!isPdfFile(fileName, dataUrl)) {
+      return { filled: [], notes: 'Upload a PDF or image lab report for auto-fill.' }
+    }
+
+    let text = await extractPdfText(dataUrl)
+    let usedOcr = false
+
+    if (text.replace(/\s/g, '').length < MIN_TEXT_CHARS) {
+      const images = await renderPdfPagesToImages(dataUrl, 2)
+      if (images.length) {
+        text = await ocrImages(images)
+        usedOcr = true
+      }
+    }
+
+    if (!text.trim()) {
+      return {
+        filled: [],
+        notes: 'Could not read text from this PDF (even with OCR). Enter details manually.',
+      }
+    }
+
+    const parsed = parseLabReportText(text)
+    if (parsed.filled.length && usedOcr) {
+      parsed.notes = 'Auto-filled via OCR from scanned PDF — please review all fields before saving.'
+    }
+    return parsed
   } catch {
-    return { filled: [], notes: 'Could not parse this PDF. Enter details manually.' }
+    return { filled: [], notes: 'Could not parse this file. Enter details manually.' }
   }
 }

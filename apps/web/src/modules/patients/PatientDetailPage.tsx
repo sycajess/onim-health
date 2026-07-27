@@ -363,7 +363,7 @@ export function PatientDetailPage() {
         <Card title="Appointments" noPadding>
           {appts.length ? (
             <table className="data-table">
-              <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Google Meet</th><th>Status</th></tr></thead>
+              <thead><tr><th>Date</th><th>Time</th><th>Type</th><th>Meet / Calendar</th><th>Status</th></tr></thead>
               <tbody>
                 {appts.map((a) => (
                   <tr key={a.id}>

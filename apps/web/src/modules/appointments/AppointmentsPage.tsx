@@ -33,7 +33,7 @@ export function AppointmentsPage() {
                 <th>Type</th>
                 <th>Specialty</th>
                 <th>Provider</th>
-                <th>Google Meet</th>
+                <th>Meet / Calendar</th>
                 <th>Status</th>
                 {canWrite && <th>Actions</th>}
               </tr>
