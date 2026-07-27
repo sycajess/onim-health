@@ -35,6 +35,9 @@ export function SignupPage() {
 
   return (
     <AuthShell error={error || undefined} footer={<>Already have an account? <Link to="/login">Sign in</Link></>}>
+      <p style={{ fontSize: 13, color: 'var(--gray4)', margin: '0 0 16px', lineHeight: 1.45 }}>
+        After you create an account, an admin must approve you and assign your role before you can use the clinic system.
+      </p>
       <form onSubmit={handleSubmit}>
         <label htmlFor="signup-email">Email</label>
         <input

@@ -98,6 +98,7 @@ for (const user of USERS) {
       specialty: user.specialty ?? null,
       phone: user.phone ?? null,
       avatar_initials: initials(user.full_name).toUpperCase(),
+      approved: true,
     },
     { onConflict: 'id' },
   )

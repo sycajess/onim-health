@@ -19,7 +19,7 @@ const SECTION_LABELS = {
 export function AppLayout() {
   const { profile, signOut } = useAuth()
   const { canAccessModule, canCreatePatient } = usePermissions()
-  const { loading: dataLoading, error: dataError } = useData()
+  const { db, loading: dataLoading, error: dataError } = useData()
   const location = useLocation()
   const navigate = useNavigate()
   const [patientModalOpen, setPatientModalOpen] = useState(false)
@@ -44,6 +44,7 @@ export function AppLayout() {
   const visibleModules = MODULES.filter((m) => canAccessModule(m.id))
   const sections = [...new Set(visibleModules.map((m) => m.section))]
   const activeModule = MODULES.find((m) => location.pathname.startsWith(m.path))
+  const pendingApprovals = role === 'admin' ? db.staff.filter((s) => !s.approved).length : 0
 
   function handleSignOut() {
     signOut()
@@ -55,7 +56,7 @@ export function AppLayout() {
       {navOpen && <button type="button" className="sidebar-backdrop" aria-label="Close menu" onClick={() => setNavOpen(false)} />}
       <aside className={`sidebar${navOpen ? ' sidebar--open' : ''}`}>
         <div className="sidebar__logo">
-          <div className="sidebar__logo-name">Onim Health</div>
+          <img className="sidebar__logo-img" src="/onim-logo.png" alt="Onim Health" />
           <div className="sidebar__logo-sub">Patient Records System</div>
         </div>
 
@@ -76,6 +77,9 @@ export function AppLayout() {
                 >
                   <span className="sidebar__nav-icon">{mod.icon}</span>
                   {getModuleLabel(mod, role)}
+                  {mod.id === 'settings' && pendingApprovals > 0 && (
+                    <span className="sidebar__nav-badge">{pendingApprovals}</span>
+                  )}
                 </NavLink>
               ))}
           </div>

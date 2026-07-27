@@ -63,11 +63,7 @@ export function LandingPage() {
       <header className="oh-nav">
         <div className="oh-nav__inner">
           <Link to="/" className="oh-nav__brand">
-            <span className="oh-nav__logo" aria-hidden />
-            <span>
-              <strong>Onim Health</strong>
-              <small>GH</small>
-            </span>
+            <img className="oh-nav__logo-img" src="/onim-logo.png" alt="Onim Health" />
           </Link>
           <nav className="oh-nav__links" aria-label="Primary">
             <a href="#features">Modules</a>

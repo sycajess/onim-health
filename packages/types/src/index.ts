@@ -177,6 +177,8 @@ export type Profile = {
   avatar_initials: string
   google_calendar_connected?: boolean
   google_calendar_email?: string
+  /** False until an admin approves a self-signup */
+  approved?: boolean
 }
 
 export function getDefaultRouteForRole(role: Role): string {

@@ -17,11 +17,13 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
-.login-logo {
-  font-family: var(--font-serif);
-  font-size: 26px;
-  color: var(--teal-deep);
-  margin-bottom: 4px;
+.login-logo-img {
+  display: block;
+  height: 52px;
+  width: auto;
+  max-width: 100%;
+  margin-bottom: 8px;
+  object-fit: contain;
 }
 
 .login-sub {

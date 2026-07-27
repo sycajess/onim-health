@@ -135,7 +135,7 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     supabase.from('dispense_log').select('*').order('date', { ascending: false }),
     supabase.from('billing').select('*').order('date', { ascending: false }),
     supabase.from('messages').select('*').order('created_at'),
-    supabase.from('profiles').select('id, full_name, email, role, specialty, phone, license_number, license_expiry'),
+    supabase.from('profiles').select('id, full_name, email, role, specialty, phone, license_number, license_expiry, approved'),
     supabase.from('clinic_settings').select('provider_accreditation, eclaim_authorization').eq('id', 'default').maybeSingle(),
   ])
 
@@ -153,6 +153,17 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
 
   if (firstError) return { error: firstError!.message }
 
+  let profileRows = profilesRes.data
+  if (profilesRes.error && /approved/i.test(profilesRes.error.message)) {
+    const fallback = await supabase
+      .from('profiles')
+      .select('id, full_name, email, role, specialty, phone, license_number, license_expiry')
+    if (fallback.error) return { error: fallback.error.message }
+    profileRows = (fallback.data ?? []).map((p) => ({ ...p, approved: true }))
+  } else if (profilesRes.error) {
+    return { error: profilesRes.error.message }
+  }
+
   const messages: Record<string, Message[]> = {}
   for (const m of messagesRes.data ?? []) {
     const thread = String(m.thread_id)
@@ -169,7 +180,7 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     )
   }
 
-  const staff: StaffMember[] = (profilesRes.data ?? []).map((p) => ({
+  const staff: StaffMember[] = (profileRows ?? []).map((p) => ({
     id: String(p.id),
     name: String(p.full_name),
     username: String(p.email).split('@')[0] ?? '',
@@ -179,6 +190,7 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     phone: String(p.phone ?? ''),
     license_number: String(p.license_number ?? ''),
     license_expiry: p.license_expiry ? String(p.license_expiry) : '',
+    approved: p.approved !== false,
   }))
 
   return {

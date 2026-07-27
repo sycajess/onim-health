@@ -11,6 +11,7 @@ type DbProfile = {
   avatar_initials: string
   google_calendar_connected: boolean | null
   google_calendar_email: string | null
+  approved: boolean | null
 }
 
 function mapProfile(row: DbProfile): Profile {
@@ -24,6 +25,7 @@ function mapProfile(row: DbProfile): Profile {
     avatar_initials: row.avatar_initials,
     google_calendar_connected: row.google_calendar_connected ?? false,
     google_calendar_email: row.google_calendar_email ?? undefined,
+    approved: row.approved !== false,
   }
 }
 
@@ -33,7 +35,7 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
 
   const baseSelect =
     'id, email, full_name, role, specialty, phone, avatar_initials'
-  const fullSelect = `${baseSelect}, google_calendar_connected, google_calendar_email`
+  const fullSelect = `${baseSelect}, google_calendar_connected, google_calendar_email, approved`
 
   let { data, error } = await supabase
     .from('profiles')
@@ -41,13 +43,14 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     .eq('id', userId)
     .single()
 
-  if (error && /google_calendar/i.test(error.message)) {
+  if (error && /google_calendar|approved/i.test(error.message)) {
     const fallback = await supabase.from('profiles').select(baseSelect).eq('id', userId).single()
     if (fallback.error || !fallback.data) return null
     return mapProfile({
-      ...(fallback.data as Omit<DbProfile, 'google_calendar_connected' | 'google_calendar_email'>),
+      ...(fallback.data as Omit<DbProfile, 'google_calendar_connected' | 'google_calendar_email' | 'approved'>),
       google_calendar_connected: false,
       google_calendar_email: null,
+      approved: true,
     })
   }
 

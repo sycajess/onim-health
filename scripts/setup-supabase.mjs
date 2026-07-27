@@ -266,6 +266,7 @@ async function seedUsers() {
       specialty: user.specialty ?? null,
       phone: user.phone ?? null,
       avatar_initials: initials(user.full_name),
+      approved: true,
     }).eq('id', userId)
 
     if (profileError) console.error(`Profile ${user.email}:`, profileError.message)

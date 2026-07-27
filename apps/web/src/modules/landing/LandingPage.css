@@ -45,6 +45,17 @@
   color: #fff;
 }
 
+.oh-nav__logo-img {
+  height: 40px;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
+  padding: 4px 8px;
+  box-sizing: border-box;
+}
+
 .oh-nav__logo {
   width: 32px;
   height: 32px;

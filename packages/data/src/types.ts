@@ -164,6 +164,7 @@ export type StaffMember = {
   phone: string
   license_number: string
   license_expiry: string
+  approved: boolean
 }
 
 export type Database = {

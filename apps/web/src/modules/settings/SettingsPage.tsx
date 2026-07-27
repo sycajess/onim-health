@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth, usePermissions } from '@onim/auth'
 import { useData, SPECIALTIES, SPECIALTY_COLORS } from '@onim/data'
 import type { StaffMember } from '@onim/data'
+import { ROLE_LABELS, type Role } from '@onim/types'
 import { Badge, Button, Card } from '@onim/ui'
 import { disconnectGoogleCalendar, startGoogleCalendarConnect } from '../../lib/googleCalendar'
 import { StaffFormModal } from './StaffFormModal'
@@ -14,7 +15,7 @@ const ROLE_BADGE: Record<string, 'teal' | 'blue' | 'amber' | 'success' | 'gray' 
 }
 
 export function SettingsPage() {
-  const { db, adminDeleteStaff, saveClinicSettings } = useData()
+  const { db, adminDeleteStaff, adminUpdateStaff, saveClinicSettings, refresh } = useData()
   const { profile, refreshProfile } = useAuth()
   const { role, canWriteModule } = usePermissions()
   const isAdmin = role === 'admin'
@@ -25,6 +26,10 @@ export function SettingsPage() {
   const [providerAccreditation, setProviderAccreditation] = useState('')
   const [eclaimAuthorization, setEclaimAuthorization] = useState('')
   const [googleMsg, setGoogleMsg] = useState('')
+  const [approvingId, setApprovingId] = useState<string | null>(null)
+
+  const pendingStaff = useMemo(() => db.staff.filter((s) => !s.approved), [db.staff])
+  const activeStaff = useMemo(() => db.staff.filter((s) => s.approved), [db.staff])
 
   useEffect(() => {
     setProviderAccreditation(db.clinicSettings.provider_accreditation)
@@ -60,6 +65,25 @@ export function SettingsPage() {
     if (!ok) window.alert('Could not delete staff.')
   }
 
+  async function handleApprove(s: StaffMember) {
+    setApprovingId(s.id)
+    const ok = await adminUpdateStaff({
+      id: s.id,
+      role: (s.role as Role) || 'staff',
+      full_name: s.name,
+      specialty: s.specialty,
+      phone: s.phone,
+      license_number: s.license_number,
+      license_expiry: s.license_expiry || undefined,
+    })
+    setApprovingId(null)
+    if (!ok) {
+      window.alert('Could not approve account.')
+      return
+    }
+    await refresh()
+  }
+
   return (
     <div>
       {canSchedule && (
@@ -93,17 +117,53 @@ export function SettingsPage() {
         </Card>
       )}
 
+      {isAdmin && pendingStaff.length > 0 && (
+        <Card
+          title={`Pending approvals (${pendingStaff.length})`}
+          style={{ marginBottom: 20, borderColor: '#f0d78c' }}
+        >
+          <p style={{ fontSize: 13, color: 'var(--gray4)', marginTop: 0 }}>
+            New sign-ups waiting for you to approve and assign a role.
+          </p>
+          <div className="team-grid">
+            {pendingStaff.map((s) => (
+              <div key={s.id} className="team-card" style={{ borderColor: '#f0d78c', background: '#fffdf5' }}>
+                <div className="team-card__avatar">{s.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}</div>
+                <div style={{ fontWeight: 600 }}>{s.name}</div>
+                <div style={{ fontSize: 12, color: 'var(--gray4)', margin: '4px 0 8px' }}>{s.email}</div>
+                <Badge variant="amber">Pending</Badge>
+                <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="primary"
+                    onClick={() => void handleApprove(s)}
+                    disabled={approvingId === s.id}
+                  >
+                    {approvingId === s.id ? 'Approving…' : 'Approve as Staff'}
+                  </Button>
+                  <Button variant="secondary" onClick={() => openEdit(s)}>Assign role</Button>
+                  <Button variant="danger" onClick={() => void handleDelete(s)}>Delete</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card
-        title="Team & Access"
+        title={
+          isAdmin && pendingStaff.length
+            ? `Team & Access (${pendingStaff.length} pending)`
+            : 'Team & Access'
+        }
         action={isAdmin ? <Button variant="primary" onClick={openCreate}>+ Staff</Button> : undefined}
       >
         <div className="team-grid">
-          {db.staff.map((s) => (
+          {activeStaff.map((s) => (
             <div key={s.id} className="team-card">
               <div className="team-card__avatar">{s.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}</div>
               <div style={{ fontWeight: 600 }}>{s.name}</div>
               <div style={{ fontSize: 12, color: 'var(--gray4)', margin: '4px 0 8px' }}>{s.specialty || '—'}</div>
-              <Badge variant={ROLE_BADGE[s.role] ?? 'gray'}>{s.role}</Badge>
+              <Badge variant={ROLE_BADGE[s.role] ?? 'gray'}>{ROLE_LABELS[s.role as Role] ?? s.role}</Badge>
               <div style={{ fontSize: 11, color: 'var(--gray4)', marginTop: 10 }}>{s.email}</div>
               {s.license_number && (
                 <div style={{ fontSize: 11, color: 'var(--gray4)', marginTop: 4 }}>
