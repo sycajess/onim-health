@@ -255,7 +255,7 @@ export function NewRecordModal({
         </FormField>
         <FormField label="Chief complaint" span={2}><textarea className="form-input" rows={2} value={complaint} onChange={(e) => setComplaint(e.target.value)} /></FormField>
         <FormField label="Assessment" span={2}><textarea className="form-input" rows={2} value={assessment} onChange={(e) => setAssessment(e.target.value)} /></FormField>
-        <FormField label="Labs to be ordered" span={2}>
+        <FormField label="Labs" span={2}>
           <textarea
             className="form-input"
             rows={2}
