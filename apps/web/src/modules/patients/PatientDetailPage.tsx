@@ -190,11 +190,6 @@ export function PatientDetailPage() {
         </div>
         {showHeaderActions && (
           <div className="pt-header__actions">
-            {canWriteRecords && (
-              <Button variant="primary" onClick={() => setRecordModalOpen(true)}>
-                + New Medical Record
-              </Button>
-            )}
             <RowActions>
               {canEditPatient && (
                 <IconAction icon="edit" label={`Edit ${patientFullName(patient)}`} onClick={() => setEditOpen(true)} />
