@@ -188,16 +188,23 @@ export function PatientDetailPage() {
             <Badge>{patient.status}</Badge>
           </div>
         </div>
-        {showHeaderActions && (
+        {(showHeaderActions || (tab === 'Records' && canWriteRecords)) && (
           <div className="pt-header__actions">
-            <RowActions>
-              {canEditPatient && (
-                <IconAction icon="edit" label={`Edit ${patientFullName(patient)}`} onClick={() => setEditOpen(true)} />
-              )}
-              {canDeletePatient && (
-                <IconAction icon="delete" label={`Delete ${patientFullName(patient)}`} variant="danger" onClick={() => void handleDelete()} />
-              )}
-            </RowActions>
+            {showHeaderActions && (
+              <RowActions>
+                {canEditPatient && (
+                  <IconAction icon="edit" label={`Edit ${patientFullName(patient)}`} onClick={() => setEditOpen(true)} />
+                )}
+                {canDeletePatient && (
+                  <IconAction icon="delete" label={`Delete ${patientFullName(patient)}`} variant="danger" onClick={() => void handleDelete()} />
+                )}
+              </RowActions>
+            )}
+            {tab === 'Records' && canWriteRecords && (
+              <Button variant="primary" onClick={() => setRecordModalOpen(true)}>
+                + New Medical Record
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -273,11 +280,6 @@ export function PatientDetailPage() {
       {tab === 'Records' && (
         <Card
           title="Medical Records"
-          action={canWriteRecords ? (
-            <Button variant="primary" onClick={() => setRecordModalOpen(true)}>
-              + New Medical Record
-            </Button>
-          ) : undefined}
           noPadding
         >
           {records.length ? (
