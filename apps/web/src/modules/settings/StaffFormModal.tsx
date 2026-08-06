@@ -6,6 +6,7 @@ import { ROLE_LABELS, type Role } from '@onim/types'
 import { Button, Modal } from '@onim/ui'
 import { FormField, FormGrid } from '../../components/FormField'
 import { SPECIALTIES } from '@onim/data'
+import { adminSetStaffPassword } from '../../lib/adminStaffPassword'
 
 const ROLES = Object.keys(ROLE_LABELS) as Role[]
 
@@ -60,6 +61,12 @@ export function StaffFormModal({ open, onClose, staff }: StaffFormModalProps) {
     setSaving(true)
 
     if (isEdit && staff) {
+      if (password && password.length < 8) {
+        setSaving(false)
+        setError('New password must be at least 8 characters (or leave blank to keep current).')
+        return
+      }
+
       const ok = await adminUpdateStaff({
         id: staff.id,
         role,
@@ -69,11 +76,22 @@ export function StaffFormModal({ open, onClose, staff }: StaffFormModalProps) {
         license_number: licenseNumber.trim(),
         license_expiry: licenseExpiry || undefined,
       })
-      setSaving(false)
       if (!ok) {
+        setSaving(false)
         setError('Could not update profile.')
         return
       }
+
+      if (password) {
+        const pw = await adminSetStaffPassword(staff.id, password)
+        if (pw.error) {
+          setSaving(false)
+          setError(`Profile saved, but password was not changed: ${pw.error}`)
+          return
+        }
+      }
+
+      setSaving(false)
       onClose()
       return
     }
@@ -139,9 +157,21 @@ export function StaffFormModal({ open, onClose, staff }: StaffFormModalProps) {
           </>
         )}
         {isEdit && (
-          <FormField label="Email" span={2}>
-            <input className="form-input" value={email} readOnly />
-          </FormField>
+          <>
+            <FormField label="Email" span={2}>
+              <input className="form-input" value={email} readOnly />
+            </FormField>
+            <FormField label="New password (optional)" span={2}>
+              <input
+                className="form-input"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Leave blank to keep current password"
+                autoComplete="new-password"
+              />
+            </FormField>
+          </>
         )}
         <FormField label="Role">
           <select className="form-input" value={role} onChange={(e) => setRole(e.target.value as Role)}>
