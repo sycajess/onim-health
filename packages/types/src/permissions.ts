@@ -31,6 +31,9 @@ export function canWriteModule(role: Role, module: ModuleId): boolean {
   switch (module) {
     case 'patients':
       return canPerformAction(role, 'patients:edit')
+    case 'prescriptions':
+      // Nurses may view meds; only clinical/pharmacy roles prescribe or change status
+      return role === 'admin' || role === 'doctor' || role === 'pharmacist'
     case 'inventory':
       return (
         canPerformAction(role, 'inventory:manage') ||
