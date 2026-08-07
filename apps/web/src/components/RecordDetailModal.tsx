@@ -1,4 +1,5 @@
-import { fmtDate, displayField, type MedicalRecord, type Patient } from '@onim/data'
+import { useAuth } from '@onim/auth'
+import { useData, fmtDate, displayField, type MedicalRecord, type Patient } from '@onim/data'
 import { Button, Modal } from '@onim/ui'
 import { emailLabOrder, openLabOrderPrint } from '../lib/labOrderDocument'
 import './RecordDetailModal.css'
@@ -21,7 +22,18 @@ function DetailBlock({ label, value }: { label: string; value: string }) {
 }
 
 export function RecordDetailModal({ record, patient, open, onClose }: RecordDetailModalProps) {
+  const { profile } = useAuth()
+  const { db } = useData()
+
   if (!record) return null
+
+  const staff = db.staff.find((s) => s.id === profile?.id || s.name === record.provider)
+  const clinician = {
+    name: record.provider || profile?.full_name,
+    phone: staff?.phone || profile?.phone,
+    email: staff?.email || profile?.email,
+    licenseNumber: staff?.license_number,
+  }
 
   const vitals = [
     record.bp?.trim() ? `BP ${record.bp}` : '',
@@ -42,13 +54,13 @@ export function RecordDetailModal({ record, patient, open, onClose }: RecordDeta
             <Button variant="secondary" onClick={onClose}>Close</Button>
             <Button
               variant="secondary"
-              onClick={() => emailLabOrder({ patient, record })}
+              onClick={() => emailLabOrder({ patient, record, clinician })}
             >
               Email lab order
             </Button>
             <Button
               variant="primary"
-              onClick={() => openLabOrderPrint({ patient, record })}
+              onClick={() => openLabOrderPrint({ patient, record, clinician })}
             >
               Print / PDF lab order
             </Button>

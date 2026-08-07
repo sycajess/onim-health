@@ -260,6 +260,13 @@ export function NewRecordModal({
             labs_ordered: labsOrdered,
             complaint,
             assessment,
+            plan,
+          },
+          clinician: {
+            name: profile?.full_name,
+            phone: profile?.phone,
+            email: profile?.email,
+            licenseNumber: db.staff.find((s) => s.id === profile?.id)?.license_number,
           },
         })
       }
