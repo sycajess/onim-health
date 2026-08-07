@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth, usePermissions } from '@onim/auth'
 import { useData } from '@onim/data'
@@ -6,6 +6,7 @@ import { MODULES, ROLE_LABELS, getModuleLabel } from '@onim/types'
 import { Button, PageLoader } from '@onim/ui'
 import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NewPatientModal } from '../components/NewPatientModal'
+import { countUnreadMessages, getMessagesLastSeen, markMessagesSeen } from '../lib/messageUnread'
 import './AppLayout.css'
 
 const SECTION_LABELS = {
@@ -24,10 +25,26 @@ export function AppLayout() {
   const navigate = useNavigate()
   const [patientModalOpen, setPatientModalOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
+  const [msgBannerDismissed, setMsgBannerDismissed] = useState(false)
+  const [msgSeenTick, setMsgSeenTick] = useState(0)
 
   useEffect(() => {
     setNavOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/messaging') && profile?.id) {
+      markMessagesSeen(profile.id)
+      setMsgSeenTick((t) => t + 1)
+      setMsgBannerDismissed(true)
+    }
+  }, [location.pathname, profile?.id])
+
+  const unreadMessages = useMemo(() => {
+    if (!profile?.id || !canAccessModule('messaging') || dataLoading) return 0
+    void msgSeenTick
+    return countUnreadMessages(db.messages, profile.id, getMessagesLastSeen(profile.id))
+  }, [canAccessModule, dataLoading, db.messages, profile?.id, msgSeenTick])
 
   if (!profile) return null
   if (dataLoading) return <PageLoader />
@@ -45,6 +62,12 @@ export function AppLayout() {
   const sections = [...new Set(visibleModules.map((m) => m.section))]
   const activeModule = MODULES.find((m) => location.pathname.startsWith(m.path))
   const pendingApprovals = role === 'admin' ? db.staff.filter((s) => !s.approved).length : 0
+
+  const showMsgBanner =
+    canAccessModule('messaging') &&
+    unreadMessages > 0 &&
+    !msgBannerDismissed &&
+    !location.pathname.startsWith('/messaging')
 
   function handleSignOut() {
     signOut()
@@ -79,6 +102,9 @@ export function AppLayout() {
                   {getModuleLabel(mod, role)}
                   {mod.id === 'settings' && pendingApprovals > 0 && (
                     <span className="sidebar__nav-badge">{pendingApprovals}</span>
+                  )}
+                  {mod.id === 'messaging' && unreadMessages > 0 && (
+                    <span className="sidebar__nav-badge">{unreadMessages}</span>
                   )}
                 </NavLink>
               ))}
@@ -117,6 +143,28 @@ export function AppLayout() {
             )}
           </div>
         </header>
+
+        {showMsgBanner && (
+          <div className="msg-alert-banner" role="status">
+            <span>
+              You have <strong>{unreadMessages}</strong> new team message{unreadMessages === 1 ? '' : 's'}.
+            </span>
+            <div className="msg-alert-banner__actions">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setMsgBannerDismissed(true)
+                  navigate('/messaging')
+                }}
+              >
+                Open messages
+              </Button>
+              <Button variant="secondary" onClick={() => setMsgBannerDismissed(true)}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
 
         <main className="content">
           <Suspense fallback={<PageLoader />}>

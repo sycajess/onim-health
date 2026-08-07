@@ -217,6 +217,7 @@ export function PatientDetailPage() {
       />
       <RecordDetailModal
         record={recordDetail}
+        patient={patient}
         open={!!recordDetail}
         onClose={() => setRecordDetail(null)}
       />

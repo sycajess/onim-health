@@ -55,6 +55,7 @@ export function RecordsPage() {
       <NewRecordModal open={modalOpen} onClose={() => setModalOpen(false)} />
       <RecordDetailModal
         record={recordDetail}
+        patient={recordDetail ? db.patients.find((p) => p.id === recordDetail.patient_id) : undefined}
         open={!!recordDetail}
         onClose={() => setRecordDetail(null)}
       />

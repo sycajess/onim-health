@@ -9,7 +9,7 @@ export type ActionId =
   | 'inventory:dispense'
 
 const ACTION_ROLES: Record<ActionId, readonly Role[]> = {
-  'patients:create': ['admin', 'doctor', 'nurse', 'nutritionist', 'staff'],
+  'patients:create': ['admin', 'doctor', 'nurse', 'nutritionist', 'staff', 'pharmacist', 'accountant', 'lab_partner'],
   'patients:edit': ['admin', 'doctor', 'nurse', 'nutritionist', 'staff'],
   'patients:delete': ['admin'],
   'inventory:manage': ['admin', 'pharmacist'],

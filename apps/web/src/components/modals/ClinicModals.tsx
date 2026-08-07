@@ -28,6 +28,8 @@ import { SearchInput } from '../SearchInput'
 import { searchIcd10, searchLoinc } from '../../lib/clinicalTables'
 import { checkDrugAllergyWithRxNorm, resolveRxcuiForSave } from '../../lib/drugAllergy'
 import { createGoogleMeetLink, ensureGoogleConnected } from '../../lib/googleCalendar'
+import { LAB_ORDER_OPTIONS, formatLabsOrdered } from '../../lib/labOrderOptions'
+import { openLabOrderPrint } from '../../lib/labOrderDocument'
 import '../SearchInput.css'
 
 type PatientSelectProps = {
@@ -195,7 +197,7 @@ export function NewRecordModal({
   onClose: () => void
   patientId?: string
 }) {
-  const { addRecord } = useData()
+  const { db, addRecord } = useData()
   const { profile } = useAuth()
   const [patientId, setPatientId] = useState(lockedPatientId ?? '')
   const [date, setDate] = useState(today())
@@ -203,7 +205,8 @@ export function NewRecordModal({
   const [specialty, setSpecialty] = useState<string>(SPECIALTIES[0])
   const [complaint, setComplaint] = useState('')
   const [assessment, setAssessment] = useState('')
-  const [labsOrdered, setLabsOrdered] = useState('')
+  const [selectedLabs, setSelectedLabs] = useState<string[]>([])
+  const [labsOther, setLabsOther] = useState('')
   const [plan, setPlan] = useState('')
 
   useEffect(() => {
@@ -218,12 +221,20 @@ export function NewRecordModal({
     setSpecialty(SPECIALTIES[0])
     setComplaint('')
     setAssessment('')
-    setLabsOrdered('')
+    setSelectedLabs([])
+    setLabsOther('')
     setPlan('')
+  }
+
+  function toggleLab(lab: string) {
+    setSelectedLabs((prev) =>
+      prev.includes(lab) ? prev.filter((l) => l !== lab) : [...prev, lab],
+    )
   }
 
   async function handleSave() {
     if (!patientId) return
+    const labsOrdered = formatLabsOrdered(selectedLabs, labsOther)
     const ok = await addRecord({
       patient_id: patientId,
       date,
@@ -236,6 +247,23 @@ export function NewRecordModal({
       provider: profile?.full_name ?? '',
     })
     if (!ok) return
+    const patient = db.patients.find((p) => p.id === patientId)
+    if (labsOrdered.trim()) {
+      const wantPrint = window.confirm('Record saved. Open printable lab order (Print / Save PDF)?')
+      if (wantPrint) {
+        openLabOrderPrint({
+          patient,
+          record: {
+            date,
+            provider: profile?.full_name ?? '',
+            specialty,
+            labs_ordered: labsOrdered,
+            complaint,
+            assessment,
+          },
+        })
+      }
+    }
     reset()
     onClose()
   }
@@ -256,12 +284,25 @@ export function NewRecordModal({
         <FormField label="Chief complaint" span={2}><textarea className="form-input" rows={2} value={complaint} onChange={(e) => setComplaint(e.target.value)} /></FormField>
         <FormField label="Assessment" span={2}><textarea className="form-input" rows={2} value={assessment} onChange={(e) => setAssessment(e.target.value)} /></FormField>
         <FormField label="Labs" span={2}>
+          <div className="lab-order-checks">
+            {LAB_ORDER_OPTIONS.map((lab) => (
+              <label key={lab} className="lab-order-checks__item">
+                <input
+                  type="checkbox"
+                  checked={selectedLabs.includes(lab)}
+                  onChange={() => toggleLab(lab)}
+                />
+                <span>{lab}</span>
+              </label>
+            ))}
+          </div>
           <textarea
             className="form-input"
             rows={2}
-            value={labsOrdered}
-            onChange={(e) => setLabsOrdered(e.target.value)}
-            placeholder="e.g. CBC, HbA1c, Lipid panel"
+            value={labsOther}
+            onChange={(e) => setLabsOther(e.target.value)}
+            placeholder="Other labs (optional)"
+            style={{ marginTop: 8 }}
           />
         </FormField>
         <FormField label="Plan" span={2}><textarea className="form-input" rows={2} value={plan} onChange={(e) => setPlan(e.target.value)} /></FormField>

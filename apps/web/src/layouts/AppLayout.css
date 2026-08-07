@@ -98,6 +98,27 @@
   justify-content: center;
 }
 
+.msg-alert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  background: #fff8e8;
+  border: 1px solid #f0d78c;
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--gray5);
+}
+
+.msg-alert-banner__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .sidebar__footer {
   margin-top: auto;
   padding: 12px 16px;

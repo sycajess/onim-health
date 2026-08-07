@@ -1,8 +1,11 @@
-import { fmtDate, displayField, type MedicalRecord } from '@onim/data'
-import { Modal } from '@onim/ui'
+import { fmtDate, displayField, type MedicalRecord, type Patient } from '@onim/data'
+import { Button, Modal } from '@onim/ui'
+import { emailLabOrder, openLabOrderPrint } from '../lib/labOrderDocument'
+import './RecordDetailModal.css'
 
 type RecordDetailModalProps = {
   record: MedicalRecord | null
+  patient?: Patient
   open: boolean
   onClose: () => void
 }
@@ -17,7 +20,7 @@ function DetailBlock({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function RecordDetailModal({ record, open, onClose }: RecordDetailModalProps) {
+export function RecordDetailModal({ record, patient, open, onClose }: RecordDetailModalProps) {
   if (!record) return null
 
   const vitals = [
@@ -26,11 +29,32 @@ export function RecordDetailModal({ record, open, onClose }: RecordDetailModalPr
     record.weight ? `Weight ${record.weight} kg` : '',
   ].filter(Boolean).join(' · ')
 
+  const hasLabs = !!record.labs_ordered.trim()
+
   return (
     <Modal
       open={open}
       title={`${record.type} — ${fmtDate(record.date)}`}
       onClose={onClose}
+      footer={
+        hasLabs ? (
+          <>
+            <Button variant="secondary" onClick={onClose}>Close</Button>
+            <Button
+              variant="secondary"
+              onClick={() => emailLabOrder({ patient, record })}
+            >
+              Email lab order
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => openLabOrderPrint({ patient, record })}
+            >
+              Print / PDF lab order
+            </Button>
+          </>
+        ) : undefined
+      }
     >
       <div className="record-detail">
         <div className="record-detail__meta">

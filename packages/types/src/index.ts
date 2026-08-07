@@ -113,7 +113,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
   },
   accountant: {
     dashboard: true,
-    patients: false,
+    patients: true,
     appointments: false,
     records: false,
     prescriptions: false,
@@ -150,7 +150,7 @@ export type ModuleConfig = {
 
 export const MODULES: ModuleConfig[] = [
   { id: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: '⊞', section: 'overview', roles: ['admin', 'doctor', 'pharmacist', 'nutritionist', 'nurse', 'staff', 'accountant', 'lab_partner'] },
-  { id: 'patients', path: '/patients', label: 'Patients', icon: '👥', section: 'overview', roles: ['admin', 'doctor', 'nurse', 'pharmacist', 'nutritionist', 'staff', 'lab_partner'] },
+  { id: 'patients', path: '/patients', label: 'Patients', icon: '👥', section: 'overview', roles: ['admin', 'doctor', 'nurse', 'pharmacist', 'nutritionist', 'staff', 'lab_partner', 'accountant'] },
   { id: 'appointments', path: '/appointments', label: 'Appointments', icon: '📅', section: 'overview', roles: ['admin', 'doctor', 'nurse', 'nutritionist', 'staff'] },
   { id: 'records', path: '/records', label: 'Medical Records', icon: '📋', section: 'clinical', roles: ['admin', 'doctor', 'nurse', 'nutritionist'] },
   { id: 'prescriptions', path: '/prescriptions', label: 'Prescriptions', icon: '💊', section: 'clinical', roles: ['admin', 'doctor', 'pharmacist'] },

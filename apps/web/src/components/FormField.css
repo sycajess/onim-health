@@ -29,3 +29,34 @@
   color: var(--gray4);
   text-transform: uppercase;
 }
+
+.lab-order-checks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--gray3);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+}
+
+.lab-order-checks__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--gray5);
+  cursor: pointer;
+  line-height: 1.35;
+}
+
+.lab-order-checks__item input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .lab-order-checks {
+    grid-template-columns: 1fr;
+  }
+}
