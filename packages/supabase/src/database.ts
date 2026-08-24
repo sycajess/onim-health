@@ -13,6 +13,7 @@ import type {
   StaffMember,
 } from '@onim/data'
 import { getSupabase } from './client'
+import { logAuditEvent } from './audit'
 import { mapStaffMessageRow } from './messaging'
 
 export function emptyDatabase(): Database {
@@ -27,7 +28,7 @@ export function emptyDatabase(): Database {
     billing: [],
     messages: {},
     staff: [],
-    clinicSettings: { provider_accreditation: '', eclaim_authorization: '' },
+    clinicSettings: { provider_accreditation: '', eclaim_authorization: '', hefra_approved: true, hefra_license_number: '' },
   }
 }
 
@@ -136,7 +137,7 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     supabase.from('billing').select('*').order('date', { ascending: false }),
     supabase.from('messages').select('*').order('created_at'),
     supabase.from('profiles').select('id, full_name, email, role, specialty, phone, license_number, license_expiry, approved'),
-    supabase.from('clinic_settings').select('provider_accreditation, eclaim_authorization').eq('id', 'default').maybeSingle(),
+    supabase.from('clinic_settings').select('provider_accreditation, eclaim_authorization, hefra_approved, hefra_license_number').eq('id', 'default').maybeSingle(),
   ])
 
   const firstError = [
@@ -229,6 +230,8 @@ export async function fetchDatabase(): Promise<Database | { error: string }> {
     clinicSettings: {
       provider_accreditation: String(settingsRes.data?.provider_accreditation ?? ''),
       eclaim_authorization: String(settingsRes.data?.eclaim_authorization ?? ''),
+      hefra_approved: settingsRes.data?.hefra_approved !== false,
+      hefra_license_number: String(settingsRes.data?.hefra_license_number ?? ''),
     },
   }
 }
@@ -389,6 +392,7 @@ export async function updatePatient(
 
   const { data, error } = await supabase.from('patients').update(row).eq('id', id).select('*').single()
   if (error) return { error: error.message }
+  void logAuditEvent({ action: 'update', entity_type: 'patient', entity_id: id, patient_id: id })
   return mapPatient(data)
 }
 
@@ -400,6 +404,7 @@ export async function deletePatient(id: string): Promise<true | { error: string 
 
   const { error } = await supabase.from('patients').delete().eq('id', id)
   if (error) return { error: error.message }
+  void logAuditEvent({ action: 'delete', entity_type: 'patient', entity_id: id, patient_id: id })
   return true
 }
 

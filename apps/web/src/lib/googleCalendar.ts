@@ -80,6 +80,31 @@ export async function addMeetToGoogleCalendar(input: {
   }
 }
 
+export async function scheduleVirtualAppointment(input: {
+  date: string
+  time: string
+  title: string
+  notes?: string
+}): Promise<{ meetLink: string; calendarEventId: string } | { error: string }> {
+  try {
+    const res = await fetch(`${appOrigin()}/api/google/schedule-virtual`, {
+      method: 'POST',
+      headers: {
+        ...(await authHeaders()),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(input),
+    })
+    const data = (await res.json()) as { meetLink?: string; calendarEventId?: string; error?: string }
+    if (!res.ok || !data.meetLink || !data.calendarEventId) {
+      return { error: data.error || 'Could not schedule virtual appointment.' }
+    }
+    return { meetLink: data.meetLink, calendarEventId: data.calendarEventId }
+  } catch {
+    return { error: 'Could not schedule virtual appointment.' }
+  }
+}
+
 export async function ensureGoogleConnected(profileConnected: boolean | undefined): Promise<boolean> {
   if (profileConnected) return true
   await startGoogleCalendarConnect()

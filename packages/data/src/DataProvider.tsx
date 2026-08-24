@@ -7,6 +7,9 @@ import {
   createMedicalRecord,
   createPatient,
   createPrescription,
+  deleteLabResult,
+  deleteMedicalRecord,
+  deletePrescription,
   deletePatient,
   dispenseMedication,
   emptyDatabase,
@@ -25,6 +28,9 @@ import {
   saveClinicSettings,
   updatePatient,
   updatePrescriptionStatus,
+  updateMedicalRecord,
+  updateLabResult,
+  updatePrescription,
   type MedicationInput,
   type NewAppointmentInput,
   type NewInvoiceInput,
@@ -33,6 +39,9 @@ import {
   type UpdatePatientInput,
   type NewPrescriptionInput,
   type NewRecordInput,
+  type UpdateRecordInput,
+  type UpdateLabInput,
+  type UpdatePrescriptionInput,
   adminUpdateStaff,
   adminDeleteStaff,
   type ClinicSettingsInput,
@@ -56,9 +65,15 @@ type DataContextValue = {
   updateAppointmentCalendarSync: (id: string, calendarEventId: string) => Promise<boolean>
   addAppointment: (input: NewAppointmentInput) => Promise<boolean>
   addRecord: (input: NewRecordInput) => Promise<boolean>
+  updateRecord: (id: string, patientId: string, input: UpdateRecordInput) => Promise<boolean>
+  deleteRecord: (id: string, patientId: string) => Promise<boolean>
   updatePrescriptionStatus: (id: string, status: string) => Promise<boolean>
   addPrescription: (input: NewPrescriptionInput) => Promise<boolean>
+  updatePrescriptionFields: (id: string, patientId: string, input: UpdatePrescriptionInput) => Promise<boolean>
+  deletePrescription: (id: string, patientId: string) => Promise<boolean>
   addLabResult: (input: NewLabInput) => Promise<boolean>
+  updateLabResultFields: (id: string, patientId: string, input: UpdateLabInput) => Promise<boolean>
+  deleteLabResult: (id: string, patientId: string) => Promise<boolean>
   saveMedication: (input: MedicationInput, existingId?: string) => Promise<boolean>
   dispenseMedication: (medId: string, patientId: string, qty: number, patientName: string) => Promise<boolean | { error: string }>
   updateBillingStatus: (id: string, status: string) => Promise<boolean>
@@ -206,6 +221,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const handleUpdateRecord = useCallback(
+    async (id: string, patientId: string, input: UpdateRecordInput) =>
+      runMutation(() => updateMedicalRecord(id, patientId, input), refresh),
+    [refresh],
+  )
+
+  const handleDeleteRecord = useCallback(
+    async (id: string, patientId: string) => runMutation(() => deleteMedicalRecord(id, patientId), refresh),
+    [refresh],
+  )
+
   const handleUpdatePrescriptionStatus = useCallback(
     async (id: string, status: string) => runMutation(() => updatePrescriptionStatus(id, status), refresh),
     [refresh],
@@ -216,8 +242,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const handleUpdatePrescriptionFields = useCallback(
+    async (id: string, patientId: string, input: UpdatePrescriptionInput) =>
+      runMutation(() => updatePrescription(id, patientId, input), refresh),
+    [refresh],
+  )
+
+  const handleDeletePrescription = useCallback(
+    async (id: string, patientId: string) => runMutation(() => deletePrescription(id, patientId), refresh),
+    [refresh],
+  )
+
   const addLabResult = useCallback(
     async (input: NewLabInput) => runMutation(() => createLabResult(input), refresh),
+    [refresh],
+  )
+
+  const handleUpdateLabResultFields = useCallback(
+    async (id: string, patientId: string, input: UpdateLabInput) =>
+      runMutation(() => updateLabResult(id, patientId, input), refresh),
+    [refresh],
+  )
+
+  const handleDeleteLabResult = useCallback(
+    async (id: string, patientId: string) => runMutation(() => deleteLabResult(id, patientId), refresh),
     [refresh],
   )
 
@@ -299,9 +347,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateAppointmentCalendarSync: handleUpdateAppointmentCalendarSync,
       addAppointment,
       addRecord,
+      updateRecord: handleUpdateRecord,
+      deleteRecord: handleDeleteRecord,
       updatePrescriptionStatus: handleUpdatePrescriptionStatus,
       addPrescription,
+      updatePrescriptionFields: handleUpdatePrescriptionFields,
+      deletePrescription: handleDeletePrescription,
       addLabResult,
+      updateLabResultFields: handleUpdateLabResultFields,
+      deleteLabResult: handleDeleteLabResult,
       saveMedication: handleSaveMedication,
       dispenseMedication: handleDispenseMedication,
       updateBillingStatus: handleUpdateBillingStatus,
@@ -329,9 +383,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       handleUpdateAppointmentCalendarSync,
       addAppointment,
       addRecord,
+      handleUpdateRecord,
+      handleDeleteRecord,
       handleUpdatePrescriptionStatus,
       addPrescription,
+      handleUpdatePrescriptionFields,
+      handleDeletePrescription,
       addLabResult,
+      handleUpdateLabResultFields,
+      handleDeleteLabResult,
       handleSaveMedication,
       handleDispenseMedication,
       handleUpdateBillingStatus,

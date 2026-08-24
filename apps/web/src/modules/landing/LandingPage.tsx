@@ -83,6 +83,15 @@ export function LandingPage() {
           >
             Onim Health
           </motion.span>
+          <motion.span
+            className="oh-hero__badge oh-hero__badge--hefra"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.04 }}
+            style={{ marginLeft: 8 }}
+          >
+            HEFRA Approved Facility
+          </motion.span>
           <motion.h1
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}

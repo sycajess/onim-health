@@ -144,6 +144,8 @@ export type BillingInvoice = {
 export type ClinicSettings = {
   provider_accreditation: string
   eclaim_authorization: string
+  hefra_approved: boolean
+  hefra_license_number: string
 }
 
 export type Message = {

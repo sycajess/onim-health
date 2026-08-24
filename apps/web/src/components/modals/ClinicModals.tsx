@@ -27,7 +27,7 @@ import { SigCodeInput } from '../SigCodeInput'
 import { SearchInput } from '../SearchInput'
 import { searchIcd10, searchLoinc } from '../../lib/clinicalTables'
 import { checkDrugAllergyWithRxNorm, resolveRxcuiForSave } from '../../lib/drugAllergy'
-import { createGoogleMeetLink, ensureGoogleConnected } from '../../lib/googleCalendar'
+import { ensureGoogleConnected, scheduleVirtualAppointment } from '../../lib/googleCalendar'
 import { LAB_ORDER_OPTIONS, formatLabsOrdered } from '../../lib/labOrderOptions'
 import { openLabOrderPrint } from '../../lib/labOrderDocument'
 import '../SearchInput.css'
@@ -78,7 +78,7 @@ function ModalShell({ open, title, onClose, onSave, saveLabel = 'Save', saveDisa
 }
 
 export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { addAppointment } = useData()
+  const { db, addAppointment } = useData()
   const { profile } = useAuth()
   const [patientId, setPatientId] = useState('')
   const [date, setDate] = useState(today())
@@ -89,6 +89,10 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
   const [addGoogleMeet, setAddGoogleMeet] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (type === 'Telemedicine') setAddGoogleMeet(true)
+  }, [type])
 
   function reset() {
     setPatientId('')
@@ -105,20 +109,30 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
     if (!patientId || saving) return
     setError('')
 
+    const wantsVirtual = addGoogleMeet || type === 'Telemedicine'
     setSaving(true)
     let meetLink = ''
-    if (addGoogleMeet) {
+    let calendarEventId = ''
+    let calendarSynced = false
+
+    if (wantsVirtual) {
       if (!(await ensureGoogleConnected(profile?.google_calendar_connected))) {
         setSaving(false)
         return
       }
-      const meet = await createGoogleMeetLink()
-      if ('error' in meet) {
-        setError(meet.error)
+      const patient = db.patients.find((p) => p.id === patientId)
+      const title = patient
+        ? `${type} — ${patientFullName(patient)}`
+        : `${type} appointment`
+      const virtual = await scheduleVirtualAppointment({ date, time, title, notes })
+      if ('error' in virtual) {
+        setError(virtual.error)
         setSaving(false)
         return
       }
-      meetLink = meet.meetLink
+      meetLink = virtual.meetLink
+      calendarEventId = virtual.calendarEventId
+      calendarSynced = true
     }
 
     const ok = await addAppointment({
@@ -130,6 +144,8 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
       provider: profile?.full_name ?? '',
       notes,
       meet_link: meetLink,
+      calendar_event_id: calendarEventId,
+      calendar_synced: calendarSynced,
     })
     setSaving(false)
     if (!ok) return
@@ -155,7 +171,7 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
         {addGoogleMeet && !profile?.google_calendar_connected && (
           <FormField label=" " span={2}>
             <div className="alert-banner alert-banner--info">
-              Creates a Meet link only. After saving, use “Add to Calendar” on the appointment if you want it on Google Calendar.
+              Connect Google in Settings first. Telemedicine appointments automatically create a Meet link and add it to your Google Calendar.
             </div>
           </FormField>
         )}
@@ -180,7 +196,7 @@ export function NewAppointmentModal({ open, onClose }: { open: boolean; onClose:
               checked={addGoogleMeet}
               onChange={(e) => setAddGoogleMeet(e.target.checked)}
             />
-            Create Meet link now (optional — add to calendar after)
+            Create Google Meet + Calendar event (required for Telemedicine)
           </label>
         </FormField>
       </FormGrid>
@@ -405,6 +421,11 @@ export function NewPrescriptionModal({ open, onClose }: { open: boolean; onClose
             onSelectDrug={(drug) => {
               setMedRxcui(drug.rxcui)
             }}
+            onSelectInventory={(item) => {
+              setInventoryMedId(item.id)
+              if (item.strength && !dosage.trim()) setDosage(item.strength)
+            }}
+            inventoryItems={db.inventory}
           />
         </FormField>
         <FormField label="Strength / Dosage">

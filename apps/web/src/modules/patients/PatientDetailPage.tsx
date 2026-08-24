@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
-import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, formatCodedList, parseCodedEntries, formatLabSource, type DrugAllergyAlert, type MedicalRecord } from '@onim/data'
+import { logAuditEvent } from '@onim/supabase'
+import { useData, fmtDate, displayField, formatPatientDemographics, patientFullName, formatCodedList, parseCodedEntries, formatLabSource, type DrugAllergyAlert, type MedicalRecord, type LabResult, type Prescription } from '@onim/data'
 import { checkPatientMedAllergiesWithRxNorm, checkDrugAllergyWithRxNorm } from '../../lib/drugAllergy'
 import type { ModuleId } from '@onim/types'
 import { Badge, Button, Card, EmptyState, PdfAttachZone, SpecialtyTag, Timeline } from '@onim/ui'
@@ -10,6 +11,7 @@ import { IconAction, RowActions } from '../../components/IconAction'
 import { AppointmentMeetCell } from '../../components/AppointmentMeetCell'
 import { NewPatientModal } from '../../components/NewPatientModal'
 import { NewRecordModal } from '../../components/modals/ClinicModals'
+import { EditLabModal, EditPrescriptionModal, EditRecordModal } from '../../components/AdminEditModals'
 import { RecordDetailModal } from '../../components/RecordDetailModal'
 import '../../components/RecordDetailModal.css'
 import '@onim/ui/Card.css'
@@ -30,13 +32,27 @@ const TAB_MODULES: Record<(typeof TABS)[number], ModuleId | null> = {
 export function PatientDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { db, getPatient, deletePatient, updateLabAttachment } = useData()
-  const { canEditPatient, canDeletePatient, canWriteModule, canAccessModule } = usePermissions()
+  const { db, getPatient, deletePatient, updateLabAttachment, deleteRecord, deleteLabResult, deletePrescription } = useData()
+  const { canEditPatient, canDeletePatient, canWriteModule, canAccessModule, canEditEntry, canDeleteEntry } = usePermissions()
   const [tab, setTab] = useState<(typeof TABS)[number]>('Overview')
   const [editOpen, setEditOpen] = useState(false)
   const [recordModalOpen, setRecordModalOpen] = useState(false)
   const [recordDetail, setRecordDetail] = useState<MedicalRecord | null>(null)
+  const [editRecord, setEditRecord] = useState<MedicalRecord | null>(null)
+  const [editLab, setEditLab] = useState<LabResult | null>(null)
+  const [editRx, setEditRx] = useState<Prescription | null>(null)
   const patient = id ? getPatient(id) : undefined
+
+  useEffect(() => {
+    if (!patient?.id) return
+    void logAuditEvent({
+      action: 'view',
+      entity_type: 'patient',
+      entity_id: patient.id,
+      patient_id: patient.id,
+    })
+  }, [patient?.id])
+
   const canWriteRecords = canWriteModule('records')
   const canWriteLabs = canWriteModule('labs')
   const canWriteAppointments = canWriteModule('appointments')
@@ -220,7 +236,14 @@ export function PatientDetailPage() {
         patient={patient}
         open={!!recordDetail}
         onClose={() => setRecordDetail(null)}
+        onEdit={canEditEntry ? () => {
+          if (recordDetail) setEditRecord(recordDetail)
+        } : undefined}
+        onDelete={canDeleteEntry && recordDetail ? () => void deleteRecord(recordDetail.id, recordDetail.patient_id) : undefined}
       />
+      <EditRecordModal record={editRecord} open={!!editRecord} onClose={() => setEditRecord(null)} />
+      <EditLabModal lab={editLab} open={!!editLab} onClose={() => setEditLab(null)} />
+      <EditPrescriptionModal prescription={editRx} open={!!editRx} onClose={() => setEditRx(null)} />
 
       <div className="pt-tabs">
         {visibleTabs.map((t) => (
@@ -285,7 +308,12 @@ export function PatientDetailPage() {
         >
           {records.length ? (
             <table className="data-table">
-              <thead><tr><th>Date</th><th>Type</th><th>Specialty</th><th>Assessment</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Date</th><th>Type</th><th>Specialty</th><th>Assessment</th>
+                  {(canEditEntry || canDeleteEntry) && <th>Actions</th>}
+                </tr>
+              </thead>
               <tbody>
                 {records.map((r) => (
                   <tr
@@ -297,6 +325,24 @@ export function PatientDetailPage() {
                     <td><span className="link-cell">{r.type}</span></td>
                     <td>{r.specialty}</td>
                     <td>{r.assessment || r.complaint || '–'}</td>
+                    {(canEditEntry || canDeleteEntry) && (
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <RowActions>
+                          {canEditEntry && <IconAction icon="edit" label="Edit record" onClick={() => setEditRecord(r)} />}
+                          {canDeleteEntry && (
+                            <IconAction
+                              icon="delete"
+                              label="Delete record"
+                              variant="danger"
+                              onClick={() => {
+                                if (!window.confirm(`Delete record ${r.id}?`)) return
+                                void deleteRecord(r.id, r.patient_id)
+                              }}
+                            />
+                          )}
+                        </RowActions>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -309,7 +355,12 @@ export function PatientDetailPage() {
         <Card title="Prescriptions" noPadding>
           {rx.length ? (
             <table className="data-table">
-              <thead><tr><th>Medication</th><th>Strength</th><th>Directions</th><th>Route</th><th>Qty Dispensed</th><th>Status</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Medication</th><th>Strength</th><th>Directions</th><th>Route</th><th>Qty Dispensed</th><th>Status</th>
+                  {(canEditEntry || canDeleteEntry) && <th>Actions</th>}
+                </tr>
+              </thead>
               <tbody>
                 {rx.map((r) => {
                   const alert = rxRowAlerts[r.id]
@@ -321,6 +372,24 @@ export function PatientDetailPage() {
                     <td>{r.route || '–'}</td>
                     <td>{r.qty_dispensed}</td>
                     <td><Badge>{r.status}</Badge></td>
+                    {(canEditEntry || canDeleteEntry) && (
+                      <td>
+                        <RowActions>
+                          {canEditEntry && <IconAction icon="edit" label="Edit prescription" onClick={() => setEditRx(r)} />}
+                          {canDeleteEntry && (
+                            <IconAction
+                              icon="delete"
+                              label="Delete prescription"
+                              variant="danger"
+                              onClick={() => {
+                                if (!window.confirm(`Delete prescription ${r.id}?`)) return
+                                void deletePrescription(r.id, r.patient_id)
+                              }}
+                            />
+                          )}
+                        </RowActions>
+                      </td>
+                    )}
                   </tr>
                   )
                 })}
@@ -335,7 +404,26 @@ export function PatientDetailPage() {
           {labs.length ? labs.map((l) => {
             const source = formatLabSource(l)
             return (
-            <Card key={l.id} title={`${l.test} — ${fmtDate(l.date)}`}>
+            <Card
+              key={l.id}
+              title={`${l.test} — ${fmtDate(l.date)}`}
+              action={(canEditEntry || canDeleteEntry) ? (
+                <RowActions>
+                  {canEditEntry && <IconAction icon="edit" label="Edit lab" onClick={() => setEditLab(l)} />}
+                  {canDeleteEntry && (
+                    <IconAction
+                      icon="delete"
+                      label="Delete lab"
+                      variant="danger"
+                      onClick={() => {
+                        if (!window.confirm(`Delete lab ${l.id}?`)) return
+                        void deleteLabResult(l.id, l.patient_id)
+                      }}
+                    />
+                  )}
+                </RowActions>
+              ) : undefined}
+            >
               <div style={{ marginBottom: 8 }}><strong>{l.result}</strong> <Badge>{l.status}</Badge></div>
               <div style={{ fontSize: 12, color: 'var(--gray4)', marginBottom: 12 }}>
                 {source ? `${source} · ` : ''}Ref: {l.ref || '–'}

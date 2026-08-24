@@ -8,6 +8,7 @@ import type {
   Prescription,
 } from '@onim/data'
 import { getSupabase } from './client'
+import { logAuditEvent } from './audit'
 import { conversationThreadId, type StaffMessageRow } from './messaging'
 
 function today(): string {
@@ -74,6 +75,8 @@ export type NewAppointmentInput = {
   provider?: string
   notes?: string
   meet_link?: string
+  calendar_event_id?: string
+  calendar_synced?: boolean
 }
 
 export async function createAppointment(input: NewAppointmentInput): Promise<Appointment | MutError> {
@@ -91,11 +94,17 @@ export async function createAppointment(input: NewAppointmentInput): Promise<App
     notes: input.notes ?? '',
     status: 'Scheduled',
     meet_link: input.meet_link ?? '',
-    calendar_event_id: '',
-    calendar_synced: false,
+    calendar_event_id: input.calendar_event_id ?? '',
+    calendar_synced: input.calendar_synced ?? false,
   }
   const { error } = await supabase.from('appointments').insert(row)
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'create',
+    entity_type: 'appointment',
+    entity_id: id,
+    patient_id: input.patient_id,
+  })
   return row as Appointment
 }
 
@@ -137,7 +146,69 @@ export async function createMedicalRecord(input: NewRecordInput): Promise<Medica
   }
   const { error } = await supabase.from('medical_records').insert(row)
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'create',
+    entity_type: 'record',
+    entity_id: id,
+    patient_id: input.patient_id,
+  })
   return row as MedicalRecord
+}
+
+export type UpdateRecordInput = Partial<Omit<NewRecordInput, 'patient_id'>>
+
+export async function updateMedicalRecord(
+  id: string,
+  patientId: string,
+  input: UpdateRecordInput,
+): Promise<MedicalRecord | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const patch: Record<string, unknown> = {}
+  if (input.date !== undefined) patch.date = input.date
+  if (input.type !== undefined) patch.type = input.type
+  if (input.specialty !== undefined) patch.specialty = input.specialty
+  if (input.complaint !== undefined) patch.complaint = input.complaint
+  if (input.exam !== undefined) patch.exam = input.exam
+  if (input.assessment !== undefined) patch.assessment = input.assessment
+  if (input.labs_ordered !== undefined) patch.labs_ordered = input.labs_ordered
+  if (input.plan !== undefined) patch.plan = input.plan
+  if (input.bp !== undefined) patch.bp = input.bp
+  if (input.temp !== undefined) patch.temp = input.temp
+  if (input.weight !== undefined) patch.weight = input.weight
+  if (input.provider !== undefined) patch.provider = input.provider
+  const { data, error } = await supabase.from('medical_records').update(patch).eq('id', id).select('*').single()
+  if (error) return { error: error.message }
+  void logAuditEvent({ action: 'update', entity_type: 'record', entity_id: id, patient_id: patientId })
+  return mapRecordRow(data)
+}
+
+export async function deleteMedicalRecord(id: string, patientId: string): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { error } = await supabase.from('medical_records').delete().eq('id', id)
+  if (error) return { error: error.message }
+  void logAuditEvent({ action: 'delete', entity_type: 'record', entity_id: id, patient_id: patientId })
+  return true
+}
+
+function mapRecordRow(row: Record<string, unknown>): MedicalRecord {
+  return {
+    id: String(row.id),
+    patient_id: String(row.patient_id),
+    date: String(row.date),
+    type: String(row.type),
+    specialty: String(row.specialty ?? ''),
+    complaint: String(row.complaint ?? ''),
+    exam: String(row.exam ?? ''),
+    assessment: String(row.assessment ?? ''),
+    labs_ordered: String(row.labs_ordered ?? ''),
+    plan: String(row.plan ?? ''),
+    bp: String(row.bp ?? ''),
+    temp: String(row.temp ?? ''),
+    weight: Number(row.weight ?? 0),
+    provider: String(row.provider ?? ''),
+  }
 }
 
 export async function updatePrescriptionStatus(id: string, status: string): Promise<true | MutError> {
@@ -212,7 +283,77 @@ export async function createPrescription(input: NewPrescriptionInput): Promise<P
   }
   const { error } = await supabase.from('prescriptions').insert(row)
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'create',
+    entity_type: 'prescription',
+    entity_id: id,
+    patient_id: input.patient_id,
+  })
   return row as Prescription
+}
+
+export type UpdatePrescriptionInput = {
+  medication?: string
+  med_rxcui?: string
+  dosage?: string
+  frequency?: string
+  route?: string
+  duration?: string
+  refills?: number
+  notes?: string
+  status?: string
+}
+
+export async function updatePrescription(
+  id: string,
+  patientId: string,
+  input: UpdatePrescriptionInput,
+): Promise<Prescription | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const patch: Record<string, unknown> = {}
+  if (input.medication !== undefined) patch.medication = input.medication
+  if (input.med_rxcui !== undefined) patch.med_rxcui = input.med_rxcui?.trim() || null
+  if (input.dosage !== undefined) patch.dosage = input.dosage
+  if (input.frequency !== undefined) patch.frequency = input.frequency
+  if (input.route !== undefined) patch.route = input.route
+  if (input.duration !== undefined) patch.duration = input.duration
+  if (input.refills !== undefined) patch.refills = input.refills
+  if (input.notes !== undefined) patch.notes = input.notes
+  if (input.status !== undefined) patch.status = input.status
+  const { data, error } = await supabase.from('prescriptions').update(patch).eq('id', id).select('*').single()
+  if (error) return { error: error.message }
+  void logAuditEvent({ action: 'update', entity_type: 'prescription', entity_id: id, patient_id: patientId })
+  return mapPrescriptionRow(data)
+}
+
+export async function deletePrescription(id: string, patientId: string): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { error } = await supabase.from('prescriptions').delete().eq('id', id)
+  if (error) return { error: error.message }
+  void logAuditEvent({ action: 'delete', entity_type: 'prescription', entity_id: id, patient_id: patientId })
+  return true
+}
+
+function mapPrescriptionRow(row: Record<string, unknown>): Prescription {
+  return {
+    id: String(row.id),
+    patient_id: String(row.patient_id),
+    medication: String(row.medication),
+    med_id: String(row.med_id ?? ''),
+    med_rxcui: row.med_rxcui ? String(row.med_rxcui) : undefined,
+    dosage: String(row.dosage ?? ''),
+    frequency: String(row.frequency ?? ''),
+    route: String(row.route ?? ''),
+    duration: String(row.duration ?? ''),
+    refills: Number(row.refills ?? 0),
+    date: String(row.date),
+    provider: String(row.provider ?? ''),
+    notes: String(row.notes ?? ''),
+    status: String(row.status),
+    qty_dispensed: Number(row.qty_dispensed ?? 0),
+  }
 }
 
 export type NewLabInput = {
@@ -251,6 +392,12 @@ export async function createLabResult(input: NewLabInput): Promise<LabResult | M
   }
   const { error } = await supabase.from('lab_results').insert(row)
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'create',
+    entity_type: 'lab',
+    entity_id: id,
+    patient_id: input.patient_id,
+  })
   return {
     id,
     patient_id: input.patient_id,
@@ -266,6 +413,65 @@ export async function createLabResult(input: NewLabInput): Promise<LabResult | M
     notes: row.notes,
     attachment: input.attachment ?? undefined,
   }
+}
+
+export type UpdateLabInput = {
+  test?: string
+  date?: string
+  facility?: string
+  result?: string
+  ref?: string
+  status?: string
+  provider?: string
+  notes?: string
+}
+
+export async function updateLabResult(
+  id: string,
+  patientId: string,
+  input: UpdateLabInput,
+): Promise<LabResult | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const patch: Record<string, unknown> = {}
+  if (input.test !== undefined) patch.test = input.test
+  if (input.date !== undefined) patch.date = input.date
+  if (input.facility !== undefined) patch.facility = input.facility
+  if (input.result !== undefined) patch.result = input.result
+  if (input.ref !== undefined) patch.ref = input.ref
+  if (input.status !== undefined) patch.status = input.status
+  if (input.provider !== undefined) patch.provider = input.provider
+  if (input.notes !== undefined) patch.notes = input.notes
+  const { data, error } = await supabase.from('lab_results').update(patch).eq('id', id).select('*').single()
+  if (error) return { error: error.message }
+  void logAuditEvent({ action: 'update', entity_type: 'lab', entity_id: id, patient_id: patientId })
+  const attachment = data.attachment_path
+    ? (JSON.parse(String(data.attachment_path)) as LabAttachment)
+    : undefined
+  return {
+    id: String(data.id),
+    patient_id: String(data.patient_id),
+    test: String(data.test),
+    date: String(data.date),
+    facility: String(data.facility ?? ''),
+    result: String(data.result ?? ''),
+    ref: String(data.ref ?? ''),
+    status: String(data.status),
+    provider: String(data.provider ?? ''),
+    uploader_name: String(data.uploader_name ?? ''),
+    uploader_contact: String(data.uploader_contact ?? ''),
+    notes: String(data.notes ?? ''),
+    attachment,
+  }
+}
+
+export async function deleteLabResult(id: string, patientId: string): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { error } = await supabase.from('lab_results').delete().eq('id', id)
+  if (error) return { error: error.message }
+  void logAuditEvent({ action: 'delete', entity_type: 'lab', entity_id: id, patient_id: patientId })
+  return true
 }
 
 export type MedicationInput = {
@@ -424,6 +630,8 @@ export async function markBillingNhisExported(ids: string[]): Promise<true | Mut
 export type ClinicSettingsInput = {
   provider_accreditation: string
   eclaim_authorization: string
+  hefra_approved?: boolean
+  hefra_license_number?: string
 }
 
 export async function saveClinicSettings(input: ClinicSettingsInput): Promise<true | MutError> {
@@ -433,6 +641,8 @@ export async function saveClinicSettings(input: ClinicSettingsInput): Promise<tr
     id: 'default',
     provider_accreditation: input.provider_accreditation.trim(),
     eclaim_authorization: input.eclaim_authorization.trim(),
+    hefra_approved: input.hefra_approved ?? true,
+    hefra_license_number: input.hefra_license_number?.trim() ?? '',
     updated_at: new Date().toISOString(),
   })
   if (error) return { error: error.message }

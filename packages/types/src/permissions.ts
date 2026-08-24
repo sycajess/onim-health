@@ -5,6 +5,8 @@ export type ActionId =
   | 'patients:create'
   | 'patients:edit'
   | 'patients:delete'
+  | 'entries:edit'
+  | 'entries:delete'
   | 'inventory:manage'
   | 'inventory:dispense'
 
@@ -12,6 +14,8 @@ const ACTION_ROLES: Record<ActionId, readonly Role[]> = {
   'patients:create': ['admin', 'doctor', 'nurse', 'nutritionist', 'staff', 'pharmacist', 'accountant', 'lab_partner'],
   'patients:edit': ['admin', 'doctor', 'nurse', 'nutritionist', 'staff'],
   'patients:delete': ['admin'],
+  'entries:edit': ['admin'],
+  'entries:delete': ['admin'],
   'inventory:manage': ['admin', 'pharmacist'],
   'inventory:dispense': ['admin', 'pharmacist', 'nurse'],
 }

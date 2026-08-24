@@ -28,6 +28,8 @@ export {
 } from './staffAdmin'
 export type { AdminStaffInput } from './staffAdmin'
 export { emptyDatabase, fetchDatabase } from './database'
+export { logAuditEvent, fetchAuditLog } from './audit'
+export type { AuditLogEntry, AuditEventInput } from './audit'
 export {
   createPatient,
   updatePatient,
@@ -38,9 +40,15 @@ export {
   updateAppointmentCalendarSync,
   createAppointment,
   createMedicalRecord,
+  updateMedicalRecord,
+  deleteMedicalRecord,
   updatePrescriptionStatus,
   createPrescription,
+  updatePrescription,
+  deletePrescription,
   createLabResult,
+  updateLabResult,
+  deleteLabResult,
   saveMedication,
   dispenseMedication,
   updateBillingStatus,
@@ -55,8 +63,11 @@ export type {
   UpdatePatientInput,
   NewAppointmentInput,
   NewRecordInput,
+  UpdateRecordInput,
   NewPrescriptionInput,
+  UpdatePrescriptionInput,
   NewLabInput,
+  UpdateLabInput,
   MedicationInput,
   NewInvoiceInput,
   ClinicSettingsInput,

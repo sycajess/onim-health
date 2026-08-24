@@ -9,6 +9,8 @@ type RecordDetailModalProps = {
   patient?: Patient
   open: boolean
   onClose: () => void
+  onEdit?: () => void
+  onDelete?: () => void
 }
 
 function DetailBlock({ label, value }: { label: string; value: string }) {
@@ -21,7 +23,7 @@ function DetailBlock({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function RecordDetailModal({ record, patient, open, onClose }: RecordDetailModalProps) {
+export function RecordDetailModal({ record, patient, open, onClose, onEdit, onDelete }: RecordDetailModalProps) {
   const { profile } = useAuth()
   const { db } = useData()
 
@@ -49,21 +51,27 @@ export function RecordDetailModal({ record, patient, open, onClose }: RecordDeta
       title={`${record.type} — ${fmtDate(record.date)}`}
       onClose={onClose}
       footer={
-        hasLabs ? (
+        hasLabs || onEdit || onDelete ? (
           <>
             <Button variant="secondary" onClick={onClose}>Close</Button>
-            <Button
-              variant="secondary"
-              onClick={() => emailLabOrder({ patient, record, clinician })}
-            >
-              Email lab order
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => openLabOrderPrint({ patient, record, clinician })}
-            >
-              Print / PDF lab order
-            </Button>
+            {onEdit && <Button variant="secondary" onClick={onEdit}>Edit</Button>}
+            {onDelete && <Button variant="danger" onClick={onDelete}>Delete</Button>}
+            {hasLabs && (
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => emailLabOrder({ patient, record, clinician })}
+                >
+                  Email lab order
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => openLabOrderPrint({ patient, record, clinician })}
+                >
+                  Print / PDF lab order
+                </Button>
+              </>
+            )}
           </>
         ) : undefined
       }

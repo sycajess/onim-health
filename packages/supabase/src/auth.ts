@@ -1,5 +1,6 @@
 import type { Profile, Role } from '@onim/types'
 import { getSupabase } from './client'
+import { logAuditEvent } from './audit'
 
 type DbProfile = {
   id: string
@@ -89,6 +90,8 @@ export async function supabaseSignIn(
 
   const profile = await fetchProfile(data.user.id)
   if (!profile) return { error: 'Profile not found for this account.' }
+
+  void logAuditEvent({ action: 'login', entity_type: 'auth', entity_id: profile.id })
 
   return { profile }
 }
