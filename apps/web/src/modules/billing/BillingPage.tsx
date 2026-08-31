@@ -18,7 +18,7 @@ import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { BillingReceiptModal } from '../../components/BillingReceiptModal'
 import { NewInvoiceModal } from '../../components/modals/ClinicModals'
 import { NhisExportModal } from './NhisExportModal'
-import { emailInvoiceToPatient, openInvoicePrint } from '../../lib/invoiceDocument'
+import { emailInvoiceToPatient, emailReceiptToPatient, openInvoicePrint, openReceiptPrint } from '../../lib/invoiceDocument'
 import '@onim/ui/Card.css'
 
 const STATUSES = ['Pending', 'Paid – Cash', 'Paid – MoMo', 'Paid – Insurance', 'Partial']
@@ -108,7 +108,11 @@ export function BillingPage() {
                         <IconAction icon="print" label="Save invoice PDF" onClick={() => openInvoicePrint(invoiceDoc(b))} />
                         <IconAction icon="mail" label="Email invoice to patient" onClick={() => emailInvoiceToPatient(invoiceDoc(b))} />
                         {isPaidBillingStatus(b.status) && (
-                          <IconAction icon="paid" label="View receipt" onClick={() => setReceiptInvoice(b)} />
+                          <>
+                            <IconAction icon="paid" label="View receipt" onClick={() => setReceiptInvoice(b)} />
+                            <IconAction icon="complete" label="Save receipt PDF" onClick={() => openReceiptPrint(invoiceDoc(b))} />
+                            <IconAction icon="send" label="Email receipt to patient" onClick={() => emailReceiptToPatient(invoiceDoc(b))} />
+                          </>
                         )}
                         {canWrite && (
                           <StatusIconMenu value={b.status} options={STATUSES} onChange={(s) => void updateBillingStatus(b.id, s)} />

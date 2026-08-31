@@ -9,7 +9,7 @@ import {
   type BillingTariffTier,
 } from '@onim/data'
 import { Button, Modal } from '@onim/ui'
-import { emailInvoiceToPatient, openInvoicePrint } from '../lib/invoiceDocument'
+import { emailInvoiceToPatient, emailReceiptToPatient, openInvoicePrint, openReceiptPrint } from '../lib/invoiceDocument'
 
 type BillingReceiptModalProps = {
   open: boolean
@@ -34,18 +34,26 @@ export function BillingReceiptModal({ open, onClose, invoice, patient }: Billing
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Close</Button>
-          <Button
-            variant="secondary"
-            onClick={() => emailInvoiceToPatient({ invoice, patient, clinicName: 'Onim Health' })}
-          >
-            Email patient
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => openInvoicePrint({ invoice, patient, clinicName: 'Onim Health' })}
-          >
-            Save as PDF
-          </Button>
+          {paid && (
+            <>
+              <Button variant="secondary" onClick={() => emailReceiptToPatient({ invoice, patient, clinicName: 'Onim Health' })}>
+                Email receipt
+              </Button>
+              <Button variant="primary" onClick={() => openReceiptPrint({ invoice, patient, clinicName: 'Onim Health' })}>
+                Save receipt PDF
+              </Button>
+            </>
+          )}
+          {!paid && (
+            <>
+              <Button variant="secondary" onClick={() => emailInvoiceToPatient({ invoice, patient, clinicName: 'Onim Health' })}>
+                Email invoice
+              </Button>
+              <Button variant="primary" onClick={() => openInvoicePrint({ invoice, patient, clinicName: 'Onim Health' })}>
+                Save invoice PDF
+              </Button>
+            </>
+          )}
         </>
       }
     >

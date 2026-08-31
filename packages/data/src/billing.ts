@@ -33,6 +33,10 @@ export type BillingLineItem = {
   icd10Name?: string
   gdrg?: string
   gdrgName?: string
+  /** When service is Medication / Drugs — clinic inventory id */
+  inventoryMedId?: string
+  /** Units dispensed from inventory for this line */
+  qty?: number
 }
 
 export type BillingServicesPayload = {
@@ -97,19 +101,10 @@ export function validateInvoiceForSave(input: {
   if (!input.lines.some((l) => l.type.trim() || l.description.trim())) {
     return 'Add at least one service line with a type or description.'
   }
-  // ICD-10 and G-DRG are optional for cash/private; recommended for NHIS claims
-  if (input.paymentTier === 'nhis') {
-    if (!input.patientNhis.trim()) {
-      return 'Patient NHIS membership number is required for NHIS billing.'
-    }
-    for (const line of input.lines) {
-      if (!line.gdrg?.trim()) {
-        return 'Each NHIS service line needs a G-DRG code.'
-      }
-    }
-  }
-  const total = billingLinesTotal(input.lines, input.paymentTier)
-  if (total <= 0) return 'Invoice total must be greater than zero for the selected tariff tier.'
+  // Most fields optional — only block empty invoice shell
+  void input.primaryIcd10
+  void input.patientNhis
+  void input.paymentTier
   return null
 }
 
@@ -122,9 +117,11 @@ export function isArchivedBillingStatus(status: string): boolean {
   return isPaidBillingStatus(status)
 }
 
-/** Completed / cancelled appointments leave the live queue but stay in Archive. */
-export function isArchivedAppointmentStatus(status: string): boolean {
-  return status === 'Completed' || status === 'Cancelled'
+/** Completed / cancelled / past-date appointments leave the live queue. */
+export function isArchivedAppointmentStatus(status: string, date?: string, todayStr?: string): boolean {
+  if (status === 'Completed' || status === 'Cancelled') return true
+  if (date && todayStr && date < todayStr) return true
+  return false
 }
 
 export function billingPaymentMethod(status: string): string {

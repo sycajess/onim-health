@@ -666,9 +666,11 @@ type MedicationModalProps = {
   open: boolean
   onClose: () => void
   item?: InventoryItem
+  /** Prefill when adding a new lot after archiving an old one */
+  seedFrom?: InventoryItem
 }
 
-export function MedicationModal({ open, onClose, item }: MedicationModalProps) {
+export function MedicationModal({ open, onClose, item, seedFrom }: MedicationModalProps) {
   const { saveMedication } = useData()
   const [name, setName] = useState('')
   const [generic, setGeneric] = useState('')
@@ -676,24 +678,26 @@ export function MedicationModal({ open, onClose, item }: MedicationModalProps) {
   const [lot, setLot] = useState('')
   const [expiry, setExpiry] = useState('')
   const [qty, setQty] = useState('0')
-  const [threshold, setThreshold] = useState('10')
+  const [threshold, setThreshold] = useState('0')
   const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (!open) return
-    setName(item?.name ?? '')
-    setGeneric(item?.generic ?? '')
-    setCategory(item?.category ?? 'General')
-    setLot(item?.lot ?? '')
-    setExpiry(item?.expiry ?? '')
-    setQty(String(item?.qty ?? 0))
-    setThreshold(String(item?.threshold ?? 10))
+    const source = item ?? seedFrom
+    setName(source?.name ?? '')
+    setGeneric(source?.generic ?? '')
+    setCategory(source?.category ?? 'General')
+    setLot(item ? (item.lot ?? '') : '')
+    setExpiry(item?.expiry ?? seedFrom?.expiry ?? '')
+    setQty(item ? String(item.qty ?? 0) : '0')
+    setThreshold(String(source?.threshold ?? 0))
     setSaveError('')
-  }, [open, item])
+  }, [open, item, seedFrom])
 
   async function handleSave() {
     if (!name.trim() || !lot.trim() || !expiry) return
     setSaveError('')
+    const parsedThreshold = threshold.trim() === '' ? 0 : Number(threshold)
     const ok = await saveMedication(
       {
         name: name.trim(),
@@ -702,12 +706,12 @@ export function MedicationModal({ open, onClose, item }: MedicationModalProps) {
         lot: lot.trim(),
         expiry,
         qty: Number(qty) || 0,
-        threshold: Number(threshold) || 10,
-        form: item?.form,
-        strength: item?.strength,
-        supplier: item?.supplier,
-        cost: item?.cost,
-        storage: item?.storage,
+        threshold: Number.isFinite(parsedThreshold) ? parsedThreshold : 0,
+        form: item?.form ?? seedFrom?.form,
+        strength: item?.strength ?? seedFrom?.strength,
+        supplier: item?.supplier ?? seedFrom?.supplier,
+        cost: item?.cost ?? seedFrom?.cost,
+        storage: item?.storage ?? seedFrom?.storage,
       },
       item?.id,
     )
@@ -721,20 +725,27 @@ export function MedicationModal({ open, onClose, item }: MedicationModalProps) {
   return (
     <ModalShell
       open={open}
-      title={item ? 'Edit Medication' : 'Add Medication'}
+      title={item ? 'Edit Medication' : seedFrom ? `New lot — ${seedFrom.name}` : 'Add Medication'}
       onClose={onClose}
       onSave={handleSave}
       saveDisabled={!name.trim() || !lot.trim() || !expiry}
     >
       {saveError && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{saveError}</p>}
+      {seedFrom && !item && (
+        <p style={{ fontSize: 12, color: 'var(--gray4)', marginBottom: 12 }}>
+          Previous lot <strong>{seedFrom.lot}</strong> was archived. Enter the new lot number and quantity.
+        </p>
+      )}
       <FormGrid>
         <FormField label="Name" span={2}><input className="form-input" value={name} onChange={(e) => setName(e.target.value)} /></FormField>
         <FormField label="Generic"><input className="form-input" value={generic} onChange={(e) => setGeneric(e.target.value)} /></FormField>
         <FormField label="Category"><input className="form-input" value={category} onChange={(e) => setCategory(e.target.value)} /></FormField>
-        <FormField label="Lot number"><input className="form-input" value={lot} onChange={(e) => setLot(e.target.value)} /></FormField>
+        <FormField label="Lot number"><input className="form-input" value={lot} onChange={(e) => setLot(e.target.value)} placeholder="Required — unique per shipment" /></FormField>
         <FormField label="Expiry"><input className="form-input" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} /></FormField>
-        <FormField label="Quantity"><input className="form-input" type="number" min={0} value={qty} onChange={(e) => setQty(e.target.value)} /></FormField>
-        <FormField label="Reorder threshold"><input className="form-input" type="number" min={0} value={threshold} onChange={(e) => setThreshold(e.target.value)} /></FormField>
+        <FormField label="Quantity"><input className="form-input" type="number" value={qty} onChange={(e) => setQty(e.target.value)} /></FormField>
+        <FormField label="Reorder threshold">
+          <input className="form-input" type="number" value={threshold} onChange={(e) => setThreshold(e.target.value)} placeholder="0 allowed" />
+        </FormField>
       </FormGrid>
     </ModalShell>
   )
@@ -797,12 +808,14 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
 
   const patient = db.patients.find((p) => p.id === patientId)
   const total = billingLinesTotal(lines, paymentTier)
-  const inventoryItems = db.inventory.map((m) => ({
-    id: m.id,
-    name: m.name,
-    strength: m.strength,
-    generic: m.generic,
-  }))
+  const inventoryItems = db.inventory
+    .filter((m) => !m.archived)
+    .map((m) => ({
+      id: m.id,
+      name: m.name,
+      strength: m.strength,
+      generic: m.generic,
+    }))
 
   const searchGdrg = useCallback(
     async (q: string) =>
@@ -927,18 +940,33 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
                     <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeLine(index)} disabled={lines.length <= 1}>✕</button>
                   </div>
                   {isDrug ? (
-                    <MedicationSearch
-                      value={line.description}
-                      onChange={(name) => updateLine(index, { description: name })}
-                      onSelectInventory={(item) => {
-                        const label = [item.name, item.strength].filter(Boolean).join(' — ')
-                        updateLine(index, { description: label })
-                      }}
-                      inventoryItems={inventoryItems}
-                      placeholder="Pick drug from clinic inventory…"
-                    />
+                    <>
+                      <MedicationSearch
+                        value={line.description}
+                        onChange={(name) => updateLine(index, { description: name, inventoryMedId: undefined })}
+                        onSelectInventory={(item) => {
+                          const full = db.inventory.find((m) => m.id === item.id)
+                          const label = [item.name, item.strength, full?.lot ? `Lot ${full.lot}` : ''].filter(Boolean).join(' — ')
+                          updateLine(index, {
+                            description: label,
+                            inventoryMedId: item.id,
+                            qty: line.qty && line.qty > 0 ? line.qty : 1,
+                          })
+                        }}
+                        inventoryItems={inventoryItems}
+                        placeholder="Pick drug from clinic inventory…"
+                      />
+                      <input
+                        className="form-input"
+                        type="number"
+                        min={1}
+                        value={line.qty ?? 1}
+                        onChange={(e) => updateLine(index, { qty: Math.max(1, Number(e.target.value) || 1) })}
+                        placeholder="Qty to dispense from inventory"
+                      />
+                    </>
                   ) : (
-                    <input className="form-input" value={line.description} onChange={(e) => updateLine(index, { description: e.target.value })} placeholder="Description" />
+                    <input className="form-input" value={line.description} onChange={(e) => updateLine(index, { description: e.target.value })} placeholder="Description (optional)" />
                   )}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
                     <input className="form-input" type="number" min={0} step={0.01} value={line.cashPrice || ''} onChange={(e) => updateLine(index, { cashPrice: Number(e.target.value) || 0 })} placeholder="Cash (GHS)" />
@@ -957,7 +985,7 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
                       })
                     }}
                     search={searchGdrg}
-                    placeholder={paymentTier === 'nhis' ? 'G-DRG code (required for NHIS)…' : 'G-DRG code (optional)…'}
+                    placeholder="G-DRG code (optional)…"
                   />
                 </div>
               )

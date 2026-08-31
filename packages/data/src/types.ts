@@ -113,6 +113,7 @@ export type InventoryItem = {
   threshold: number
   cost: number
   storage: string
+  archived?: boolean
 }
 
 export type DispenseLogEntry = {

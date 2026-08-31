@@ -71,7 +71,41 @@ export function DashboardPage() {
       </div>
 
       {isAdmin && (
-        <Card title="Activity log" action={<Link to="/settings" className="link-cell">Full audit trail</Link>} noPadding>
+        <Card title="Notifications (last 24 hours)" action={<Link to="/activity" className="link-cell">Open activity log</Link>} noPadding>
+          {activityLoading && !activity.length ? (
+            <p style={{ padding: 16, fontSize: 13, color: 'var(--gray4)' }}>Loading…</p>
+          ) : activity.filter((row) => {
+            const tMs = Date.parse(row.created_at)
+            return !Number.isNaN(tMs) && Date.now() - tMs <= 24 * 60 * 60 * 1000 && row.user_id !== profile?.id
+          }).length ? (
+            <table className="data-table">
+              <thead>
+                <tr><th>When</th><th>Activity</th><th>Role</th></tr>
+              </thead>
+              <tbody>
+                {activity
+                  .filter((row) => {
+                    const tMs = Date.parse(row.created_at)
+                    return !Number.isNaN(tMs) && Date.now() - tMs <= 24 * 60 * 60 * 1000 && row.user_id !== profile?.id
+                  })
+                  .slice(0, 15)
+                  .map((row) => (
+                    <tr key={row.id}>
+                      <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{new Date(row.created_at).toLocaleString()}</td>
+                      <td style={{ fontSize: 13 }}>{formatAuditActivity(row)}</td>
+                      <td><Badge>{row.user_role || '—'}</Badge></td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          ) : (
+            <EmptyState icon="🔔" title="No team notifications" description="Other staff activity from the last 24 hours shows here. Your own actions are listed in the full activity log." />
+          )}
+        </Card>
+      )}
+
+      {isAdmin && (
+        <Card title="Activity log" action={<Link to="/activity" className="link-cell">View all</Link>} noPadding>
           {activityLoading && !activity.length ? (
             <p style={{ padding: 16, fontSize: 13, color: 'var(--gray4)' }}>Loading activity…</p>
           ) : activity.length ? (
@@ -80,7 +114,7 @@ export function DashboardPage() {
                 <tr><th>When</th><th>Activity</th><th>Role</th></tr>
               </thead>
               <tbody>
-                {activity.slice(0, 25).map((row) => (
+                {activity.slice(0, 12).map((row) => (
                   <tr key={row.id}>
                     <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{new Date(row.created_at).toLocaleString()}</td>
                     <td style={{ fontSize: 13 }}>{formatAuditActivity(row)}</td>

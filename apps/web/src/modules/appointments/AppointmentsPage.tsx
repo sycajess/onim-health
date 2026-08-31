@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
-import { useData, fmtDate, patientFullName, isArchivedAppointmentStatus } from '@onim/data'
+import { useData, fmtDate, patientFullName, isArchivedAppointmentStatus, today } from '@onim/data'
 import { Badge, Button, Card, EmptyState } from '@onim/ui'
 import { RowActions } from '../../components/IconAction'
 import { AppointmentMeetCell } from '../../components/AppointmentMeetCell'
@@ -19,12 +19,13 @@ export function AppointmentsPage() {
   const canWrite = canWriteModule('appointments')
   const [modalOpen, setModalOpen] = useState(false)
   const [tab, setTab] = useState<ListTab>('active')
+  const todayStr = today()
 
   const { active, archived } = useMemo(() => {
-    const activeList = db.appointments.filter((a) => !isArchivedAppointmentStatus(a.status))
-    const archivedList = db.appointments.filter((a) => isArchivedAppointmentStatus(a.status))
+    const activeList = db.appointments.filter((a) => !isArchivedAppointmentStatus(a.status, a.date, todayStr))
+    const archivedList = db.appointments.filter((a) => isArchivedAppointmentStatus(a.status, a.date, todayStr))
     return { active: activeList, archived: archivedList }
-  }, [db.appointments])
+  }, [db.appointments, todayStr])
 
   const rows = tab === 'active' ? active : archived
 
@@ -35,7 +36,7 @@ export function AppointmentsPage() {
         action={canWrite ? <Button variant="primary" onClick={() => setModalOpen(true)}>+ Schedule Appointment</Button> : undefined}
         noPadding
       >
-        <div className="list-tabs" style={{ display: 'flex', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--gray2)' }}>
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--gray2)' }}>
           <Button variant={tab === 'active' ? 'primary' : 'secondary'} onClick={() => setTab('active')}>
             Active ({active.length})
           </Button>
@@ -87,7 +88,7 @@ export function AppointmentsPage() {
           <EmptyState
             icon="📅"
             title={tab === 'active' ? 'No active appointments' : 'Archive is empty'}
-            description={tab === 'active' ? 'Completed and cancelled visits move here when status is updated.' : 'Completed and cancelled appointments appear here so you can revisit them.'}
+            description={tab === 'active' ? 'Past, completed, and cancelled visits move to Archive.' : 'Past, completed, and cancelled appointments appear here so you can revisit them.'}
           />
         )}
       </Card>

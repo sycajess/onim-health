@@ -12,6 +12,8 @@ import {
   deletePrescription,
   deletePatient,
   dispenseMedication,
+  archiveInventoryLot,
+  restoreInventoryLot,
   emptyDatabase,
   fetchDatabase,
   saveLabAttachment,
@@ -75,6 +77,8 @@ type DataContextValue = {
   updateLabResultFields: (id: string, patientId: string, input: UpdateLabInput) => Promise<boolean>
   deleteLabResult: (id: string, patientId: string) => Promise<boolean>
   saveMedication: (input: MedicationInput, existingId?: string) => Promise<boolean>
+  archiveInventoryLot: (id: string) => Promise<boolean>
+  restoreInventoryLot: (id: string) => Promise<boolean>
   dispenseMedication: (medId: string, patientId: string, qty: number, patientName: string) => Promise<boolean | { error: string }>
   updateBillingStatus: (id: string, status: string) => Promise<boolean>
   updateBillingNhisCleared: (id: string, cleared: boolean) => Promise<boolean>
@@ -274,6 +278,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [refresh],
   )
 
+  const handleArchiveInventoryLot = useCallback(
+    async (id: string) => runMutation(() => archiveInventoryLot(id), refresh),
+    [refresh],
+  )
+
+  const handleRestoreInventoryLot = useCallback(
+    async (id: string) => runMutation(() => restoreInventoryLot(id), refresh),
+    [refresh],
+  )
+
   const handleDispenseMedication = useCallback(
     async (medId: string, patientId: string, qty: number, patientName: string) => {
       const provider = profile?.full_name ?? ''
@@ -357,6 +371,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateLabResultFields: handleUpdateLabResultFields,
       deleteLabResult: handleDeleteLabResult,
       saveMedication: handleSaveMedication,
+      archiveInventoryLot: handleArchiveInventoryLot,
+      restoreInventoryLot: handleRestoreInventoryLot,
       dispenseMedication: handleDispenseMedication,
       updateBillingStatus: handleUpdateBillingStatus,
       updateBillingNhisCleared: handleUpdateBillingNhisCleared,
@@ -393,6 +409,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       handleUpdateLabResultFields,
       handleDeleteLabResult,
       handleSaveMedication,
+      handleArchiveInventoryLot,
+      handleRestoreInventoryLot,
       handleDispenseMedication,
       handleUpdateBillingStatus,
       handleUpdateBillingNhisCleared,

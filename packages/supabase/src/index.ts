@@ -50,6 +50,8 @@ export {
   updateLabResult,
   deleteLabResult,
   saveMedication,
+  archiveInventoryLot,
+  restoreInventoryLot,
   dispenseMedication,
   updateBillingStatus,
   createInvoice,

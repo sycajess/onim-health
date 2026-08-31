@@ -521,7 +521,7 @@ export async function saveMedication(
       lot: input.lot,
       expiry: input.expiry,
       qty: input.qty,
-      threshold: input.threshold ?? Number(existing.threshold ?? 10),
+      threshold: input.threshold !== undefined ? input.threshold : Number(existing.threshold ?? 0),
       cost: input.cost ?? Number(existing.cost ?? 0),
       storage: input.storage ?? String(existing.storage ?? ''),
     }
@@ -533,7 +533,7 @@ export async function saveMedication(
       entity_id: existingId,
       details: { name: row.name, qty: row.qty },
     })
-    return { id: existingId, ...row } as InventoryItem
+    return { id: existingId, ...row, archived: Boolean(existing.archived) } as InventoryItem
   }
 
   const row = {
@@ -546,9 +546,10 @@ export async function saveMedication(
     lot: input.lot,
     expiry: input.expiry,
     qty: input.qty,
-    threshold: input.threshold ?? 10,
+    threshold: input.threshold !== undefined ? input.threshold : 0,
     cost: input.cost ?? 0,
     storage: input.storage ?? '',
+    archived: false,
   }
   const id = await nextId('inventory', 'M')
   const { error } = await supabase.from('inventory').insert({ id, ...row })
@@ -557,9 +558,39 @@ export async function saveMedication(
     action: 'create',
     entity_type: 'inventory',
     entity_id: id,
-    details: { name: row.name, qty: row.qty },
+    details: { name: row.name, qty: row.qty, lot: row.lot },
   })
   return { id, ...row } as InventoryItem
+}
+
+export async function archiveInventoryLot(id: string): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { data: existing, error: fetchErr } = await supabase.from('inventory').select('name, lot').eq('id', id).single()
+  if (fetchErr) return { error: fetchErr.message }
+  const { error } = await supabase.from('inventory').update({ archived: true }).eq('id', id)
+  if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'update',
+    entity_type: 'inventory',
+    entity_id: id,
+    details: { archived: true, name: existing?.name, lot: existing?.lot },
+  })
+  return true
+}
+
+export async function restoreInventoryLot(id: string): Promise<true | MutError> {
+  const supabase = getSupabase()
+  if (!supabase) return notConfigured()
+  const { error } = await supabase.from('inventory').update({ archived: false }).eq('id', id)
+  if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'update',
+    entity_type: 'inventory',
+    entity_id: id,
+    details: { archived: false },
+  })
+  return true
 }
 
 export async function dispenseMedication(
@@ -647,6 +678,42 @@ export async function createInvoice(input: NewInvoiceInput): Promise<BillingInvo
   }
   const { error } = await supabase.from('billing').insert(row)
   if (error) return { error: error.message }
+
+  // Deduct inventory + dispense log for medication lines tied to stock
+  try {
+    let lines: { type?: string; inventoryMedId?: string; qty?: number }[] = []
+    try {
+      const parsed = JSON.parse(row.services) as { lines?: typeof lines }
+      if (Array.isArray(parsed?.lines)) lines = parsed.lines
+    } catch {
+      lines = []
+    }
+    const { data: patient } = await supabase.from('patients').select('fname, lname').eq('id', input.patient_id).maybeSingle()
+    const patientName = patient ? `${patient.fname ?? ''} ${patient.lname ?? ''}`.trim() : input.patient_id
+    const { data: authUser } = await supabase.auth.getUser()
+    const { data: profile } = authUser.user
+      ? await supabase.from('profiles').select('full_name').eq('id', authUser.user.id).maybeSingle()
+      : { data: null }
+    const provider = String(profile?.full_name ?? 'Billing')
+
+    for (const line of lines) {
+      if (line.type !== 'Medication / Drugs' || !line.inventoryMedId) continue
+      const qty = Math.max(1, Number(line.qty) || 1)
+      const dispenseResult = await dispenseMedication(line.inventoryMedId, input.patient_id, qty, provider, patientName)
+      if (typeof dispenseResult === 'object' && 'error' in dispenseResult) {
+        void logAuditEvent({
+          action: 'update',
+          entity_type: 'billing',
+          entity_id: id,
+          patient_id: input.patient_id,
+          details: { dispense_error: dispenseResult.error, med_id: line.inventoryMedId },
+        })
+      }
+    }
+  } catch {
+    /* invoice already saved */
+  }
+
   void logAuditEvent({
     action: 'create',
     entity_type: 'billing',

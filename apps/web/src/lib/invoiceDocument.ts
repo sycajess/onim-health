@@ -189,3 +189,97 @@ export function emailInvoiceToPatient(input: InvoiceDocInput) {
   )
   window.location.href = `mailto:${encodeURIComponent(patient.email.trim())}?subject=${subject}&body=${body}`
 }
+
+export function openReceiptPrint(input: InvoiceDocInput) {
+  const { invoice, patient } = input
+  const clinic = input.clinicName || 'Onim Health'
+  const contact = input.clinicContact || 'platform.onimhealth.com'
+  const lines = parseBillingServices(invoice.services)
+  const tier = (invoice.payment_tier ?? 'cash') as BillingTariffTier
+  const total = lines.length ? billingLinesTotal(lines, tier) : invoice.amount
+  const patientName = patient ? patientFullName(patient) : '—'
+  const lineRows = lines.length
+    ? lines
+        .map(
+          (line) => `
+      <tr>
+        <td>${escapeHtml(String(line.type || 'Service'))}</td>
+        <td>${escapeHtml(line.description || '—')}</td>
+        <td class="num">GHS ${billingLineAmount(line, tier).toLocaleString('en-GH', { minimumFractionDigits: 2 })}</td>
+      </tr>`,
+        )
+        .join('')
+    : `<tr><td colspan="2">${escapeHtml(invoice.services || 'Services')}</td><td class="num">GHS ${invoice.amount.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</td></tr>`
+
+  const html = `<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8" /><title>${escapeHtml(clinic)} Receipt ${escapeHtml(invoice.id)}</title>
+<style>
+  body{font-family:Georgia,serif;color:#1a2e22;margin:0;padding:28px}
+  h1{margin:0;color:#1b5e3b;font-size:22px}
+  .sub{font-family:system-ui,sans-serif;font-size:12px;color:#5a6b60}
+  .badge{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:999px;background:#e8f5ee;color:#1b5e3b;font-family:system-ui,sans-serif;font-size:11px;font-weight:700}
+  table{width:100%;border-collapse:collapse;font-family:system-ui,sans-serif;font-size:13px;margin:18px 0}
+  th{text-align:left;background:#1b5e3b;color:#fff;padding:8px 10px}
+  td{border-bottom:1px solid #dde5df;padding:8px 10px}
+  .num{text-align:right}
+  .paid{font-family:system-ui,sans-serif;font-size:14px;color:#1b5e3b;font-weight:700;margin-top:12px}
+  .actions{margin-bottom:12px;font-family:system-ui,sans-serif}
+  .actions button{background:#1b5e3b;color:#fff;border:0;padding:8px 14px;border-radius:6px;cursor:pointer}
+  @media print{.actions{display:none}}
+</style></head><body>
+  <div class="actions"><button onclick="window.print()">Save as PDF / Print</button></div>
+  <h1>${escapeHtml(clinic)}</h1>
+  <div class="sub">Electronic Health Record · Payment Receipt</div>
+  <div class="sub">${escapeHtml(contact)}</div>
+  <div class="badge">PAID · ${escapeHtml(billingPaymentMethod(invoice.status))}</div>
+  <p style="font-family:system-ui,sans-serif;font-size:13px;margin-top:16px">
+    <strong>Receipt / Invoice:</strong> ${escapeHtml(invoice.id)}<br/>
+    <strong>Date:</strong> ${escapeHtml(fmtDate(invoice.date))}<br/>
+    <strong>Patient:</strong> ${escapeHtml(patientName)} (${escapeHtml(patient?.id || '—')})
+  </p>
+  <table><thead><tr><th>Service</th><th>Description</th><th class="num">Amount</th></tr></thead><tbody>${lineRows}</tbody></table>
+  <div class="paid">Total paid: GHS ${total.toLocaleString('en-GH', { minimumFractionDigits: 2 })}</div>
+  ${invoice.notes ? `<p style="font-family:system-ui,sans-serif;font-size:12px;color:#555">Notes: ${escapeHtml(invoice.notes)}</p>` : ''}
+  <p style="font-family:system-ui,sans-serif;font-size:11px;color:#667;margin-top:24px">This receipt was generated from the ${escapeHtml(clinic)} EHR billing module. Retain for your records.</p>
+</body></html>`
+
+  const win = window.open('', '_blank', 'noopener,noreferrer,width=860,height=1000')
+  if (!win) {
+    window.alert('Please allow pop-ups to save or print the receipt PDF.')
+    return
+  }
+  win.document.open()
+  win.document.write(html)
+  win.document.close()
+}
+
+export function emailReceiptToPatient(input: InvoiceDocInput) {
+  const { invoice, patient } = input
+  if (!patient?.email?.trim()) {
+    window.alert('This patient has no email on file. Add an email on the patient profile, or use Save as PDF.')
+    return
+  }
+  const clinic = input.clinicName || 'Onim Health'
+  const name = patientFullName(patient)
+  const lines = parseBillingServices(invoice.services)
+  const tier = (invoice.payment_tier ?? 'cash') as BillingTariffTier
+  const total = lines.length ? billingLinesTotal(lines, tier) : invoice.amount
+  const subject = encodeURIComponent(`${clinic} Payment Receipt ${invoice.id} — ${name}`)
+  const body = encodeURIComponent(
+    [
+      `${clinic} — Payment Receipt`,
+      '',
+      `Dear ${name},`,
+      '',
+      `Thank you for your payment.`,
+      '',
+      `Receipt: ${invoice.id}`,
+      `Date: ${fmtDate(invoice.date)}`,
+      `Paid by: ${billingPaymentMethod(invoice.status)}`,
+      `Amount paid: GHS ${total.toLocaleString('en-GH', { minimumFractionDigits: 2 })}`,
+      '',
+      'Thank you for choosing Onim Health.',
+    ].join('\n'),
+  )
+  window.location.href = `mailto:${encodeURIComponent(patient.email.trim())}?subject=${subject}&body=${body}`
+}

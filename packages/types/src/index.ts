@@ -19,6 +19,7 @@ export type ModuleId =
   | 'billing'
   | 'messaging'
   | 'reports'
+  | 'activity'
   | 'settings'
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -44,6 +45,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: true,
     messaging: true,
     reports: true,
+    activity: true,
     settings: true,
   },
   doctor: {
@@ -57,6 +59,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: false,
     messaging: true,
     reports: true,
+    activity: false,
     settings: false,
   },
   pharmacist: {
@@ -70,6 +73,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: true,
     messaging: true,
     reports: true,
+    activity: false,
     settings: false,
   },
   nutritionist: {
@@ -83,6 +87,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: false,
     messaging: true,
     reports: false,
+    activity: false,
     settings: false,
   },
   nurse: {
@@ -96,6 +101,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: false,
     messaging: true,
     reports: false,
+    activity: false,
     settings: false,
   },
   staff: {
@@ -109,6 +115,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: false,
     messaging: true,
     reports: false,
+    activity: false,
     settings: false,
   },
   accountant: {
@@ -122,6 +129,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: true,
     messaging: false,
     reports: true,
+    activity: false,
     settings: false,
   },
   lab_partner: {
@@ -135,6 +143,7 @@ export const ROLE_PERMISSIONS: Record<Role, Record<ModuleId, boolean>> = {
     billing: false,
     messaging: false,
     reports: false,
+    activity: false,
     settings: false,
   },
 }
@@ -159,6 +168,7 @@ export const MODULES: ModuleConfig[] = [
   { id: 'billing', path: '/billing', label: 'Billing', icon: '🧾', section: 'operations', roles: ['admin', 'accountant', 'pharmacist'] },
   { id: 'messaging', path: '/messaging', label: 'Team Messaging', icon: '💬', section: 'operations', roles: ['admin', 'doctor', 'pharmacist', 'nutritionist', 'nurse', 'staff'] },
   { id: 'reports', path: '/reports', label: 'Reports', icon: '📊', section: 'analytics', roles: ['admin', 'doctor', 'pharmacist', 'accountant'] },
+  { id: 'activity', path: '/activity', label: 'Activity Log', icon: '🔔', section: 'system', roles: ['admin'] },
   { id: 'settings', path: '/settings', label: 'Settings', icon: '⚙️', section: 'system', roles: ['admin'] },
 ]
 

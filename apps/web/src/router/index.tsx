@@ -22,6 +22,7 @@ const BillingPage = lazyRoute(() => import('../modules/billing/BillingPage'), 'B
 const MessagingPage = lazyRoute(() => import('../modules/messaging/MessagingPage'), 'MessagingPage')
 const ReportsPage = lazyRoute(() => import('../modules/reports/ReportsPage'), 'ReportsPage')
 const SettingsPage = lazyRoute(() => import('../modules/settings/SettingsPage'), 'SettingsPage')
+const ActivityLogPage = lazyRoute(() => import('../modules/activity/ActivityLogPage'), 'ActivityLogPage')
 
 function Lazy({ children }: { children: ReactNodeType }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>
@@ -145,6 +146,17 @@ export function AppRouter() {
               element={(
                 <Lazy>
                   <ReportsPage />
+                </Lazy>
+              )}
+            />
+          </Route>
+
+          <Route element={<ProtectedRoute module="activity" />}>
+            <Route
+              path="activity"
+              element={(
+                <Lazy>
+                  <ActivityLogPage />
                 </Lazy>
               )}
             />
