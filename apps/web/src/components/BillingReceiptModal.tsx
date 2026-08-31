@@ -9,6 +9,7 @@ import {
   type BillingTariffTier,
 } from '@onim/data'
 import { Button, Modal } from '@onim/ui'
+import { emailInvoiceToPatient, openInvoicePrint } from '../lib/invoiceDocument'
 
 type BillingReceiptModalProps = {
   open: boolean
@@ -25,10 +26,6 @@ export function BillingReceiptModal({ open, onClose, invoice, patient }: Billing
   const total = lines.length ? billingLinesTotal(lines, tier) : invoice.amount
   const paid = invoice.status.startsWith('Paid')
 
-  function handlePrint() {
-    window.print()
-  }
-
   return (
     <Modal
       open={open}
@@ -37,7 +34,18 @@ export function BillingReceiptModal({ open, onClose, invoice, patient }: Billing
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Close</Button>
-          <Button variant="primary" onClick={handlePrint}>Print Receipt</Button>
+          <Button
+            variant="secondary"
+            onClick={() => emailInvoiceToPatient({ invoice, patient, clinicName: 'Onim Health' })}
+          >
+            Email patient
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => openInvoicePrint({ invoice, patient, clinicName: 'Onim Health' })}
+          >
+            Save as PDF
+          </Button>
         </>
       }
     >

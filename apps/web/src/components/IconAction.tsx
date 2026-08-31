@@ -17,6 +17,8 @@ export type IconName =
   | 'pending'
   | 'message'
   | 'send'
+  | 'print'
+  | 'mail'
   | 'more'
 
 const ICONS: Record<IconName, ReactNode> = {
@@ -113,6 +115,19 @@ const ICONS: Record<IconName, ReactNode> = {
     <svg viewBox="0 0 24 24" aria-hidden>
       <path d="m22 2-7 20-4-9-9-4Z" />
       <path d="M22 2 11 13" />
+    </svg>
+  ),
+  print: (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <path d="M6 9V2h12v7" />
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+      <path d="M6 14h12v8H6z" />
+    </svg>
+  ),
+  mail: (
+    <svg viewBox="0 0 24 24" aria-hidden>
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="m22 7-10 7L2 7" />
     </svg>
   ),
   more: (

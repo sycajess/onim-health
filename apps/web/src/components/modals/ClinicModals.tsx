@@ -677,6 +677,7 @@ export function MedicationModal({ open, onClose, item }: MedicationModalProps) {
   const [expiry, setExpiry] = useState('')
   const [qty, setQty] = useState('0')
   const [threshold, setThreshold] = useState('10')
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (!open) return
@@ -687,10 +688,12 @@ export function MedicationModal({ open, onClose, item }: MedicationModalProps) {
     setExpiry(item?.expiry ?? '')
     setQty(String(item?.qty ?? 0))
     setThreshold(String(item?.threshold ?? 10))
+    setSaveError('')
   }, [open, item])
 
   async function handleSave() {
     if (!name.trim() || !lot.trim() || !expiry) return
+    setSaveError('')
     const ok = await saveMedication(
       {
         name: name.trim(),
@@ -700,10 +703,18 @@ export function MedicationModal({ open, onClose, item }: MedicationModalProps) {
         expiry,
         qty: Number(qty) || 0,
         threshold: Number(threshold) || 10,
+        form: item?.form,
+        strength: item?.strength,
+        supplier: item?.supplier,
+        cost: item?.cost,
+        storage: item?.storage,
       },
       item?.id,
     )
-    if (!ok) return
+    if (!ok) {
+      setSaveError('Could not save medication. Check your role permissions and try again.')
+      return
+    }
     onClose()
   }
 
@@ -715,6 +726,7 @@ export function MedicationModal({ open, onClose, item }: MedicationModalProps) {
       onSave={handleSave}
       saveDisabled={!name.trim() || !lot.trim() || !expiry}
     >
+      {saveError && <p style={{ color: 'var(--danger)', fontSize: 13, marginBottom: 12 }}>{saveError}</p>}
       <FormGrid>
         <FormField label="Name" span={2}><input className="form-input" value={name} onChange={(e) => setName(e.target.value)} /></FormField>
         <FormField label="Generic"><input className="form-input" value={generic} onChange={(e) => setGeneric(e.target.value)} /></FormField>
@@ -775,6 +787,7 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
   const [paymentTier, setPaymentTier] = useState<BillingTariffTier>('cash')
   const [primaryIcd10, setPrimaryIcd10] = useState('')
   const [primaryIcd10Name, setPrimaryIcd10Name] = useState('')
+  const [icdDisplay, setIcdDisplay] = useState('')
   const [lines, setLines] = useState<BillingLineItem[]>([
     { type: BILLING_SERVICE_TYPES[0], description: '', cashPrice: 0, privateInsurancePrice: 0, nhisTariff: 0 },
   ])
@@ -784,6 +797,12 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
 
   const patient = db.patients.find((p) => p.id === patientId)
   const total = billingLinesTotal(lines, paymentTier)
+  const inventoryItems = db.inventory.map((m) => ({
+    id: m.id,
+    name: m.name,
+    strength: m.strength,
+    generic: m.generic,
+  }))
 
   const searchGdrg = useCallback(
     async (q: string) =>
@@ -795,12 +814,15 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
     [],
   )
 
+  const searchIcd = useCallback(async (q: string) => searchIcd10(q), [])
+
   function reset() {
     setPatientId('')
     setDate(today())
     setPaymentTier('cash')
     setPrimaryIcd10('')
     setPrimaryIcd10Name('')
+    setIcdDisplay('')
     setLines([{ type: BILLING_SERVICE_TYPES[0], description: '', cashPrice: 0, privateInsurancePrice: 0, nhisTariff: 0 }])
     setStatus('Pending')
     setNotes('')
@@ -817,6 +839,19 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
 
   function removeLine(index: number) {
     setLines((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)))
+  }
+
+  function applyIcdTyping(raw: string) {
+    setIcdDisplay(raw)
+    const match = raw.match(/^(.*?)\s*\(([A-Za-z0-9.]+)\)\s*$/)
+    if (match) {
+      setPrimaryIcd10Name(match[1].trim())
+      setPrimaryIcd10(match[2].trim())
+      return
+    }
+    // Free-text allowed — keep as diagnosis name until a coded pick is made
+    setPrimaryIcd10Name(raw.trim())
+    setPrimaryIcd10('')
   }
 
   async function handleSave() {
@@ -840,7 +875,7 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
       notes,
       payment_tier: paymentTier,
       primary_icd10: primaryIcd10,
-      primary_icd10_name: primaryIcd10Name,
+      primary_icd10_name: primaryIcd10Name || icdDisplay,
     })
     if (!ok) {
       setSaveError('Could not save invoice.')
@@ -861,51 +896,72 @@ export function NewInvoiceModal({ open, onClose }: { open: boolean; onClose: () 
             {BILLING_TARIFF_TIERS.map((t) => <option key={t} value={t}>{BILLING_TARIFF_LABELS[t]}</option>)}
           </select>
         </FormField>
-        <FormField label="Primary ICD-10 diagnosis" span={2}>
+        <FormField label="Primary ICD-10 diagnosis (optional)" span={2}>
           <SearchInput
-            value={primaryIcd10Name ? `${primaryIcd10Name} (${primaryIcd10})` : ''}
-            onChange={() => {}}
+            value={icdDisplay}
+            onChange={applyIcdTyping}
             onSelect={(opt) => {
               setPrimaryIcd10(opt.code)
               setPrimaryIcd10Name(opt.name)
+              setIcdDisplay(opt.code ? `${opt.name} (${opt.code})` : opt.name)
             }}
-            search={searchIcd10}
-            placeholder="Required ICD-10…"
+            search={searchIcd}
+            placeholder="Type to search ICD-10 suggestions…"
           />
         </FormField>
         <FormField label="Total (GHS)"><input className="form-input" value={total.toFixed(2)} readOnly /></FormField>
         <FormField label="Services rendered" span={2}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {lines.map((line, index) => (
-              <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, border: '1px solid var(--gray2)', borderRadius: 8 }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'end' }}>
-                  <select className="form-input" value={line.type} onChange={(e) => updateLine(index, { type: e.target.value })}>
-                    {BILLING_SERVICE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeLine(index)} disabled={lines.length <= 1}>✕</button>
+            {lines.map((line, index) => {
+              const isDrug = line.type === 'Medication / Drugs'
+              return (
+                <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, border: '1px solid var(--gray2)', borderRadius: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'end' }}>
+                    <select
+                      className="form-input"
+                      value={line.type}
+                      onChange={(e) => updateLine(index, { type: e.target.value, description: e.target.value === 'Medication / Drugs' ? line.description : line.description })}
+                    >
+                      {BILLING_SERVICE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <button type="button" className="btn btn-secondary btn-sm" onClick={() => removeLine(index)} disabled={lines.length <= 1}>✕</button>
+                  </div>
+                  {isDrug ? (
+                    <MedicationSearch
+                      value={line.description}
+                      onChange={(name) => updateLine(index, { description: name })}
+                      onSelectInventory={(item) => {
+                        const label = [item.name, item.strength].filter(Boolean).join(' — ')
+                        updateLine(index, { description: label })
+                      }}
+                      inventoryItems={inventoryItems}
+                      placeholder="Pick drug from clinic inventory…"
+                    />
+                  ) : (
+                    <input className="form-input" value={line.description} onChange={(e) => updateLine(index, { description: e.target.value })} placeholder="Description" />
+                  )}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                    <input className="form-input" type="number" min={0} step={0.01} value={line.cashPrice || ''} onChange={(e) => updateLine(index, { cashPrice: Number(e.target.value) || 0 })} placeholder="Cash (GHS)" />
+                    <input className="form-input" type="number" min={0} step={0.01} value={line.privateInsurancePrice || ''} onChange={(e) => updateLine(index, { privateInsurancePrice: Number(e.target.value) || 0 })} placeholder="Private ins. (GHS)" />
+                    <input className="form-input" type="number" min={0} step={0.01} value={line.nhisTariff || ''} onChange={(e) => updateLine(index, { nhisTariff: Number(e.target.value) || 0 })} placeholder="NHIS (GHS)" />
+                  </div>
+                  <SearchInput
+                    value={line.gdrgName ? `${line.gdrgName} (${line.gdrg})` : ''}
+                    onChange={() => {}}
+                    onSelect={(opt) => {
+                      const gdrg = searchGdrgCodes(opt.code).find((g) => g.code === opt.code)
+                      updateLine(index, {
+                        gdrg: opt.code,
+                        gdrgName: opt.name,
+                        nhisTariff: gdrg?.tariff ?? line.nhisTariff,
+                      })
+                    }}
+                    search={searchGdrg}
+                    placeholder={paymentTier === 'nhis' ? 'G-DRG code (required for NHIS)…' : 'G-DRG code (optional)…'}
+                  />
                 </div>
-                <input className="form-input" value={line.description} onChange={(e) => updateLine(index, { description: e.target.value })} placeholder="Description" />
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-                  <input className="form-input" type="number" min={0} step={0.01} value={line.cashPrice || ''} onChange={(e) => updateLine(index, { cashPrice: Number(e.target.value) || 0 })} placeholder="Cash (GHS)" />
-                  <input className="form-input" type="number" min={0} step={0.01} value={line.privateInsurancePrice || ''} onChange={(e) => updateLine(index, { privateInsurancePrice: Number(e.target.value) || 0 })} placeholder="Private ins. (GHS)" />
-                  <input className="form-input" type="number" min={0} step={0.01} value={line.nhisTariff || ''} onChange={(e) => updateLine(index, { nhisTariff: Number(e.target.value) || 0 })} placeholder="NHIS (GHS)" />
-                </div>
-                <SearchInput
-                  value={line.gdrgName ? `${line.gdrgName} (${line.gdrg})` : ''}
-                  onChange={() => {}}
-                  onSelect={(opt) => {
-                    const gdrg = searchGdrgCodes(opt.code).find((g) => g.code === opt.code)
-                    updateLine(index, {
-                      gdrg: opt.code,
-                      gdrgName: opt.name,
-                      nhisTariff: gdrg?.tariff ?? line.nhisTariff,
-                    })
-                  }}
-                  search={searchGdrg}
-                  placeholder="G-DRG code…"
-                />
-              </div>
-            ))}
+              )
+            })}
             <button type="button" className="btn btn-secondary btn-sm" style={{ alignSelf: 'flex-start' }} onClick={addLine}>+ Add service line</button>
           </div>
         </FormField>

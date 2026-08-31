@@ -37,6 +37,12 @@ export async function updateAppointmentStatus(id: string, status: string): Promi
   if (!supabase) return notConfigured()
   const { error } = await supabase.from('appointments').update({ status }).eq('id', id)
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'update',
+    entity_type: 'appointment',
+    entity_id: id,
+    details: { status },
+  })
   return true
 }
 
@@ -495,6 +501,41 @@ export async function saveMedication(
 ): Promise<InventoryItem | MutError> {
   const supabase = getSupabase()
   if (!supabase) return notConfigured()
+
+  if (existingId) {
+    const { data: existing, error: fetchErr } = await supabase
+      .from('inventory')
+      .select('*')
+      .eq('id', existingId)
+      .single()
+    if (fetchErr || !existing) return { error: fetchErr?.message ?? 'Medication not found.' }
+
+    // Preserve fields the edit form does not collect (form, strength, supplier, cost, storage)
+    const row = {
+      name: input.name,
+      generic: input.generic ?? String(existing.generic ?? ''),
+      category: input.category ?? String(existing.category ?? 'General'),
+      form: input.form ?? String(existing.form ?? ''),
+      strength: input.strength ?? String(existing.strength ?? ''),
+      supplier: input.supplier ?? String(existing.supplier ?? ''),
+      lot: input.lot,
+      expiry: input.expiry,
+      qty: input.qty,
+      threshold: input.threshold ?? Number(existing.threshold ?? 10),
+      cost: input.cost ?? Number(existing.cost ?? 0),
+      storage: input.storage ?? String(existing.storage ?? ''),
+    }
+    const { error } = await supabase.from('inventory').update(row).eq('id', existingId)
+    if (error) return { error: error.message }
+    void logAuditEvent({
+      action: 'update',
+      entity_type: 'inventory',
+      entity_id: existingId,
+      details: { name: row.name, qty: row.qty },
+    })
+    return { id: existingId, ...row } as InventoryItem
+  }
+
   const row = {
     name: input.name,
     generic: input.generic ?? '',
@@ -509,16 +550,15 @@ export async function saveMedication(
     cost: input.cost ?? 0,
     storage: input.storage ?? '',
   }
-
-  if (existingId) {
-    const { error } = await supabase.from('inventory').update(row).eq('id', existingId)
-    if (error) return { error: error.message }
-    return { id: existingId, ...row } as InventoryItem
-  }
-
   const id = await nextId('inventory', 'M')
   const { error } = await supabase.from('inventory').insert({ id, ...row })
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'create',
+    entity_type: 'inventory',
+    entity_id: id,
+    details: { name: row.name, qty: row.qty },
+  })
   return { id, ...row } as InventoryItem
 }
 
@@ -552,6 +592,13 @@ export async function dispenseMedication(
     provider,
   })
   if (logErr) return { error: logErr.message }
+  void logAuditEvent({
+    action: 'create',
+    entity_type: 'dispense',
+    entity_id: medId,
+    patient_id: patientId,
+    details: { qty, med_name: String(med.name) },
+  })
   return true
 }
 
@@ -560,6 +607,12 @@ export async function updateBillingStatus(id: string, status: string): Promise<t
   if (!supabase) return notConfigured()
   const { error } = await supabase.from('billing').update({ status }).eq('id', id)
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'update',
+    entity_type: 'billing',
+    entity_id: id,
+    details: { status },
+  })
   return true
 }
 
@@ -594,6 +647,13 @@ export async function createInvoice(input: NewInvoiceInput): Promise<BillingInvo
   }
   const { error } = await supabase.from('billing').insert(row)
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'create',
+    entity_type: 'billing',
+    entity_id: id,
+    patient_id: input.patient_id,
+    details: { amount: row.amount, status: row.status },
+  })
   return {
     id,
     patient_id: input.patient_id,

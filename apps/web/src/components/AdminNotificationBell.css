@@ -1,0 +1,91 @@
+.admin-bell {
+  position: relative;
+}
+
+.admin-bell__btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--gray2);
+  background: var(--white, #fff);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.admin-bell__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-bell__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: min(360px, 90vw);
+  max-height: 420px;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--gray2);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  z-index: 40;
+}
+
+.admin-bell__head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--gray2);
+  position: sticky;
+  top: 0;
+  background: #fff;
+}
+
+.admin-bell__hint {
+  font-size: 11px;
+  color: var(--gray4);
+}
+
+.admin-bell__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-bell__list li {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--gray1, #f0f0f0);
+}
+
+.admin-bell__item-text {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.admin-bell__item-time {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--gray4);
+}
+
+.admin-bell__empty {
+  margin: 0;
+  padding: 18px 14px;
+  font-size: 13px;
+  color: var(--gray4);
+}

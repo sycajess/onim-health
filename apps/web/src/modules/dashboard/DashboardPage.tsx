@@ -1,15 +1,36 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '@onim/auth'
 import { useData, fmtDate, patientInitials, patientFullName, SPECIALTY_COLORS, today, daysUntil } from '@onim/data'
+import { fetchAuditLog, type AuditLogEntry } from '@onim/supabase'
 import { Badge, Card, EmptyState, StatCard } from '@onim/ui'
+import { formatAuditActivity } from '../../lib/auditLabels'
 import '@onim/ui/Card.css'
 
 export function DashboardPage() {
+  const { profile } = useAuth()
   const { db } = useData()
   const t = today()
+  const isAdmin = profile?.role === 'admin'
+  const [activity, setActivity] = useState<AuditLogEntry[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
+
+  useEffect(() => {
+    if (!isAdmin) return
+    let cancelled = false
+    setActivityLoading(true)
+    void fetchAuditLog(80).then((result) => {
+      if (cancelled) return
+      if (!('error' in result)) setActivity(result)
+      setActivityLoading(false)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [isAdmin, db.patients.length, db.appointments.length, db.billing.length, db.inventory.length, db.prescriptions.length, db.labs.length])
 
   const data = useMemo(() => {
-    const todayAppointments = db.appointments.filter((a) => a.date === t)
+    const todayAppointments = db.appointments.filter((a) => a.date === t && a.status !== 'Cancelled' && a.status !== 'Completed')
     const activeRxCount = db.prescriptions.filter((p) => p.status === 'Active').length
     const lowStockCount = db.inventory.filter((m) => m.qty <= m.threshold).length
     const recentPatients = db.patients.slice(0, 5)
@@ -48,6 +69,32 @@ export function DashboardPage() {
           <StatCard key={s.label} icon={s.icon} iconBg={s.bg} iconColor={s.color} label={s.label} value={s.value} sub={s.sub} />
         ))}
       </div>
+
+      {isAdmin && (
+        <Card title="Activity log" action={<Link to="/settings" className="link-cell">Full audit trail</Link>} noPadding>
+          {activityLoading && !activity.length ? (
+            <p style={{ padding: 16, fontSize: 13, color: 'var(--gray4)' }}>Loading activity…</p>
+          ) : activity.length ? (
+            <table className="data-table">
+              <thead>
+                <tr><th>When</th><th>Activity</th><th>Role</th></tr>
+              </thead>
+              <tbody>
+                {activity.slice(0, 25).map((row) => (
+                  <tr key={row.id}>
+                    <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>{new Date(row.created_at).toLocaleString()}</td>
+                    <td style={{ fontSize: 13 }}>{formatAuditActivity(row)}</td>
+                    <td><Badge>{row.user_role || '—'}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <EmptyState icon="📋" title="No activity yet" description="Creates, updates, and views across the clinic will appear here." />
+          )}
+        </Card>
+      )}
+
       <div className="two-col">
         <Card title="Recent Patients" action={<Link to="/patients" className="link-cell">View All</Link>} noPadding>
           {data.recentPatients.length ? (

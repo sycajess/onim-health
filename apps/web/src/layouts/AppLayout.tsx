@@ -4,6 +4,7 @@ import { useAuth, usePermissions } from '@onim/auth'
 import { useData } from '@onim/data'
 import { MODULES, ROLE_LABELS, getModuleLabel } from '@onim/types'
 import { Button, PageLoader } from '@onim/ui'
+import { AdminNotificationBell } from '../components/AdminNotificationBell'
 import { GlobalSearchBar } from '../components/GlobalSearchBar'
 import { NewPatientModal } from '../components/NewPatientModal'
 import { countUnreadMessages, getMessagesLastSeen, markMessagesSeen } from '../lib/messageUnread'
@@ -136,6 +137,7 @@ export function AppLayout() {
           </div>
           <div className="topbar__actions">
             <GlobalSearchBar />
+            {role === 'admin' && <AdminNotificationBell adminUserId={profile.id} />}
             {canCreatePatient && (
               <Button variant="primary" onClick={() => setPatientModalOpen(true)}>
                 + New Patient

@@ -34,6 +34,8 @@ export {
   billingLineAmount,
   validateInvoiceForSave,
   isPaidBillingStatus,
+  isArchivedBillingStatus,
+  isArchivedAppointmentStatus,
   isNhisClaimInvoice,
   billingPaymentMethod,
   type BillingLineItem,

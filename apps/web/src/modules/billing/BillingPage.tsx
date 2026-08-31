@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { usePermissions } from '@onim/auth'
 import {
@@ -7,6 +7,7 @@ import {
   patientFullName,
   formatBillingServicesSummary,
   isPaidBillingStatus,
+  isArchivedBillingStatus,
   BILLING_TARIFF_LABELS,
   type BillingInvoice,
   type BillingTariffTier,
@@ -17,9 +18,12 @@ import { StatusIconMenu } from '../../components/StatusIconMenu'
 import { BillingReceiptModal } from '../../components/BillingReceiptModal'
 import { NewInvoiceModal } from '../../components/modals/ClinicModals'
 import { NhisExportModal } from './NhisExportModal'
+import { emailInvoiceToPatient, openInvoicePrint } from '../../lib/invoiceDocument'
 import '@onim/ui/Card.css'
 
 const STATUSES = ['Pending', 'Paid – Cash', 'Paid – MoMo', 'Paid – Insurance', 'Partial']
+
+type ListTab = 'active' | 'archive'
 
 export function BillingPage() {
   const { db, updateBillingStatus, updateBillingNhisCleared } = useData()
@@ -28,6 +32,23 @@ export function BillingPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [receiptInvoice, setReceiptInvoice] = useState<BillingInvoice | null>(null)
+  const [tab, setTab] = useState<ListTab>('active')
+
+  const { active, archived } = useMemo(() => {
+    const activeList = db.billing.filter((b) => !isArchivedBillingStatus(b.status))
+    const archivedList = db.billing.filter((b) => isArchivedBillingStatus(b.status))
+    return { active: activeList, archived: archivedList }
+  }, [db.billing])
+
+  const rows = tab === 'active' ? active : archived
+
+  function invoiceDoc(b: BillingInvoice) {
+    return {
+      invoice: b,
+      patient: db.patients.find((p) => p.id === b.patient_id),
+      clinicName: 'Onim Health',
+    }
+  }
 
   return (
     <div>
@@ -43,13 +64,21 @@ export function BillingPage() {
         }
         noPadding
       >
-        {db.billing.length ? (
+        <div style={{ display: 'flex', gap: 8, padding: '12px 16px', borderBottom: '1px solid var(--gray2)' }}>
+          <Button variant={tab === 'active' ? 'primary' : 'secondary'} onClick={() => setTab('active')}>
+            Active ({active.length})
+          </Button>
+          <Button variant={tab === 'archive' ? 'primary' : 'secondary'} onClick={() => setTab('archive')}>
+            Archive ({archived.length})
+          </Button>
+        </div>
+        {rows.length ? (
           <table className="data-table">
             <thead>
               <tr><th>Invoice</th><th>Date</th><th>Patient</th><th>Tier</th><th>ICD-10</th><th>Services</th><th>Amount</th><th>NHIS</th><th>Status</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              {db.billing.map((b) => {
+              {rows.map((b) => {
                 const p = db.patients.find((x) => x.id === b.patient_id)
                 const tier = BILLING_TARIFF_LABELS[(b.payment_tier as BillingTariffTier) ?? 'cash'] ?? b.payment_tier
                 return (
@@ -76,6 +105,8 @@ export function BillingPage() {
                     <td><Badge>{b.status}</Badge></td>
                     <td>
                       <RowActions>
+                        <IconAction icon="print" label="Save invoice PDF" onClick={() => openInvoicePrint(invoiceDoc(b))} />
+                        <IconAction icon="mail" label="Email invoice to patient" onClick={() => emailInvoiceToPatient(invoiceDoc(b))} />
                         {isPaidBillingStatus(b.status) && (
                           <IconAction icon="paid" label="View receipt" onClick={() => setReceiptInvoice(b)} />
                         )}
@@ -90,7 +121,11 @@ export function BillingPage() {
             </tbody>
           </table>
         ) : (
-          <EmptyState icon="🧾" title="No invoices" />
+          <EmptyState
+            icon="🧾"
+            title={tab === 'active' ? 'No active invoices' : 'Archive is empty'}
+            description={tab === 'active' ? 'Paid invoices move to Archive automatically.' : 'Paid invoices stay here so you can revisit or resend them.'}
+          />
         )}
       </Card>
       <NewInvoiceModal open={modalOpen} onClose={() => setModalOpen(false)} />

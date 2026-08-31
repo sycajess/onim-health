@@ -317,6 +317,13 @@ export async function createPatient(input: NewPatientInput): Promise<Patient | {
 
   const { error } = await supabase.from('patients').insert(row)
   if (error) return { error: error.message }
+  void logAuditEvent({
+    action: 'create',
+    entity_type: 'patient',
+    entity_id: id,
+    patient_id: id,
+    details: { name: `${row.fname} ${row.lname}`.trim() },
+  })
   return mapPatient(row)
 }
 

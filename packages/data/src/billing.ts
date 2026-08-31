@@ -93,23 +93,38 @@ export function validateInvoiceForSave(input: {
   lines: BillingLineItem[]
   patientNhis: string
 }): string | null {
-  if (!input.primaryIcd10.trim()) return 'Primary ICD-10 diagnosis is required.'
   if (!input.lines.length) return 'Add at least one service line.'
-  for (const line of input.lines) {
-    if (!line.gdrg?.trim() && input.paymentTier === 'nhis') {
-      return 'Each NHIS service line needs a G-DRG code.'
+  if (!input.lines.some((l) => l.type.trim() || l.description.trim())) {
+    return 'Add at least one service line with a type or description.'
+  }
+  // ICD-10 and G-DRG are optional for cash/private; recommended for NHIS claims
+  if (input.paymentTier === 'nhis') {
+    if (!input.patientNhis.trim()) {
+      return 'Patient NHIS membership number is required for NHIS billing.'
+    }
+    for (const line of input.lines) {
+      if (!line.gdrg?.trim()) {
+        return 'Each NHIS service line needs a G-DRG code.'
+      }
     }
   }
-  if (input.paymentTier === 'nhis' && !input.patientNhis.trim()) {
-    return 'Patient NHIS membership number is required for NHIS billing.'
-  }
   const total = billingLinesTotal(input.lines, input.paymentTier)
-  if (total <= 0) return 'Invoice total must be greater than zero.'
+  if (total <= 0) return 'Invoice total must be greater than zero for the selected tariff tier.'
   return null
 }
 
 export function isPaidBillingStatus(status: string): boolean {
   return status.startsWith('Paid')
+}
+
+/** Paid invoices leave the live billing queue but stay in Archive. */
+export function isArchivedBillingStatus(status: string): boolean {
+  return isPaidBillingStatus(status)
+}
+
+/** Completed / cancelled appointments leave the live queue but stay in Archive. */
+export function isArchivedAppointmentStatus(status: string): boolean {
+  return status === 'Completed' || status === 'Cancelled'
 }
 
 export function billingPaymentMethod(status: string): string {
